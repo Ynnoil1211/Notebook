@@ -1,127 +1,102 @@
-# ICPC C++ Team Notebook — Manual Completo de Algoritmos y Estructuras
+# OUR BRAINS ARE DIAZ O — ICPC C++ Team Notebook (Manual Completo de Algoritmos y Estructuras)
 
-> **Estructura de cada sección:**
->
-> - **¿Cuándo usar?**: Señales en el enunciado, cotas típicas
->   ($N,M,Q$) y criterio de elección.
->
-> - **Complejidad**: Tiempo y espacio en notación
->   $\mathcal{O}( \cdot )$.
->
-> - **Plantilla C++**: Código limpio, probado y formateado a $\leq 60$
->   caracteres por línea para impresión a **3 columnas**.
->
-> - **Métodos / Ejemplo de Input y Uso (`main`)**: Documentación puntual
->   de métodos STL y casos de entrada completos con `main()` y salida
->   esperada para algoritmos complejos.
+> **Estándar de cada ficha de algoritmo:**
+> **Antes del código:** (1) Cuándo usarlo, (2) Cuándo no usarlo / alternativa, (3) Contrato y dependencias, (4) Complejidad de esta implementación, (5) Formato de entrada, (6) Entrada y salida de ejemplo, (7) **Cómo leer la entrada**.
+> **Código y cierre:** (8) **Implementación** ($\le 60$ caracteres/línea), (9) **Cómo llamarlo y producir la salida**, (10) Trampas y adaptaciones.
 
 ------------------------------------------------------------------------
 
-## Índice General
+## Bloque 0: Guía de Decisión Rápida, Complejidad y Checklist Anti-WA
 
-1.  **Bloque 1: C++ Base, Strings STL, Bitmasks y Cambios de Base**
-    - 1.1 Template Base ICPC, Pragmas, Formateo `cout`/`printf` y Comparador `EPS`
-    - 1.2 Generador Aleatorio (`mt19937_64`), `shuffle` y `rd(l, r)`
-    - 1.3 `std::string`: Métodos Clave (`find`, `rfind`, `substr`, `erase`, `insert`, `replace`, `stringstream`, `stoll`)
-    - 1.4 Manipulación de Bits (`__builtin`, LSO, Submáscaras) y `std::bitset`
-    - 1.5 Cambios de Base (Base $A \leftrightarrow B$, Binario, Base Negativa) y Números Gigantes en String
+### 0.1 Selector Rápido: Señal del Problema → Técnica → Condición → Sección
 
-2.  **Bloque 2: Contenedores STL, PBDS y sus Métodos Más Importantes**
-    - 2.1 `std::vector` y `<algorithm>`: Métodos, `sort`, Búsqueda Binaria (`lower_bound`/`upper_bound`) y Compresión de Coordenadas
-    - 2.2 Contenedores Lineales: `std::deque`, `std::queue` y `std::stack`
-    - 2.3 Colas de Prioridad / Heaps (`std::priority_queue`): Max-Heap, Min-Heap, Custom y **Deletable Heap**
-    - 2.4 Árboles Balanceados (`std::set`, `std::multiset`, `std::map`): Métodos, Búsqueda Binaria en `set` y Borrado Seguro en `multiset`
-    - 2.5 Tablas Hash (`unordered_map`, `unordered_set`) con `custom_hash` Anti-Hack (SplitMix64) y Pares Iguales
-    - 2.6 Extensiones GNU: `ordered_set` / `ordered_multiset` (PBDS) y `__gnu_cxx::rope`
+| Señal en el Enunciado | Técnica Recomendada | Condición Obligatoria | Sección |
+| :--- | :--- | :--- | :--- |
+| «Maximizar el mínimo» / «Minimizar el máximo» | Binary Search sobre la respuesta | Predicado `check(X)` monótono (`VVVFFF` o `FFFVVV`) | §3.1 |
+| Óptimo de función continua o discreta en U / $\cap$ | Ternary Search | Función **estrictamente unimodal** (sin mesetas planas) | §3.2 |
+| Subarreglo más largo/corto con suma $\le S$ | Two Pointers (ventana deslizante) | Elementos **no negativos** ($a_i \ge 0$) para monotonía | §3.3 |
+| Subarreglos con suma $= K$ o divisible por $M$ (con $<0$) | Prefix Sum + `safe_umap` | Arreglo estático; normalizar residuo `(s%M+M)%M` | §3.4 |
+| Subarreglo contiguo de suma máxima | Algoritmo de Kadane | Al menos 1 elemento; maneja todos negativos | §3.4 |
+| Mayor rectángulo / primer menor o mayor a izq/der | Monotonic Stack + Contribuciones | Desigualdad estricta de un lado y $\le$ del otro en duplicados | §3.3, §7.12 |
+| Mínimo/máximo en todas las ventanas de tamaño $K$ | Monotonic Deque | Ventana de longitud monótona (extremos avanzan) | §3.3 |
+| Sumar $V$ a rangos $[L, R]$ y consultar solo al final | Difference Array 1D / 2D | Todas las consultas ocurren **después** de los updates | §3.5 |
+| Máximo número de intervalos disjuntos | Greedy por fin de intervalo | Ordenar por extremo derecho $r_i$ ascendente | §3.6 |
+| Tareas con duración $t_i$ y plazo $d_i$ (máx. cantidad) | Greedy con Max-Heap (*Regret*) | Ordenar por $d_i$; si $\sum t > d_i$, descartar mayor $t$ | §3.6 |
+| Intersección máxima o unión de intervalos | Sweep-Line 1D de eventos | Definir desempate en $x$ según intervalo cerrado/abierto | §3.7 |
+| Conectividad agregando aristas / MST | DSU Clásico / Kruskal | Solo inserciones (sin borrado de aristas) | §4.1, §6.4 |
+| Conectividad agregando y **borrando** aristas | `DynCon` (`RollbackDSU` offline) o `LinkCut` | `DynCon`: todas las operaciones conocidas offline | §4.1, §4.9 |
+| RMQ / GCD en rango sin actualizaciones | Sparse Table | Arreglo estático y operación idempotente ($\mathcal{O}(1)$) | §4.2 |
+| Suma en rango + update puntual (1D / 2D) | Fenwick Tree (BIT) | Operación invertible (`+`, `^`); 1-indexed | §4.3 |
+| Operación asociativa en rango + update puntual/rango | Segment Tree / Lazy SegTree | Monoid asociativo; distributividad del lazy tag | §4.4, §4.5 |
+| $k$-ésimo menor en subarreglo $[L, R]$ estático | `PersistentFreqST` | Compresión de coordenadas previa ($1 \le L \le R \le N$) | §4.5 |
+| Consultas complejas en rango sin asociatividad fácil | Algoritmo de Mo | **Offline**, sin updates (o pocos), agregar/quitar $\mathcal{O}(1)$ | §4.6 |
+| Cortar, pegar, revertir subarreglos dinámicamente | Implicit Treap / `rope` | Índices 0-based; `push` antes de dividir/unir | §4.7, §2.6 |
+| Consultas / updates en caminos o subárboles de árbol | LCA / Euler Tour / HLD / Sack | Ver §0.3 para elegir la herramienta mínima suficiente | §4.8, §6.4 |
+| Buscar patrón $P$ en texto $T$ o periodo mínimo | KMP / Z-Algorithm | Exacto y determinista en $\mathcal{O}(|T| + |P|)$ | §5.3, §5.4 |
+| Palíndromo más largo centrado en cada posición | Manacher | Transforma pares e impares en $\mathcal{O}(|S|)$ | §5.4 |
+| Múltiples patrones / DP prohibiendo subcadenas | Aho-Corasick | Construir `link` y `next` por BFS antes de consultar | §5.5 |
+| Max/Min XOR con un conjunto de enteros | `BitTrie` / `XorBasis` | `BitTrie`: elemento individual; `XorBasis`: subconjunto | §5.5, §7.6 |
+| Subcadenas distintas / LCS contigua / ocurrencias | Suffix Array + LCP o SAM | SA: $\mathcal{O}(N\log N)$; SAM: $\mathcal{O}(N\log N)$ con sort | §5.6 |
+| Camino mínimo sin pesos / pesos $\{0, 1\}$ / $\ge 0$ | BFS / 0-1 BFS / Dijkstra | Dijkstra exige **pesos no negativos** ($w \ge 0$) | §6.1, §6.3 |
+| Camino mínimo con pesos negativos o detectar ciclo $<0$ | Bellman-Ford / Floyd-Warshall | $N \le 2500$ (BF) o $N \le 400$ (Floyd) | §6.3 |
+| Decisiones binarias con cláusulas $(a \lor b)$, $(a \Rightarrow b)$ | 2-SAT con Tarjan SCC | A lo sumo 2 literales por cláusula | §6.5 |
+| Flujo máximo / Corte mínimo / Matching bipartito | Dinic / `BipartiteMVC` (Kuhn+König) | Capacidades $\ge 0$; en bipartito Dinic es $\mathcal{O}(E\sqrt{V})$ | §6.6 |
+| Flujo de costo mínimo / Asignación $N \times M$ | MCMF (SPFA) / Húngaro | Sin ciclos de costo negativo; Húngaro para matriz densa | §6.6 |
+| Matching máximo en grafo general (con ciclos impares) | Algoritmo de Blossom | $V \le 500$, $\mathcal{O}(V^3)$ | §6.6 |
+| Grafo donde cada nodo tiene exactamente 1 salida | Grafo Funcional (Ciclos + Lifting) | `LOG = 62` si $K \le 10^{18}$ | §6.11 |
+| Primalidad y factorización hasta $10^{18}$ | Miller-Rabin + Pollard's Rho | Usar multiplicación `__uint128_t` (`u128`) | §7.2 |
+| Sistema de congruencias $x \equiv r_i \pmod{m_i}$ | CRT General + `extgcd` | Ensanchar a `i128` antes de multiplicar por $m_1$ | §7.3 |
+| Recurrencia lineal $a_n$ para $N \le 10^{18}$ | Exponenciación de Matriz / BM | Matriz conocida $\mathcal{O}(K^3\log N)$ o inferida con BM | §7.6, §7.10 |
+| Convolución de polinomios exacta o módulo $998244353$ | FFT (`double`) / NTT (`998244353`) | NTT exige primo $c\cdot 2^k+1$ y raíz primitiva $g=3$ | §7.6 |
+| Subconjuntos / Asignación / TSP con $N \le 20$ | Subset DP (`dp[mask]`, `dp[mask][u]`) | $\mathcal{O}(N 2^N)$ asignación vs $\mathcal{O}(N^2 2^N)$ TSP | §8.2 |
+| Respuesta para cada nodo si fuera la raíz del árbol | Rerooting DP (2 DFS) | Combinar `down[v]` de hijos con contribución exterior `up[u]` | §8.3 |
+| DP cuadrática con rectas o costos convexos | CHT / D&C DP / Knuth | Verificar monotonía de pendientes/óptimos (§8.4) | §8.4 |
+| Geometría exacta sin errores de redondeo | Kernel Entero `PtLL` (`i128`) | Coordenadas enteras $\le 10^9$ (productos en `i128`) | §9.1 |
+| $N \le 40$ demasiado grande para $2^N$ pero $2^{N/2}$ cabe | Meet in the Middle (MITM) | Partir en $N/2$, ordenar una mitad y usar `equal_range` | §10.1 |
 
-3.  **Bloque 3: Búsquedas, Two Pointers, Prefix Sum y Difference Array**
-    - 3.1 Binary Search (Discreta Max/Min y Continua `double`)
-    - 3.2 Ternary Search (Discreta y Continua para Funciones Unimodales)
-    - 3.3 Two Pointers, Monotonic Stack (Next Greater/Smaller) y Monotonic Deque (Sliding Window Minimum)
-    - 3.4 Prefix Sum 1D (Arreglos y Cadenas) y Prefix Sum 2D (Submatrices en $\mathcal{O}(1)$)
-    - 3.5 Difference Array 1D, Doble Difference Array (Greg and Array) y Difference Array 2D
+### 0.2 Tabla Orientativa de Complejidad según Restricciones ($N$)
 
-4.  **Bloque 4: Estructuras de Datos Avanzadas (Consultas en Rango y Árboles)**
-    - 4.1 Disjoint Set Union (DSU Clásico) y DSU con Rollback + Conectividad Dinámica Offline
-    - 4.2 Sparse Table (RMQ e Idempotentes en $\mathcal{O}(1)$)
-    - 4.3 Fenwick Tree / BIT 1D (con Binary Lifting `lower_bound`) y Fenwick Tree 2D
-    - 4.4 Segment Tree Clásico (Recursivo) y Segment Tree Iterativo
-    - 4.5 Segment Tree con Lazy Propagation, Segment Tree 2D y Persistent Segment Tree
-    - 4.6 SQRT Decomposition y Algoritmo de Mo (con Optimización de Bloques)
-    - 4.7 Treap (BST Aleatorizado) e Implicit Treap (Reversión y Suma en Rango)
-    - 4.8 Consultas en Árboles: Heavy-Light Decomposition (HLD) y DSU on Tree (Sack)
-    - 4.9 Link-Cut Tree (LCT — Bosques Dinámicos Online)
+> **Nota sobre límites reales:** La tabla asume un límite estándar de **1–2 segundos en C++20** ($\approx 10^8$ operaciones simples/seg). El límite real depende de: (1) **Tiempo límite** del problema, (2) **Lenguaje** (en Python dividir el presupuesto por $10\times$–$30\times$ salvo operaciones vectorizadas/C nativas), (3) **Memoria límite** (evitar tablas `ll` de $> 3\cdot 10^7$ celdas para 256 MB) y (4) **Constantes ocultas** (`set`/`map` y grafos densos tienen constante mucho mayor que vectores contiguos o Fenwick).
 
-5.  **Bloque 5: Algoritmos de Strings**
-    - 5.1 Rotación Cíclica Mínima / Minimum Expression (Duval/Booth $\mathcal{O}(N)$)
-    - 5.2 Double Rolling Hash Polinomial y LCP con Búsqueda Binaria
-    - 5.3 KMP (Función Prefijo $\pi$, Pattern Matching, Periodo) y Autómata KMP
-    - 5.4 Z-Algorithm y Algoritmo de Manacher (Palíndromos Pares e Impares)
-    - 5.5 Trie (Strings y Trie Binario para Max XOR) y Aho-Corasick (Múltiples Patrones)
-    - 5.6 Suffix Array + LCP, Suffix Automaton (SAM) y Palindromic Tree (Eertree)
+| Cota de $N$ | Complejidad Objetivo | Técnicas Típicas |
+| :--- | :--- | :--- |
+| $N \le 10$ | $\mathcal{O}(N!)$, $\mathcal{O}(N \cdot N!)$ | `next_permutation`, backtracking exhaustivo |
+| $N \le 20$ | $\mathcal{O}(2^N)$, $\mathcal{O}(N \cdot 2^N)$, $\mathcal{O}(N^2 \cdot 2^N)$ | Bitmask DP (`dp[mask]`, TSP `dp[mask][last]`), SOS DP ($N \le 20$), submáscaras $\mathcal{O}(3^N)$ ($N \le 15$) |
+| $N \le 40$ | $\mathcal{O}(2^{N/2} \log(2^{N/2}))$ | Meet in the Middle (§10.1), Clique Máximo con poda (§10.3) |
+| $N \le 400$ | $\mathcal{O}(N^3)$ | Floyd-Warshall, Gauss, Húngaro, Blossom, DP de intervalos / Knuth $\mathcal{O}(N^2)$ |
+| $N \le 3000$ | $\mathcal{O}(N^2)$, $\mathcal{O}(N^2 / 64)$ | DP 2D clásica (LCS, Edit Distance, Knapsack), `bitset` $\mathcal{O}(N^2/64)$, árboles cuadráticos |
+| $N \le 10^5$ | $\mathcal{O}(N\sqrt{N})$, $\mathcal{O}(N\log^2 N)$ | Algoritmo de Mo, SQRT Decomposition, HLD + SegTree, D&C DP, Centroid Decomp |
+| $N \le 2\cdot 10^5$ – $5\cdot 10^5$ | $\mathcal{O}(N\log N)$ | `sort`, Binary Search, Dijkstra, Fenwick, SegTree, LCA, FFT/NTT, Suffix Array, Convex Hull |
+| $N \le 10^6$ – $5\cdot 10^6$ | $\mathcal{O}(N)$ | Two Pointers, Monotonic Stack/Deque, KMP, Z, Manacher, Criba Lineal, Prefix/Diff Array |
+| $N \le 10^{18}$ | $\mathcal{O}(\log N)$, $\mathcal{O}(\sqrt{N})$, $\mathcal{O}(N^{1/4})$ | Binary Lifting, Exponenciación de Matrices, Digit DP, Miller-Rabin + Pollard's Rho |
 
-6.  **Bloque 6: Grafos, Árboles, Conectividad y Flujos**
-    - 6.1 Recorridos BFS: Grid BFS (Flood Fill), Multi-Source BFS (Aristas Invertidas) y 0-1 BFS
-    - 6.2 Patrones DFS: Grafo Bipartito, Ciclos, Euler Tour (`tin`/`tout`), DFS en Complemento y Conteo de Triángulos
-    - 6.3 Caminos Más Cortos: Dijkstra, Bellman-Ford / SPFA (Ciclo Negativo) y Floyd-Warshall
-    - 6.4 Árboles: Diámetro (Doble BFS), MST (Kruskal y Prim), LCA Binary Lifting y Centroid Decomposition
-    - 6.5 Conectividad, DAGs y 2-SAT: Topological Sort, Puentes/Articulación, Biconexas, SCC (Tarjan/Kosaraju), 2-SAT y Camino Euleriano
-    - 6.6 Flujos y Matching: Dinic, Min-Cost Max-Flow (MCMF), Kuhn (MCBM) + König
-    - 6.7 Árbol Generador Mínimo Dirigido (Directed MST / Arborescence)
-    - 6.8 Componentes Biconexas y Block-Cut Tree
-    - 6.9 Camino y Ciclo Euleriano (Hierholzer)
-    - 6.10 Flujos Avanzados y Matching: Push-Relabel, Algoritmo Húngaro y Blossom
+### 0.3 Advertencias Críticas de Elección de Técnica
 
-7.  **Bloque 7: Matemáticas, Teoría de Números, Álgebra y Juegos**
-    - 7.1 Cribas (Eratóstenes, Divisores, Lineal SPF, Segmentada) y Primalidad $\mathcal{O}(\sqrt{N})$
-    - 7.2 Primalidad y Factorización Grande: Miller-Rabin (64-bit) y Pollard's Rho
-    - 7.3 GCD, Diferencia de Cuadrados, Euclides Extendido, Ecuaciones Diofánticas, Ecuación Modular y CRT
-    - 7.4 Aritmética Modular (`mint`), Combinatoria ($nCr$), Teorema de Lucas y Fórmula de Legendre ($n!$)
-    - 7.5 Funciones Multiplicativas: Totient de Euler ($\phi$) y Función de Möbius ($\mu$)
-    - 7.6 Álgebra Lineal y Polinomios: Exponenciación de Matrices, Eliminación Gaussiana (`double`, Modular, XOR Basis), FFT, FWT, Logaritmo Discreto y Fracciones
-    - 7.7 XOR en Rango $\mathcal{O}(1)$, Función `mex`, Grundy y Juego de Nim / Misère Nim
-    - 7.8 Criba Segmentada (Primos en Rango $[L, R]$)
-    - 7.9 Programación Lineal: Algoritmo Simplex de Dos Fases
-    - 7.10 Berlekamp-Massey y Recurrencias Lineales Modulares
-    - 7.11 Interpolación de Lagrange en $\mathcal{O}(D)$ y $\mathcal{O}(D^2)$
+1. **Sliding Window / Two Pointers de suma exige monotonía**:
+   - **Nunca** usar ventana deslizante estándar (`while (sum > K) sum -= a[l++]`) para suma de subarreglo si hay **números negativos**, porque avanzar `l` puede aumentar `sum` y avanzar `r` puede disminuirla.
+   - *Alternativa con negativos*: para contar suma exacta $K$ usar `Prefix Sum + safe_umap` (§3.4); para suma máxima usar Kadane (§3.4); para subarreglo más corto/largo con suma $\ge K$ o $\le K$ con negativos usar `Prefix Sum + Monotonic Deque / Binary Search`.
+2. **Mediana transformada a $+1 / -1$ (precisión de paridad y desigualdad)**:
+   - Al probar si existe un subarreglo con mediana $\ge X$, se transforma cada elemento en $b_i = +1$ si $a_i \ge X$ y $b_i = -1$ si $a_i < X$.
+   - **No usar `sum == 0` como regla general**:
+     - Para la **mediana inferior** (el elemento $\lfloor (L+1)/2 \rfloor$-ésimo en orden 1-based, donde en longitud par $L=2k$ es el $k$-ésimo): la mediana es $\ge X$ si y solo si la suma del subarreglo cumple **$\text{sum} > 0$** ($\text{sum} \ge 1$).
+     - Para la **mediana superior** (el elemento $\lfloor L/2 \rfloor + 1$-ésimo, donde en $L=2k$ es el $(k+1)$-ésimo): la mediana es $\ge X$ si y solo si **$\text{sum} \ge 0$** (en longitud impar equivale a $\text{sum} \ge 1$).
+   - Distinguir también si el problema pide mediana $\ge X$ (búsqueda binaria sobre $X$ con $+1/-1$) o mediana **exactamente igual** a un valor $X$ sin elementos repetidos (donde $a_i > X \to +1$, $a_i < X \to -1$, $a_i = X \to 0$ y se busca subarreglo que contenga a $X$ con suma $0$ o $+1$).
+3. **Consultas en Árboles — Cuándo bastan LCA/Prefijos y cuándo sí se necesita HLD**:
+   - **Árbol estático + operación invertible en camino** (suma, XOR, conteo): basta guardar `pref[u]` desde la raíz y usar `LCA` (§6.4): $\text{camino}(u, v) = \text{pref}[u] + \text{pref}[v] - 2\cdot\text{pref}[\text{lca}(u, v)] + \text{val}[\text{lca}(u, v)]$ en $\mathcal{O}(\log N)$ (sin HLD).
+   - **Updates en nodos + suma en subárbol** (o update de suma en camino + consulta puntual en nodo): basta **Euler Tour (`tin`/`tout`, §6.2) + Fenwick Tree (§4.3)** en $\mathcal{O}(\log N)$.
+   - **Updates en subárbol + consultas en subárbol**: basta **Euler Tour (`tin`/`tout`) + Lazy SegTree (§4.5)** porque todo subárbol es el rango contiguo `[tin[u], tout[u]]`.
+   - **Cuándo SÍ usar HLD (§4.8)**: cuando hay **updates dinámicos** y consultas en **camino** de una operación **no invertible** (`max`, `min`, `gcd`, matriz), o cuando hay simultáneamente **updates en camino y consultas en camino/subárbol**.
 
-8.  **Bloque 8: Programación Dinámica (DP) y Geometría Computacional**
-    - 8.1 DP Clásica y Máscaras: Knapsack 0/1 y Unbounded, LCS, Edit Distance, LIS $\mathcal{O}(N\log N)$, Digit DP y SOS DP
-    - 8.2 Optimizaciones de DP: Convex Hull Trick (Estático y Dinámico), Divide & Conquer DP y Knuth's Optimization
-    - 8.3 Geometría 2D: `Point`, `Line`, Segmentos, `Polygon` (Área, Centroide, Punto en Polígono, Corte), `Convex Hull`, Rotating Callipers, Closest Pair
-    - 8.4 Intersección de Semiplanos (Halfplane Intersection)
-    - 8.5 Suma de Minkowski de Polígonos Convexos
+### 0.4 Checklist Anti-WA Antes de Enviar
 
-9.  **Bloque 9: Miscelánea y Parsing Especial**
-    - 9.1 Evaluador de Expresiones Aritméticas (Shunting-Yard Parser)
-    - 9.2 Clique Máximo (Bron-Kerbosch Branch & Bound)
-
-10. **Bloque 10: Compendio Teórico, Teoremas, Fórmulas e Identidades**
-    - 10.1 Tabla de Optimización de DP (CHT, D&Q, Knuth, WQS)
-    - 10.2 Combinatoria y Sumatorias (Catalan, Stirling, Bell, Partición Pentagonal, Burnside)
-    - 10.3 Teoría de Números (Diofánticas, Frobenius/McNuggets, Wilson, Euler, Legendre, Pisano)
-    - 10.4 Teoría de Grafos y Redes (Kirchhoff Matrix-Tree, Cayley, Prüfer, König, Dilworth, Gale-Shapley, Flujo con Demandas)
-    - 10.5 Geometría y Distancias (Pick, Herón, Incírculo, Circuncírculo, Haversine)
-    - 10.6 Teoría de Juegos y XOR (Sprague-Grundy, Nim, Misère Nim, Moore $\text{Nim}_k$)
-    - 10.7 Reglas Lógicas de 2-SAT
-    - 10.8 Tabla de Constantes, Primos y Módulos Frecuentes
-
-11. **Bloque 11: Python 3 para ICPC — Trucos, BigInt, Bases y Librería Estándar**
-    - 11.1 Template Base, Fast I/O, Límites de Recursión y Digits en BigInt
-    - 11.2 Conversión de Bases Arbitrarias (Base $A \leftrightarrow B$) y Formateo
-    - 11.3 Aritmética Gigante (BigInt), Potencia Modular `pow()` y Raíz Entera `isqrt()`
-    - 11.4 Fracciones Exactas (`Fraction`) y Decimales de Alta Precisión (`Decimal`)
-    - 11.5 Manejo de Fechas y Calendarios (`datetime`)
-    - 11.6 DP con Memoización Automática (`@cache` / `cache_clear`)
-    - 11.7 Extracción de Números en Texto Sucio con Expresiones Regulares (`re`)
-    - 11.8 Frecuencias y Álgebra de Multiconjuntos (`Counter`)
-    - 11.9 Agrupación y Grafos Instantáneos (`defaultdict`)
-    - 11.10 Rotación y Transposición de Matrices en 1 Línea (`zip(*mat)`)
-    - 11.11 Álgebra de Conjuntos Nativos (`set`)
-    - 11.12 Bits en Números Gigantes (`bit_count`, `bit_length`)
-    - 11.13 Búsqueda Binaria con Proyección (`bisect` con `key`) y Ordenamiento Multi-Criterio
-    - 11.14 Combinatoria y Generadores Nativos (`comb`, `perm`, `itertools`)
-    - 11.15 Evaluación de Expresiones Aritméticas (`eval`)
+- [ ] **Overflow entero**: ¿Usaste `ll` en sumas de prefijos, distancias de Dijkstra, costos de DP y conteos de pares `1LL * n * (n - 1) / 2`? ¿Usaste `i128` antes de multiplicar en CRT, geometría entera (`PtLL`) o `mul_mod64` (`u128`)?
+- [ ] **Indexación ($0$-based vs $1$-based)**: Fenwick, DSU, LCA, HLD y grafos suelen ser `1..N`; Segment Tree, Sparse Table, Strings y Geometría suelen ser `0..N-1`. ¿Ajustaste `--u, --v` al leer?
+- [ ] **Casos múltiples (`T` testcases) y reinicio**: ¿Limpiaste `adj[1..n]`, `vis[1..n]` y contadores entre casos? **Prohibido** hacer `memset(arr, 0, sizeof(arr))` sobre un arreglo global de $2\cdot 10^5$ dentro de cada caso cuando $\sum N \le 2\cdot 10^5$ (causa TLE $\mathcal{O}(T \cdot N_{\max})$); usar `fill(arr, arr + n + 1, 0)`.
+- [ ] **Constante `INF`**: ¿Es suficientemente grande (`1e18` para `ll`, no `1e9`) pero protegida contra overflow al hacer `dist[u] + w` (`if (dist[u] < INF)`)?
+- [ ] **Negativos en módulo e inversos**: En C++ `(-a) % MOD` es negativo; usar `(x % MOD + MOD) % MOD`. Antes de usar `inv_fermat(a, p)`, verificar que $p$ sea primo y $a \not\equiv 0 \pmod p$; para módulo compuesto usar `inv_extgcd` solo si $\gcd(a, m) = 1$.
+- [ ] **Recursión y pila**: En grafos/árboles con $N = 2\cdot 10^5$, no pasar vectores por valor en el DFS. En Python, configurar `sys.setrecursionlimit(300000)` o reescribir el DFS iterativo.
+- [ ] **Precisión en punto flotante**: Usar `ld` (`long double`), imprimir con `fixed << setprecision(10)`, comparar con `eps_eq`/`eps_lt`, y **nunca** pasar un comparador aproximado `a + EPS < b` a `std::set`/`std::map`.
+- [ ] **Estructura vacía y bordes**: Verificar $N=1$, $K=0$, grafo desconectado, llamar a `ms.find(x)` antes de `ms.erase(it)` en `multiset`, y comprobar `!s.empty()` antes de `*s.begin()`, `*s.rbegin()` o `pq.top()`.
 
 ------------------------------------------------------------------------
 
@@ -129,14 +104,33 @@
 
 ### 1.1 Template Base ICPC, Pragmas, Formateo `cout`/`printf` y Comparador `EPS`
 
-- **¿Cuándo usar?**: Esqueleto inicial para todo problema. Incluye
-  optimización de I/O, impresión de `__int128`, pragmas de vectorización
-  (usar solo si el tiempo es muy ajustado en $\mathcal{O}(N^{2})$
-  simple) y formateo de decimales/ceros a la izquierda.
+- **Cuándo usar:** Esqueleto base para todo programa C++ en competencia: incluye fast I/O, impresión de `__int128`, comparación segura con `EPS` (`eps_lt`, `eps_eq`) y cuantización para contenedores.
+- **Cuándo no usar / alternativa:** No descomentar `#pragma GCC target("avx2...")` si el juez corre en una arquitectura distinta sin soporte AVX2 o si el problema es I/O-bound.
+- **Contrato:** Define alias `ll`, `ull`, `ld`, `i128`, `u128`, `pii`, `pll`, `vi`, `vll` y constantes `INF_INT`, `INF`, `EPS`, `PI`. `eps_eq(a, b)` comprueba `|a - b| <= EPS`. Dependencias: ninguna.
+- **Complejidad:** Fast I/O y comparadores en $\mathcal{O}(1)$; impresión de `i128` en $\mathcal{O}(\log_{10} N)$.
+- **Formato de entrada:** Dos números reales `a b` y un entero grande `x` para duplicar en 128 bits.
 
-- **Complejidad**: I/O en $\mathcal{O}(1)$ amortizado.
+**Entrada:**
+```text
+3.1415926535 3.1415926536 5000000000000000000
+```
 
-``` cpp
+**Salida:**
+```text
+IGUALES
+3.141593
+10000000000000000000
+```
+
+**Cómo leer la entrada:**
+```cpp
+ld a, b;
+ll x;
+cin >> a >> b >> x;
+```
+
+**Implementación:**
+```cpp
 // Descomentar pragmas solo si se requiere optimizacion SIMD
 // #pragma GCC optimize("O3,unroll-loops")
 // #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
@@ -148,6 +142,7 @@ using ll = long long;
 using ull = unsigned long long;
 using ld = long double;
 using i128 = __int128_t;
+using u128 = __uint128_t;
 using pii = pair<int, int>;
 using pll = pair<ll, ll>;
 using vi = vector<int>;
@@ -175,13 +170,19 @@ ostream& operator<<(ostream& os, i128 n) {
   return os << s;
 }
 
-// Comparador seguro con EPS para set<double> o map<double, T>
-struct eps_cmp {
-  bool operator()(const double& a, const double& b) const {
-    return a + EPS < b;
+// Comparacion aproximada en punto flotante (NO usar a + EPS
+// < b en set/map,
+// porque la equivalencia |a - b| <= EPS no es transitiva y
+// rompe std::set).
+inline int eps_sgn(ld x) { return (x > EPS) - (x < -EPS); }
+inline bool eps_eq(ld a, ld b) { return eps_sgn(a - b) == 0;
   }
-};
-// Uso: set<double, eps_cmp> s_dbl;
+inline bool eps_lt(ld a, ld b) { return eps_sgn(a - b) < 0;
+  }
+// Para usar doubles como clave en set/map con rejilla fija,
+// cuantizar a ll:
+inline ll quantize_eps(ld x, ld step = EPS) {
+  return llround(x / step); }
 
 void io_formatting_tricks() {
   // 1. Imprimir punto flotante con exactamente 6 decimales:
@@ -190,7 +191,8 @@ void io_formatting_tricks() {
   int h = 5, m = 9;
   cout << setfill('0') << setw(2) << h << ":"
        << setw(2) << m << "\n";
-  // 3. Imprimir en base hexadecimal, octal y volver a decimal:
+  // 3. Imprimir en base hexadecimal, octal y volver a
+  // decimal:
   cout << hex << 255 << " " << oct << 255 << dec << "\n";
 }
 
@@ -208,19 +210,44 @@ int main() {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << (eps_eq(a, b) ? "IGUALES" : "DISTINTOS") << '\n';
+cout << fixed << setprecision(6) << a << '\n';
+i128 big = (i128)x * 2;
+cout << big << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Jamás mezclar `scanf`/`printf` con `cin`/`cout` tras `sync_with_stdio(false)`; (2) no usar `eps_lt` como comparador directo de `std::set` porque la cercanía `|a-b| <= EPS` no es transitiva (usar `quantize_eps`).
+
 ------------------------------------------------------------------------
 
 ### 1.2 Generador Aleatorio (`mt19937_64`), `shuffle` y `rd(l, r)`
 
-- **¿Cuándo usar?**: Cuando necesites algoritmos aleatorizados (Treap,
-  Pollard’s Rho, Miller-Rabin), barajar un arreglo para evitar peores
-  casos, o generar casos de prueba (*stress testing*). Nunca usar
-  `rand()` porque en Windows solo genera hasta $32767$.
+- **Cuándo usar:** Generar enteros o reales uniformes en 64 bits (`rd(l, r)`), barajar arreglos antes de `sort`/QuickSelect o alimentar algoritmos aleatorizados (Pollard's Rho, Treap).
+- **Cuándo no usar / alternativa:** Nunca usar `rand()` en Windows/MinGW porque `RAND_MAX = 32767` deja sin cubrir índices $> 32767$.
+- **Contrato:** Rango cerrado `[l, r]` con `l <= r`. Para pruebas deterministas reproducibles, fijar semilla `rng.seed(1337)`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(1)$ por llamada a `rd(l, r)`; $\mathcal{O}(N)$ para `shuffle`.
+- **Formato de entrada:** Dos enteros `L R` con `L <= R`.
 
-- **Complejidad**: $\mathcal{O}(1)$ por número generado;
-  $\mathcal{O}(N)$ para `shuffle`.
+**Entrada:**
+```text
+10 10
+```
 
-``` cpp
+**Salida:**
+```text
+10
+```
+
+**Cómo leer la entrada:**
+```cpp
+ll l, r;
+cin >> l >> r;
+```
+
+**Implementación:**
+```cpp
 mt19937_64 rng(
   chrono::steady_clock::now().time_since_epoch().count()
 );
@@ -239,19 +266,48 @@ double rd_real(double l, double r) {
 // shuffle(all(v), rng);
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+rng.seed(42);
+ll x = rd(l, r);
+cout << x << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Declarar `rng` una sola vez como global (no recrearlo dentro de una función en cada llamada); (2) asegurar `l <= r` antes de llamar a `uniform_int_distribution`.
+
 ------------------------------------------------------------------------
 
 ### 1.3 `std::string`: Métodos Clave (`find`, `rfind`, `substr`, `erase`, `insert`, `replace`, `stringstream`, `stoll`)
 
-- **¿Cuándo usar?**: Procesamiento directo de texto, extracción de
-  subcadenas, reemplazos, tokenización (separar palabras por espacios o
-  por comas/dos puntos) y conversión entre bases y números.
+- **Cuándo usar:** Separar líneas por un delimitador fijo (CSV, horas `HH:MM:SS`) o por espacios arbitrarios, buscar subcadenas (`find`), extraer rangos (`substr`) y convertir entre strings y enteros (`stoll`).
+- **Cuándo no usar / alternativa:** Si necesitas buscar un patrón millones de veces o sobre textos de $10^6$ caracteres con garantías lineales en el peor caso, no usar `s.find` repetido ($\mathcal{O}(N \cdot M)$); usar KMP (§5.3) o Z-Algorithm (§5.4).
+- **Contrato:** `split_delim(s, delim)` y `split_spaces(s)` retornan `vector<string>`. En `s.substr(pos, len)`, el segundo parámetro es la **longitud**, no el índice final. Dependencias: template base (§1.1).
+- **Complejidad:** `split_delim` y `split_spaces` en $\mathcal{O}(|S|)$; `find`, `substr`, `erase`, `insert` en $\mathcal{O}(|S|)$.
+- **Formato de entrada:** Una línea con tokens separados por comas, seguida de una línea con palabras separadas por espacios.
 
-- **Complejidad**: `find`/`substr`/`erase`/`insert` toman
-  $\mathcal{O}(N)$ (donde $N = |S|$).
+**Entrada:**
+```text
+10,20,30
+icpc   regional 2026
+```
 
-``` cpp
-// 1. Separar string por un caracter delimitador (ej. ',', ':')
+**Salida:**
+```text
+60
+3 regional
+```
+
+**Cómo leer la entrada:**
+```cpp
+string line_csv, line_words;
+getline(cin >> ws, line_csv);
+getline(cin >> ws, line_words);
+```
+
+**Implementación:**
+```cpp
+// 1. Separar string por un caracter delimitador (ej. ',',
+// ':')
 vector<string> split_delim(const string& s, char delim) {
   vector<string> tokens;
   stringstream ss(s);
@@ -260,7 +316,8 @@ vector<string> split_delim(const string& s, char delim) {
   return tokens;
 }
 
-// 2. Separar string por espacios (ignora espacios multiples)
+// 2. Separar string por espacios (ignora espacios
+// multiples)
 vector<string> split_spaces(const string& s) {
   vector<string> tokens;
   stringstream ss(s);
@@ -275,7 +332,8 @@ void string_methods_demo() {
   // --- BUSQUEDA (find / rfind) ---
   // Retorna indice 0-based o string::npos si NO existe
   size_t p1 = s.find("icpc");       // 0 (primera aparicion)
-  size_t p2 = s.find("icpc", 1);    // 14 (busca desde idx 1)
+  // 14 (busca desde idx 1)
+  size_t p2 = s.find("icpc", 1);
   size_t p3 = s.rfind("icpc");      // 14 (ultima aparicion)
   if (s.find("xyz") == string::npos) { /* No esta */ }
 
@@ -288,19 +346,24 @@ void string_methods_demo() {
 
   // --- SUBCADENAS (substr) ---
   // ¡CUIDADO! substr(pos_inicio, LONGITUD)
-  // Para extraer el rango [L, R] inclusivo: s.substr(L, R-L+1)
+  // Para extraer el rango [L, R] inclusivo: s.substr(L,
+  // R-L+1)
   string sub1 = s.substr(5, 8);     // "regional" (8 chars)
-  string sub2 = s.substr(19);       // "2026" (hasta el final)
+  // "2026" (hasta el final)
+  string sub2 = s.substr(19);
 
   // --- EDICION (erase / insert / replace) ---
   s.erase(4, 9);          // Borra 9 chars desde idx 4
   s.insert(4, "_world");  // Inserta en idx 4
-  s.replace(0, 4, "acm"); // Reemplaza 4 chars desde 0 por "acm"
+  // Reemplaza 4 chars desde 0 por "acm"
+  s.replace(0, 4, "acm");
 
   // --- CONVERSIONES ---
-  ll val = stoll("1234567890123");     // string -> long long
+  // string -> long long
+  ll val = stoll("1234567890123");
   ll from_bin = stoll("101101", 0, 2); // base 2 -> ll (45)
-  ll from_hex = stoll("FF", 0, 16);    // base 16 -> ll (255)
+  // base 16 -> ll (255)
+  ll from_hex = stoll("FF", 0, 16);
   double d = stod("3.14159");          // string -> double
   string num_s = to_string(val);       // numero -> string
 
@@ -310,103 +373,56 @@ void string_methods_demo() {
 }
 ```
 
-#### Tabla de Referencia Rápida de `std::string`
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto parts = split_delim(line_csv, ',');
+ll sum = 0;
+for (auto& p : parts) sum += stoll(p);
+auto words = split_spaces(line_words);
+cout << sum << '\n';
+cout << sz(words) << " " << words[1] << '\n';
+```
 
-<figure>
-<div data-align="center">
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><p>Método</p></th>
-<th style="text-align: left;"><p>Sintaxis y Retorno</p></th>
-<th style="text-align: left;"><p>Detalle Crítico en Competencia</p></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><p><code>find</code></p></td>
-<td
-style="text-align: left;"><p><code>s.find(sub, pos = 0)</code></p></td>
-<td style="text-align: left;"><p>Retorna <code>size_t</code>. Comparar
-<strong>siempre</strong> con <code>string::npos</code>.</p></td>
-</tr>
-<tr>
-<td style="text-align: left;"><p><code>rfind</code></p></td>
-<td style="text-align: left;"><p><code>s.rfind(sub)</code></p></td>
-<td style="text-align: left;"><p>Busca de derecha a izquierda (última
-aparición).</p></td>
-</tr>
-<tr>
-<td style="text-align: left;"><p><code>substr</code></p></td>
-<td style="text-align: left;"><p><code>s.substr(i, len)</code></p></td>
-<td style="text-align: left;"><p>El 2do parámetro es <strong>cantidad de
-caracteres</strong>, NO el índice final.</p></td>
-</tr>
-<tr>
-<td style="text-align: left;"><p><code>erase</code></p></td>
-<td style="text-align: left;"><p><code>s.erase(i, len)</code></p></td>
-<td style="text-align: left;"><p>Borra <code>len</code> caracteres
-empezando en <code>i</code> en <span
-class="math inline">𝒪(|<em>S</em>|)</span>.</p></td>
-</tr>
-<tr>
-<td style="text-align: left;"><p><code>insert</code></p></td>
-<td style="text-align: left;"><p><code>s.insert(i, str)</code></p></td>
-<td style="text-align: left;"><p>Inserta <code>str</code> justo antes de
-la posición <code>i</code>.</p></td>
-</tr>
-<tr>
-<td style="text-align: left;"><p><code>replace</code></p></td>
-<td
-style="text-align: left;"><p><code>s.replace(i, len, str)</code></p></td>
-<td style="text-align: left;"><p>Borra <code>len</code> chars desde
-<code>i</code> y pone <code>str</code> en su lugar.</p></td>
-</tr>
-<tr>
-<td style="text-align: left;"><p><code>stoll</code></p></td>
-<td
-style="text-align: left;"><p><code>stoll(s, nullptr, base)</code></p></td>
-<td style="text-align: left;"><p>Convierte <code>s</code> en base <span
-class="math inline">[2, 36]</span> a <code>long long</code>
-nativamente.</p></td>
-</tr>
-<tr>
-<td style="text-align: left;"><p><code>getline</code></p></td>
-<td
-style="text-align: left;"><p><code>getline(cin >> ws, s)</code></p></td>
-<td style="text-align: left;"><p><code>cin >> ws</code> consume
-saltos de línea previos antes de leer <code>s</code>.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</figure>
+- **Trampas y adaptaciones:** (1) Al alternar `cin >> x` con `getline`, usar `getline(cin >> ws, s)` si deseas ignorar saltos de línea previos, pero si los espacios iniciales de la línea son significativos consumir solo `cin.ignore()`; (2) comparar el retorno de `find` siempre con `string::npos`.
 
 ------------------------------------------------------------------------
 
 ### 1.4 Manipulación de Bits (`__builtin`, LSO, Submáscaras) y `std::bitset`
 
-- **¿Cuándo usar?**:
+- **Cuándo usar:** Operaciones sobre máscaras de bits ($N \le 60$), conteo de bits encendidos (`__builtin_popcountll`), bit menos/más significativo, iteración de submáscaras en $\mathcal{O}(3^N)$ y conjuntos booleanos acelerados por hardware (`bitset<MAXN>`).
+- **Cuándo no usar / alternativa:** Si el tamaño del `bitset` no se conoce en tiempo de compilación y varía mucho por caso, o si solo hay pocos bits encendidos dispersos en $[0, 10^9]$ (usar `vector<int>` ordenado o `safe_uset`).
+- **Contrato:** `__builtin_ctzll(x)` y `__builtin_clzll(x)` son **comportamiento indefinido (UB) si `x == 0`**; verificar siempre `x > 0`. Para desplazamientos $\ge 31$ bits usar siempre `1LL << k` o `1ULL << k`. Dependencias: template base (§1.1).
+- **Complejidad:** Operaciones `__builtin_*` en $\mathcal{O}(1)$; recorrer todas las submáscaras de una máscara $m$ toma $\mathcal{O}(2^{\text{popcount}(m)})$; operaciones de `bitset<N>` toman $\mathcal{O}(N/64)$.
+- **Formato de entrada:** Un entero positivo `x` de 64 bits.
 
-  - **Bitmasks**: Representar subconjuntos cuando $N \leq 20$ (o
-    $N \leq 60$ en propiedades binarias/XOR).
+**Entrada:**
+```text
+42
+```
 
-  - **`std::bitset<MAX_N>`**: Optimizar operaciones de conjuntos
-    booleanos, alcanzabilidad en DAGs o Knapsack booleano dividiendo el
-    tiempo y memoria entre $64$: $\mathcal{O}(N/64)$.
+**Salida:**
+```text
+3 1 5 8
+```
 
-- **Complejidad**: Operaciones de bits en $\mathcal{O}(1)$; iterar
-  todas las submáscaras de todas las máscaras de $N$ bits toma
-  $\mathcal{O}(3^{N})$; operaciones de `bitset` toman
-  $\mathcal{O}(N/64)$.
+**Cómo leer la entrada:**
+```cpp
+ll x;
+cin >> x;
+```
 
-``` cpp
+**Implementación:**
+```cpp
 void bitmask_tricks(ll x) {
   // 1. Funciones de hardware GCC (sufijo 'll' para 64 bits)
-  int ones = __builtin_popcountll(x); // Cantidad de bits en 1
-  int ctz  = __builtin_ctzll(x);      // Ceros a la derecha (x>0)
-  int clz  = __builtin_clzll(x);      // Ceros a la izq (x>0)
-  int msb  = 63 - __builtin_clzll(x); // floor(log2(x)) exacto
+  // Cantidad de bits en 1
+  int ones = __builtin_popcountll(x);
+  // Ceros a la derecha (x>0)
+  int ctz  = __builtin_ctzll(x);
+  // Ceros a la izq (x>0)
+  int clz  = __builtin_clzll(x);
+  // floor(log2(x)) exacto
+  int msb  = 63 - __builtin_clzll(x);
 
   // 2. Operaciones sobre el k-esimo bit (0-indexed)
   int k = 4;
@@ -444,7 +460,8 @@ void bitset_methods_demo() {
   bool a = bs.any();    // true si al menos un bit es 1
   bool n = bs.none();   // true si todos son 0
 
-  // Recorrer SOLO los indices con bit en 1 en O(#unos + N/64):
+  // Recorrer SOLO los indices con bit en 1 en O(#unos +
+  // N/64):
   for (int i = bs._Find_first(); i < (int)bs.size();
        i = bs._Find_next(i)) {
     // 'i' es la posicion del bit encendido
@@ -452,29 +469,50 @@ void bitset_methods_demo() {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+int ones = __builtin_popcountll(x);
+int ctz = __builtin_ctzll(x);
+int msb = 63 - __builtin_clzll(x);
+int sub_cnt = 1; // Incluye submascara 0
+for (ll sub = x; sub > 0; sub = (sub - 1) & x) sub_cnt++;
+cout << ones << " " << ctz << " " << msb << " " << sub_cnt
+  << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Usar siempre los sufijos `ll` (`__builtin_popcountll`, `__builtin_clzll`, `__builtin_ctzll`) para tipos `long long`; sin `ll` truncan a 32 bits; (2) `1 << 35` hace overflow en `int`, escribir `1LL << 35`.
+
 ------------------------------------------------------------------------
 
 ### 1.5 Cambios de Base (Base $A \leftrightarrow B$, Binario, Base Negativa) y Números Gigantes en String
 
-- **¿Cuándo usar?**:
+- **Cuándo usar:** Convertir números entre bases $B \in [2, 36]$ (`decimal_to_base`, `base_to_decimal`), representar en base negativa como $-2$ (`to_negative_base`), o dividir/calcular el módulo de un entero de $10^5$ dígitos leído como `string` (`divide_large_number`, `mod_large_number`).
+- **Cuándo no usar / alternativa:** Si se requiere multiplicación repetida de enteros gigantes sin límite de tiempo estricto y Python está permitido, usar BigInt nativo de Python (§12.2–§12.3).
+- **Contrato:** `to_binary_string(num, n)` pone el LSB en `s[0]`; `decimal_to_base` pone el MSB en `s[0]`. `divide_large_number(s, n)` y `mod_large_number(s, m)` asumen `s` decimal no negativo y divisor `n, m > 0`. Dependencias: template base (§1.1).
+- **Complejidad:** Cambio de base en $\mathcal{O}(\log_B(\text{num}))$; división y módulo de string en $\mathcal{O}(|S|)$.
+- **Formato de entrada:** String hexadecimal `hex_s`, entero `neg_n` para base $-2$, y string decimal gigante `big_s` con divisor `d`.
 
-  - `to_binary_string(num, n)`: Cuando necesitas la representación
-    binaria de longitud fija $n$ con el bit menos significativo en
-    `s[0]` (tu plantilla de `Notebook.md`).
+**Entrada:**
+```text
+FF 6 10010 14
+```
 
-  - `decimal_to_base` / `base_to_decimal`: Conversión entre cualquier
-    par de bases $B \in \lbrack 2,36\rbrack$ o base negativa (ej. base
-    $- 2$).
+**Salida:**
+```text
+255 11010 715 0
+```
 
-  - `divide_large_number` / `mod_large_number`: Cuando el input es un
-    entero gigante de $10^{5}$ dígitos dado como `string` y necesitas
-    dividirlo o sacarle módulo por un `int`/`long long`.
+**Cómo leer la entrada:**
+```cpp
+string hex_s, big_s;
+ll neg_n, d;
+cin >> hex_s >> neg_n >> big_s >> d;
+```
 
-- **Complejidad**: $\mathcal{O}(\log_{B}(\mathrm{\text{num}}))$ para
-  cambios de base; $\mathcal{O}(|S|)$ para división/módulo en string.
-
-``` cpp
-// 1. Numero a string binario de longitud fija n (s[0] = LSB)
+**Implementación:**
+```cpp
+// 1. Numero a string binario de longitud fija n (s[0] =
+// LSB)
 string to_binary_string(ll num, int n) {
   string s = "";
   for (int i = 0; i < n; i++) {
@@ -551,30 +589,54 @@ ll mod_large_number(const string& s, ll m) {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+ll dec_val = base_to_decimal(hex_s, 16);
+string b_neg2 = to_negative_base(neg_n, -2);
+string quot = divide_large_number(big_s, d);
+ll rem = mod_large_number(big_s, d);
+cout << dec_val << " " << b_neg2 << " " << quot << " "
+  << rem << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) `to_binary_string` devuelve el bit menos significativo en el índice 0, mientras que `decimal_to_base(x, 2)` devuelve el más significativo en el índice 0; (2) en C++, `rem % neg_base` puede ser negativo, por lo que `to_negative_base` suma `-neg_base` e incrementa el cociente.
+
 ------------------------------------------------------------------------
 
 ## Bloque 2: Contenedores STL, PBDS y sus Métodos Más Importantes
 
 ### 2.1 `std::vector` y `<algorithm>`: Métodos, `sort`, Búsqueda Binaria (`lower_bound`/`upper_bound`) y Compresión de Coordenadas
 
-- **¿Cuándo usar?**:
+- **Cuándo usar:** Mapear valores arbitrarios en $[-10^{18}, 10^{18}]$ a rangos densos $[0, K-1]$ (`CoordComp`) para usarlos como índices de Fenwick/Segment Tree, y realizar búsquedas binarias en arreglos ordenados.
+- **Cuándo no usar / alternativa:** Si el conjunto de llaves cambia dinámicamente con inserciones de valores nuevos no conocidos al inicio y necesitas orden, usar `std::set`, `ordered_set` (§2.6) o Segment Tree dinámico.
+- **Contrato:** `CoordComp::init(a)` ordena y elimina duplicados; `get_id(x)` retorna el índice 0-based en $[0, K-1]$ del primer valor $\ge x$; `get_val(id)` recupera el valor original. Dependencias: template base (§1.1).
+- **Complejidad:** `init` en $\mathcal{O}(N\log N)$ tiempo y $\mathcal{O}(N)$ memoria; `get_id` en $\mathcal{O}(\log N)$.
+- **Formato de entrada:** `N`, seguido de `N` enteros posiblemente grandes o negativos.
 
-  - **Búsqueda Binaria en `vector` ordenado**: Para hallar en
-    $\mathcal{O}(\log N)$ el primer elemento $\geq x$
-    (`lower_bound`), el primero $> x$ (`upper_bound`), el último
-    $\leq x$ o $< x$, y contar cuántos elementos caen en un rango
-    $\lbrack L,R\rbrack$.
+**Entrada:**
+```text
+5
+1000000000 -50 1000000000 42 -50
+```
 
-  - **Compresión de Coordenadas**: Cuando los valores del arreglo son
-    enormes ($\lbrack - 10^{9},10^{9}\rbrack$) pero solo importa su
-    orden relativo y quieres usarlos como índices de un Fenwick Tree o
-    Segment Tree en $\lbrack 0,N - 1\rbrack$.
+**Salida:**
+```text
+3
+2 0 2 1 0
+```
 
-- **Complejidad**: `sort` y Compresión en $\mathcal{O}(N\log N)$;
-  búsquedas binarias en $\mathcal{O}(\log N)$.
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vll a(n);
+for (ll& x : a) cin >> x;
+```
 
-``` cpp
-// Compresion de Coordenadas: mapea valores arbitrarios a [0, K-1]
+**Implementación:**
+```cpp
+// Compresion de Coordenadas: mapea valores arbitrarios a
+// [0, K-1]
 struct CoordComp {
   vll vals;
   void init(const vll& a) {
@@ -593,11 +655,13 @@ void vector_and_bs_cheatsheet() {
   vi v = {1, 2, 2, 5, 5, 8, 9}; // DEBE ESTAR ORDENADO
 
   // 1. Primer elemento >= x (lower_bound)
-  auto it_ge = lower_bound(all(v), 5); // Apunta al 1er 5 (idx 3)
+  // Apunta al 1er 5 (idx 3)
+  auto it_ge = lower_bound(all(v), 5);
   int idx_ge = it_ge - v.begin();
 
   // 2. Primer elemento > x (upper_bound)
-  auto it_gt = upper_bound(all(v), 5); // Apunta al 8 (idx 5)
+  // Apunta al 8 (idx 5)
+  auto it_gt = upper_bound(all(v), 5);
   int idx_gt = it_gt - v.begin();
 
   // 3. Ultimo elemento <= x (predecesor inclusivo)
@@ -631,25 +695,48 @@ void vector_and_bs_cheatsheet() {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+CoordComp cc;
+cc.init(a);
+cout << cc.size() << '\n';
+for (int i = 0; i < n; ++i)
+  cout << cc.get_id(a[i]) << (i + 1 == n ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) En `accumulate(all(v), 0LL)`, pasar siempre `0LL` para evitar overflow en `int`; (2) si el Fenwick Tree es 1-indexed, sumar `+ 1` al resultado de `cc.get_id(x)`.
+
 ------------------------------------------------------------------------
 
 ### 2.2 Contenedores Lineales: `std::deque`, `std::queue` y `std::stack`
 
-- **¿Cuándo usar?**:
+- **Cuándo usar:** `deque` para inserción/borrado en ambos extremos y acceso aleatorio `dq[i]` en $\mathcal{O}(1)$ (0-1 BFS, ventana deslizante); `queue` para BFS FIFO; `stack` para LIFO y pilas monótonas.
+- **Cuándo no usar / alternativa:** No llamar nunca a `front()`, `back()`, `top()` o `pop()` sobre un contenedor vacío (causa comportamiento indefinido / Segmentation Fault).
+- **Contrato:** Operaciones sobre extremos en `deque`, `queue` y `stack`. Verificar siempre `!q.empty()` antes de consultar o extraer. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(1)$ tiempo por operación; $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N` enteros que se insertan alternando frente y final en un `deque`.
 
-  - `std::deque`: Cuando necesites insertar/borrar por **ambos
-    extremos** en $\mathcal{O}(1)$ y además acceder por índice `dq[i]`
-    en $\mathcal{O}(1)$ (ej. 0-1 BFS, Sliding Window Minimum).
+**Entrada:**
+```text
+4
+10 20 30 40
+```
 
-  - `std::queue`: Cola FIFO para BFS estándar y Kahn TopoSort.
+**Salida:**
+```text
+30 10 20 40
+```
 
-  - `std::stack`: Pila LIFO para Monotonic Stack, evaluación de
-    expresiones e historiales de rollback.
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vi a(n);
+for (int& x : a) cin >> x;
+```
 
-- **Complejidad**: Todas las operaciones en los extremos e indexación en
-  `deque` son $\mathcal{O}(1)$.
-
-``` cpp
+**Implementación:**
+```cpp
 void linear_containers_demo() {
   // 1. std::deque (Doble cola + acceso aleatorio O(1))
   deque<int> dq;
@@ -661,13 +748,15 @@ void linear_containers_demo() {
   dq.pop_front();       // Quita el 10
   dq.pop_back();        // Quita el 20
 
-  // 2. std::queue (FIFO - Primero en entrar, primero en salir)
+  // 2. std::queue (FIFO - Primero en entrar, primero en
+  // salir)
   queue<int> q;
   q.push(1); q.push(2);
   int primero = q.front(); // 1
   q.pop();                 // Elimina el frente (1)
 
-  // 3. std::stack (LIFO - Ultimo en entrar, primero en salir)
+  // 3. std::stack (LIFO - Ultimo en entrar, primero en
+  // salir)
   stack<int> st;
   st.push(10); st.push(20);
   int tope = st.top();     // 20
@@ -675,26 +764,49 @@ void linear_containers_demo() {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+deque<int> dq;
+for (int i = 0; i < n; ++i) {
+  if (i % 2 == 0) dq.push_front(a[i]);
+  else dq.push_back(a[i]);
+}
+for (int i = 0; i < sz(dq); ++i)
+  cout << dq[i] << (i + 1 == sz(dq) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) `std::queue` y `std::stack` no tienen método `.clear()`; para vaciarlos rápido reasignar `q = queue<int>()` o declararlos locales al caso de prueba; (2) `deque` tiene mayor constante de memoria que `vector`.
+
 ------------------------------------------------------------------------
 
 ### 2.3 Colas de Prioridad / Heaps (`std::priority_queue`): Max-Heap, Min-Heap, Custom y **Deletable Heap**
 
-- **¿Cuándo usar?**:
+- **Cuándo usar:** Extraer el mínimo o máximo dinámico en $\mathcal{O}(\log N)$, y usar `DeletableMinHeap` cuando además de `push`/`top` necesites borrar valores arbitrarios presentes sin pagar la constante de `std::multiset`.
+- **Cuándo no usar / alternativa:** En `DeletableMinHeap`, **nunca** llamar `erase(x)` con un valor `x` que no esté actualmente presente en `pq` (corrompería la cola `del` al cancelar inserciones futuras).
+- **Contrato:** `DeletableMinHeap<T>`: `push(x)`, `erase(x)` (precondición: `x` está presente), `top()` y `pop()` (precondición: `!empty()`). En `struct State`, `operator<` invierte el signo (`cost > o.cost`) porque `std::priority_queue` es un Max-Heap por defecto. Dependencias: template base (§1.1).
+- **Complejidad:** `push`, `pop`, `erase` en $\mathcal{O}(\log N)$ amortizado; `top` en $\mathcal{O}(1)$ amortizado; $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** Tres valores a insertar `a b c` y uno de ellos `rem` a eliminar antes de consultar el mínimo.
 
-  - **Max-Heap / Min-Heap**: Extraer repetidamente el máximo o mínimo
-    dinámico en $\mathcal{O}(\log N)$ (Dijkstra, Prim, Greedy con
-    eventos).
+**Entrada:**
+```text
+30 10 20 10
+```
 
-  - **Deletable Heap (Lazy Deletion)**: Cuando necesitas la velocidad de
-    un Heap pero el problema también pide **eliminar elementos
-    arbitrarios por valor** (más rápido en constante que
-    `std::multiset`).
+**Salida:**
+```text
+20 2
+```
 
-- **Complejidad**: `push`, `pop` y `erase` en $\mathcal{O}(\log N)$;
-  `top` en $\mathcal{O}(1)$ amortizado.
+**Cómo leer la entrada:**
+```cpp
+ll a, b, c, rem;
+cin >> a >> b >> c >> rem;
+```
 
-``` cpp
-// 1. Comparador en struct para Min-Heap (invertir el signo '<')
+**Implementación:**
+```cpp
+// 1. Comparador en struct para Min-Heap (invertir el signo
+// '<')
 struct State {
   int u;
   ll cost;
@@ -712,7 +824,8 @@ struct DeletableMinHeap {
   void erase(T x) { del.push(x); } // Borrado perezoso
 
   void clean() {
-    while (!pq.empty() && !del.empty() && pq.top() == del.top()) {
+    while (!pq.empty() && !del.empty() && pq.top(
+      ) == del.top()) {
       pq.pop();
       del.pop();
     }
@@ -738,29 +851,64 @@ void priority_queue_demo() {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+DeletableMinHeap<ll> dh;
+dh.push(a); dh.push(b); dh.push(c);
+dh.erase(rem);
+cout << dh.top() << " " << dh.size() << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Recordar que `priority_queue<T>` por defecto saca el **mayor** elemento primero; para Min-Heap usar `priority_queue<T, vector<T>, greater<T>>`; (2) verificar `!dh.empty()` antes de `dh.top()`.
+
 ------------------------------------------------------------------------
 
 ### 2.4 Árboles Balanceados (`std::set`, `std::multiset`, `std::map`): Métodos, Búsqueda Binaria en `set` y Borrado Seguro en `multiset`
 
-- **¿Cuándo usar?**: Cuando necesites mantener un conjunto ordenado con
-  inserciones, borrados y consultas de **sucesor ($\geq x$, $> x$) o
-  predecesor ($\leq x$, $< x$)** dinámicamente en
-  $\mathcal{O}(\log N)$.
+- **Cuándo usar:** Mantener un conjunto o multiconjunto ordenado dinámico con consultas de sucesor (`lower_bound`, `upper_bound`) y predecesor (`prev(it)`) en $\mathcal{O}(\log N)$.
+- **Cuándo no usar / alternativa:** Si no necesitas orden ni consultas de rango/vecinos, usar `safe_umap` / `safe_uset` (§2.5) en $\mathcal{O}(1)$ promedio.
+- **Contrato:** Usar siempre el método miembro `s.lower_bound(x)` ($\mathcal{O}(\log N)$) y jamás `std::lower_bound(all(s), x)` ($\mathcal{O}(N)$). En `multiset`, `ms.erase(ms.find(x))` borra **una sola** copia (verificando `it != ms.end()`). Dependencias: template base (§1.1).
+- **Complejidad:** `insert`, `erase(it)`, `find`, `lower_bound`, `upper_bound` en $\mathcal{O}(\log N)$.
+- **Formato de entrada:** `N` elementos para un `multiset`, un valor `rem` del cual borrar una copia, y un valor `q` para consultar su primer elemento $\ge q$ y su predecesor $< q$.
 
-- **Complejidad**: `insert`, `erase(it)`, `find`, `lower_bound`,
-  `upper_bound` en $\mathcal{O}(\log N)$.
+**Entrada:**
+```text
+4
+5 5 10 20
+5 10
+```
 
-``` cpp
+**Salida:**
+```text
+3 10 5
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vi a(n);
+for (int& x : a) cin >> x;
+int rem, q;
+cin >> rem >> q;
+```
+
+**Implementación:**
+```cpp
 void set_multiset_map_cheatsheet() {
   set<int> s = {10, 20, 30, 40};
   s.insert(25);
   s.erase(20);                  // Borra el 20 en O(log N)
-  int mn = *s.begin();          // Minimo actual (10) en O(1)
-  int mx = *s.rbegin();         // Maximo actual (40) en O(1)
+  // Minimo actual (10) en O(1)
+  int mn = *s.begin();
+  // Maximo actual (40) en O(1)
+  int mx = *s.rbegin();
 
   // --- BUSQUEDA BINARIA EN SET / MULTISET ---
-  // ¡PROHIBIDO usar std::lower_bound(all(s), x) porque es O(N)!
-  // Usar SIEMPRE el metodo miembro s.lower_bound(x) -> O(log N):
+  // ¡PROHIBIDO usar std::lower_bound(all(s), x) porque es
+  // O(N)!
+  // Usar SIEMPRE el metodo miembro s.lower_bound(x) ->
+  // O(log N):
 
   int x = 25;
   // 1) Primer elemento >= x:
@@ -781,35 +929,70 @@ void set_multiset_map_cheatsheet() {
 
   // --- TRAMPAS CLASICAS DE MULTISET ---
   multiset<int> ms = {5, 5, 5, 10};
-  // Trampa 1: ms.erase(5) borra TODAS las apariciones del 5.
+  // Trampa 1: ms.erase(5) borra TODAS las apariciones del
+  // 5.
   // Para borrar UNA SOLA copia del 5 en O(log N):
   auto it = ms.find(5);
   if (it != ms.end()) ms.erase(it); // Queda {5, 5, 10}
 
-  // Trampa 2: ms.count(x) es O(k + log N) donde k = repeticiones.
+  // Trampa 2: ms.count(x) es O(k + log N) donde k =
+  // repeticiones.
   // Para saber solo si existe en O(log N), usar:
   bool existe = (ms.find(5) != ms.end());
 
   // --- CUIDADO CON STD::MAP ---
   map<int, int> mp;
-  // Hacer if (mp[key] == 0) INSERTA 'key' en el mapa y gasta RAM/tiempo.
+  // Hacer if (mp[key] == 0) INSERTA 'key' en el mapa y
+  // gasta RAM/tiempo.
   // Para consultar sin insertar:
   if (mp.find(100) != mp.end()) { int val = mp[100]; }
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+multiset<int> ms(all(a));
+auto it = ms.find(rem);
+if (it != ms.end()) ms.erase(it);
+auto it_ge = ms.lower_bound(q);
+int ge = (it_ge != ms.end()) ? *it_ge : -1;
+int lt = (it_ge != ms.begin()) ? *prev(it_ge) : -1;
+cout << sz(ms) << " " << ge << " " << lt << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) `ms.count(x)` en un `multiset` tarda $\mathcal{O}(k + \log N)$ donde $k$ es la multiplicidad (usar `ms.find(x) != ms.end()` para existencia); (2) consultar `mp[k]` en `std::map` **inserta** la llave `k` con valor 0 si no existía (usar `mp.find(k)`).
+
 ------------------------------------------------------------------------
 
 ### 2.5 Tablas Hash (`unordered_map`, `unordered_set`) con `custom_hash` Anti-Hack (SplitMix64) y Pares Iguales
 
-- **¿Cuándo usar?**: Cuando quieras contar frecuencias o buscar llaves
-  en $\mathcal{O}(1)$ promedio sin necesitar orden, evitando los casos
-  *anti-hash* de Codeforces/ICPC que degradan el `unordered_map`
-  estándar a $\mathcal{O}(N^{2})$.
+- **Cuándo usar:** Conteo de frecuencias, memorización dispersa o búsqueda de llaves (incluyendo `pair<T1, T2>`) en $\mathcal{O}(1)$ promedio protegiendo contra colisiones maliciosas (*anti-hash tests*).
+- **Cuándo no usar / alternativa:** Si necesitas recorrer las llaves en orden creciente o consultar predecesor/sucesor, usar `std::map` / `std::set` (§2.4); si las llaves son enteros en $[0, N]$, usar un `vector` directo.
+- **Contrato:** `safe_umap<K, V>` y `safe_uset<K>` aceptan tipos enteros y `pair<T1, T2>`. `count_equal_pairs(a)` cuenta pares $(i < j)$ con $a[i] = a[j]$. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(1)$ tiempo esperado por operación; $\mathcal{O}(N)$ para `count_equal_pairs`.
+- **Formato de entrada:** `N`, seguido de `N` enteros.
 
-- **Complejidad**: $\mathcal{O}(1)$ esperado por operación.
+**Entrada:**
+```text
+5
+1 2 1 1 2
+```
 
-``` cpp
+**Salida:**
+```text
+4
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vi a(n);
+for (int& x : a) cin >> x;
+```
+
+**Implementación:**
+```cpp
 struct custom_hash {
   static uint64_t splitmix64(uint64_t x) {
     x += 0x9e3779b97f4a7c15;
@@ -819,7 +1002,8 @@ struct custom_hash {
   }
   size_t operator()(uint64_t x) const {
     static const uint64_t FIXED_RANDOM =
-      chrono::steady_clock::now().time_since_epoch().count();
+      chrono::steady_clock::now().time_since_epoch().count(
+        );
     return splitmix64(x + FIXED_RANDOM);
   }
   // Permite usar pair<T1, T2> como llave en safe_umap
@@ -827,7 +1011,8 @@ struct custom_hash {
   size_t operator()(const pair<T1, T2>& p) const {
     uint64_t h1 = (*this)(p.first);
     uint64_t h2 = (*this)(p.second);
-    return h1 ^ (h2 + 0x9e3779b97f4a7c15 + (h1<<6) + (h1>>2));
+    return h1 ^ (h2 + 0x9e3779b97f4a7c15 + (h1<<6) + (
+      h1>>2));
   }
 };
 
@@ -838,7 +1023,8 @@ template <typename K>
 using safe_uset = unordered_set<K, custom_hash>;
 
 // Aplicacion: Contar pares (i < j) con a[i] == a[j] en O(N)
-// Ejemplo: a = [1, 2, 1, 1, 2] -> 3 pares de 1 + 1 par de 2 = 4
+// Ejemplo: a = [1, 2, 1, 1, 2] -> 3 pares de 1 + 1 par de 2
+// = 4
 ll count_equal_pairs(const vi& a) {
   safe_umap<int, int> freq;
   freq.reserve(sz(a) * 2);
@@ -851,24 +1037,47 @@ ll count_equal_pairs(const vi& a) {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << count_equal_pairs(a) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Llamar a `mp.reserve(2 * N)` y `mp.max_load_factor(0.25f)` reduce los *rehashes* y acelera $2\times$ la tabla; (2) para `string` usar el hash nativo o Rolling Hash (§5.2).
+
 ------------------------------------------------------------------------
 
 ### 2.6 Extensiones GNU: `ordered_set` / `ordered_multiset` (PBDS) y `__gnu_cxx::rope`
 
-- **¿Cuándo usar?**:
+- **Cuándo usar:** `ordered_set` / `ordered_multiset` para responder en $\mathcal{O}(\log N)$ el $k$-ésimo elemento (`find_by_order(k)`, 0-based) y cuántos elementos son $< x$ (`order_of_key(x)`); `rope` para cortar y pegar subarreglos en $\mathcal{O}(\log N)$.
+- **Cuándo no usar / alternativa:** **Prohibido** usar `less_equal<T>` en PBDS para simular un multiset: rompe la asimetría del comparador y hace que `find`, `lower_bound` y `erase` fallen silenciosamente. Usar siempre `ordered_multiset<T>` con `pair<T, int>` e `id` único.
+- **Contrato:** `find_by_order(k)` requiere $0 \le k < \text{size()}$. En `ordered_multiset<T>`, insertar `{x, uid++}`; `order_of_key({x, -1})` cuenta elementos $< x$ y `order_of_key({x, INF_INT})` cuenta elementos $\le x$. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\log N)$ tiempo por operación; $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N` elementos a insertar en `ordered_multiset`, un valor `rem` a borrar (1 copia), un índice `k` (0-based) y una cota `x`.
 
-  - **`ordered_set`**: Cuando además de un `std::set` necesites
-    responder en $\mathcal{O}(\log N)$ cuál es el **$k$-ésimo
-    elemento más pequeño** (`find_by_order(k)`, 0-indexed) o **cuántos
-    elementos son estrictamente menores que $x$** (`order_of_key(x)`).
+**Entrada:**
+```text
+4
+5 5 10 20
+5 1 15
+```
 
-  - **`rope`**: Cuando tengas que cortar un subarreglo/substring
-    $\lbrack L,R\rbrack$ y pegarlo en otra posición en
-    $\mathcal{O}(\log N)$ sin programar un Implicit Treap.
+**Salida:**
+```text
+10 2
+```
 
-- **Complejidad**: $\mathcal{O}(\log N)$ por operación.
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vi a(n);
+for (int& v : a) cin >> v;
+int rem, k, x;
+cin >> rem >> k >> x;
+```
 
-``` cpp
+**Implementación:**
+```cpp
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp>
 #include <ext/rope>
@@ -881,37 +1090,68 @@ using ordered_set = tree<
   T, null_type, less<T>, rb_tree_tag,
   tree_order_statistics_node_update>;
 
-// 2. Ordered Multiset (usar less_equal o pair<T, int>)
+// 2. Ordered Multiset seguro con pair<T, int> y less<>
+// (NUNCA usar less_equal,
+// porque viola asimetria y corrompe find, lower_bound y
+// erase).
 template <typename T>
 using ordered_multiset = tree<
-  T, null_type, less_equal<T>, rb_tree_tag,
+  pair<T, int>, null_type, less<pair<T, int>>, rb_tree_tag,
   tree_order_statistics_node_update>;
 
 void pbds_and_rope_demo() {
   ordered_set<int> os;
   os.insert(10); os.insert(20); os.insert(50);
 
-  // k-esimo elemento (0-indexed):
+  // k-esimo elemento (0-indexed; precondicion: 0 <= k <
+  // sz(os)):
   int elem_idx_1 = *os.find_by_order(1); // 20
   // Cantidad de elementos estrictamente < 25:
-  int menores_25 = os.order_of_key(25);  // 2 (el 10 y el 20)
+  // 2 (el 10 y el 20)
+  int menores_25 = os.order_of_key(25);
 
-  // Como borrar UNA sola copia en ordered_multiset<int> oms:
+  // Multiset con duplicados, conteos por rango y borrado de
+  // UNA sola copia:
   ordered_multiset<int> oms;
-  oms.insert(5); oms.insert(5);
-  int idx = oms.order_of_key(5);
-  oms.erase(oms.find_by_order(idx));
+  int uid = 0;
+  oms.insert({5, uid++}); oms.insert({5, uid++});
+    oms.insert({10, uid++});
+  // 0 (< 5)
+  int menores_5 = oms.order_of_key({5, -1});
+  // 2 (<= 5)
+  int men_ig_5  = oms.order_of_key({5, INF_INT});
+  auto it = oms.lower_bound({5, -1});
+  // Borra 1 copia de 5
+  if (it != oms.end() && it->first == 5) oms.erase(it);
+  (void)elem_idx_1; (void)menores_25; (void)menores_5;
+    (void)men_ig_5;
 
   // 3. Uso de rope<int> o crope (rope<char>)
   // Cortar el rango 0-based [l, r] y moverlo al inicio:
   rope<int> rp;
-  for (int i = 1; i <= 5; ++i) rp.push_back(i); // [1,2,3,4,5]
+  // [1,2,3,4,5]
+  for (int i = 1; i <= 5; ++i) rp.push_back(i);
   int l = 1, r = 3, len = r - l + 1;
   rope<int> sub = rp.substr(l, len); // Extrae [2, 3, 4]
   rp.erase(l, len);                  // Queda [1, 5]
-  rp.insert(rp.mutable_begin(), sub);// Queda [2, 3, 4, 1, 5]
+  // Queda [2, 3, 4, 1, 5]
+  rp.insert(rp.mutable_begin(), sub);
 }
 ```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+ordered_multiset<int> oms;
+int uid = 0;
+for (int v : a) oms.insert({v, uid++});
+auto it = oms.lower_bound({rem, -1});
+if (it != oms.end() && it->fi == rem) oms.erase(it);
+int kth_val = oms.find_by_order(k)->fi;
+int cnt_lt = oms.order_of_key({x, -1});
+cout << kth_val << " " << cnt_lt << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Verificar siempre `k < (int)oms.size()` antes de desreferenciar `find_by_order(k)`; (2) `rope` tiene constante alta; si el límite de tiempo es ajustado o hay reversiones de rango, usar `ImplicitTreap` (§4.7).
 
 ------------------------------------------------------------------------
 
@@ -919,18 +1159,38 @@ void pbds_and_rope_demo() {
 
 ### 3.1 Binary Search (Discreta Max/Min y Continua `double`)
 
-- **¿Cuándo usar?**: Cuando el problema pide *“maximizar el mínimo”* o
-  *“minimizar el máximo”*, o cuando verificar si una respuesta $X$ es
-  válida (`check(X)`) es fácil y la función de validez es **monótona**
-  (ej. `V, V, V, F, F` o `F, F, F, V, V`).
+#### 3.1.1 Binary Search Discreta sobre la Respuesta (`bs_max` y `bs_min`)
 
-- **Complejidad**:
-  $\mathcal{O}(\log(\mathrm{\text{high}} - \mathrm{\text{low}}) \cdot \mathrm{\text{costo}}(\mathrm{\text{check}}))$.
-  En `double`, $80 - 100$ iteraciones logran precisión de
-  $10^{- 15}$.
+- **Cuándo usar:** Problemas de «maximizar el mínimo» (`bs_max`, predicado `V, V, ..., F, F`) o «minimizar el máximo» (`bs_min`, predicado `F, F, ..., V, V`) sobre un dominio entero `[low, high]`.
+- **Cuándo no usar / alternativa:** Si el predicado `check(mid)` **no es monótono** en `[low, high]`, la búsqueda binaria descartará la mitad equivocada.
+- **Contrato:** `bs_max(low, high, check)` retorna el mayor entero en `[low, high]` con `check(mid) == true`, o `low - 1` si ninguno cumple. `bs_min(low, high, check)` retorna el menor entero con `check(mid) == true`, o `high + 1` si ninguno cumple. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\log(\text{high} - \text{low} + 1) \cdot T_{\text{check}})$ tiempo, $\mathcal{O}(1)$ memoria.
+- **Formato de entrada:** `N` y `K`, seguidos de `N` longitudes de maderas para obtener al menos `K` piezas iguales de longitud máxima.
 
-``` cpp
-// 1. Maximizar respuesta discreta: [True, True, ..., False, False]
+**Entrada:**
+```text
+3 4
+10 15 20
+```
+
+**Salida:**
+```text
+10
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+ll k;
+cin >> n >> k;
+vll a(n);
+for (ll& x : a) cin >> x;
+```
+
+**Implementación:**
+```cpp
+// 1. Maximizar respuesta discreta: [True, True, ..., False,
+// False]
 template <typename F>
 ll bs_max(ll low, ll high, F check) {
   ll ans = low - 1; // Centinela si ninguno cumple
@@ -946,7 +1206,8 @@ ll bs_max(ll low, ll high, F check) {
   return ans;
 }
 
-// 2. Minimizar respuesta discreta: [False, False, ..., True, True]
+// 2. Minimizar respuesta discreta: [False, False, ...,
+// True, True]
 template <typename F>
 ll bs_min(ll low, ll high, F check) {
   ll ans = high + 1;
@@ -961,64 +1222,152 @@ ll bs_min(ll low, ll high, F check) {
   }
   return ans;
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto check = [&](ll L) {
+  ll cnt = 0;
+  for (ll x : a) cnt += x / L;
+  return cnt >= k;
+};
+cout << bs_max(1, *max_element(all(a)), check) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Nunca evaluar `L = 0` si `check(L)` divide entre `L` (`low >= 1`); (2) elegir `high` suficientemente grande pero sin causar overflow en `mid * algo` dentro de `check(mid)`.
+
+#### 3.1.2 Binary Search Continua en Punto Flotante (`bs_double`)
+
+- **Cuándo usar:** Hallar un umbral real $x \in [l, r]$ cuando `check(x)` es monótono (tiempo mínimo de encuentro, promedio máximo $0/1$ fraccionario).
+- **Cuándo no usar / alternativa:** No usar `while (r - l > EPS)` como condición de parada: si $l, r \approx 10^9$ y `EPS = 1e-9`, la distancia entre `double` consecutivos supera `EPS` y produce un **bucle infinito (TLE)**.
+- **Contrato:** `bs_double(l, r, check, it = 90)` ejecuta `it` iteraciones fijas reduciendo el intervalo en $2^{-90}$. Asume `check(mid) == true` en la mitad izquierda (`[True, False]`); si es `[False, True]`, intercambiar `l = mid` y `r = mid`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\text{it} \cdot T_{\text{check}})$ con `it = 90`.
+- **Formato de entrada:** Un real `X >= 1` para aproximar $\sqrt{X}$ mediante búsqueda binaria continua.
+
+**Entrada:**
+```text
+2.0
+```
+
+**Salida:**
+```text
+1.414214
+```
+
+**Cómo leer la entrada:**
+```cpp
+double x;
+cin >> x;
+```
+
+**Implementación:**
+```cpp
 // 3. Binary Search continua en double (iteraciones fijas)
 template <typename F>
 double bs_double(double l, double r, F check, int it = 90) {
   for (int i = 0; i < it; ++i) {
     double mid = l + (r - l) / 2.0;
-    if (check(mid)) l = mid; // Si maximiza (cambiar a r=mid si minimiza)
+    // Si maximiza (cambiar a r=mid si minimiza)
+    if (check(mid)) l = mid;
     else r = mid;
   }
   return l;
 }
 ```
 
-**Ejemplo de Uso (Cortar maderas / Agresive Cows):**
-
-``` cpp
-// Ejemplo: Dado un arreglo de troncos, hallar la mayor longitud L
-// tal que se puedan sacar al menos K pedazos de longitud L.
-int main() {
-  vll a = {10, 15, 20};
-  ll k = 4;
-  auto check = [&](ll L) {
-    ll cnt = 0;
-    for (ll x : a) cnt += x / L;
-    return cnt >= k;
-  };
-  ll best_L = bs_max(1, 20, check); // Retorna 10
-}
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto check = [&](double m) { return m * m <= x; };
+double ans = bs_double(0.0, max(1.0, x), check, 90);
+cout << fixed << setprecision(6) << ans << '\n';
 ```
+
+- **Trampas y adaptaciones:** (1) Recordar que `double` tiene 53 bits de mantisa ($\approx 15$ dígitos significativos): la precisión real es relativa a la escala ($|x| \cdot 2^{-53}$); usar `long double` (`ld`) si el rango supera $10^9$.
 
 ------------------------------------------------------------------------
 
 ### 3.2 Ternary Search (Discreta y Continua para Funciones Unimodales)
 
-- **¿Cuándo usar?**: Cuando necesitas encontrar el **mínimo o máximo
-  global** de una función **estrictamente unimodal** $f(x)$ (una
-  función en forma de U que primero decrece y luego crece, o en forma de
-  montaña que primero crece y luego decrece), donde NO puedes derivar
-  fácilmente.
+#### 3.2.1 Ternary Search Continua (`ternary_continuous`)
 
-- **Complejidad**:
-  $\mathcal{O}(\log_{3/2}(R - L) \cdot \mathrm{\text{costo}}(f))$.
+- **Cuándo usar:** Minimizar (o maximizar) una función continua **estrictamente unimodal** $f(x)$ en $[l, r]$ (p. ej., suma de distancias convexas).
+- **Cuándo no usar / alternativa:** Si $f(x)$ tiene tramos planos constantes (mesetas) o múltiples mínimos locales, la búsqueda ternaria puede converger a un punto subóptimo.
+- **Contrato:** `ternary_continuous(l, r, f, it = 100)` retorna el **valor mínimo** $f(x^*)$ en $[l, r]$. Para maximizar, cambiar `<` por `>` o minimizar `-f(x)`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\text{it} \cdot T_f)$ con `it = 100` (reduce el intervalo por $(2/3)^{100} \approx 2.4 \cdot 10^{-18}$).
+- **Formato de entrada:** Dos reales `a b` que definen la parábola $f(x) = (x - a)^2 + b$.
 
-``` cpp
+**Entrada:**
+```text
+3.5 7.25
+```
+
+**Salida:**
+```text
+7.250000
+```
+
+**Cómo leer la entrada:**
+```cpp
+double a, b;
+cin >> a >> b;
+```
+
+**Implementación:**
+```cpp
 // 1. Ternary Search Continua (halla el MINIMO en [l, r])
-// Para hallar el MAXIMO: cambiar f(m1) < f(m2) por f(m1) > f(m2)
+// Para hallar el MAXIMO: cambiar f(m1) < f(m2) por f(m1) >
+// f(m2)
 template <typename F>
-double ternary_continuous(double l, double r, F f, int it = 100) {
+double ternary_continuous(double l, double r, F f,
+  int it = 100) {
   for (int i = 0; i < it; ++i) {
     double m1 = l + (r - l) / 3.0;
     double m2 = r - (r - l) / 3.0;
     if (f(m1) < f(m2)) r = m2;
     else l = m1;
   }
-  return f(l); // Retorna el valor minimo (o 'l' para la posicion)
+  // Retorna el valor minimo (o 'l' para la posicion)
+  return f(l);
 }
+```
 
-// 2. Ternary Search Discreta en enteros [low, high] (MINIMO)
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto f = [&](double x) { return (x - a) * (x - a) + b; };
+double best = ternary_continuous(-1e6, 1e6, f, 100);
+cout << fixed << setprecision(6) << best << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Toda suma de funciones convexas (como distancias euclidianas a puntos o rectas) es convexa y por tanto unimodal; (2) si necesitas la abscisa $x^*$ en vez de $f(x^*)$, retornar `l` al final.
+
+#### 3.2.2 Ternary Search Discreta en Enteros (`ternary_discrete`)
+
+- **Cuándo usar:** Minimizar una función entera estrictamente unimodal $f(x)$ para $x \in [\text{low}, \text{high}] \cap \mathbb{Z}$.
+- **Cuándo no usar / alternativa:** Si existen valores consecutivos con $f(x) = f(x+1)$ fuera del óptimo global, la ternaria falla; si $f(x+1) - f(x)$ es monótona (función convexa), también puedes hacer búsqueda binaria sobre la derivada discreta $\Delta f(x) = f(x+1) - f(x) \ge 0$.
+- **Contrato:** `ternary_discrete(low, high, f)` retorna $\min_{x \in [\text{low}, \text{high}]} f(x)$, evaluando exhaustivamente cuando el rango se reduce a $\le 3$ elementos. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\log_{3/2}(\text{high} - \text{low} + 1) \cdot T_f)$.
+- **Formato de entrada:** Límites `low high` y parámetros `a b` para minimizar $(x - a)^2 + b$ en enteros.
+
+**Entrada:**
+```text
+-100 100 12 5
+```
+
+**Salida:**
+```text
+5
+```
+
+**Cómo leer la entrada:**
+```cpp
+ll low, high, a, b;
+cin >> low >> high >> a >> b;
+```
+
+**Implementación:**
+```cpp
+// 2. Ternary Search Discreta en enteros [low, high]
+// (MINIMO)
 template <typename F>
 ll ternary_discrete(ll low, ll high, F f) {
   while (high - low >= 3) {
@@ -1034,31 +1383,50 @@ ll ternary_discrete(ll low, ll high, F f) {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto f = [&](ll x) { return (x - a) * (x - a) + b; };
+cout << ternary_discrete(low, high, f) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Nunca reducir directamente a un solo punto sin el bucle `while (high - low >= 3)` + barrido final de 3 enteros, o ciclará por división entera.
+
 ------------------------------------------------------------------------
 
 ### 3.3 Two Pointers, Monotonic Stack (Next Greater/Smaller) y Monotonic Deque (Sliding Window Minimum)
 
-- **¿Cuándo usar?**:
+#### 3.3.1 Two Pointers / Ventana Deslizante (`max_subarray_sum_bound`)
 
-  - **Two Pointers**: Subarreglo más largo/corto que cumple una
-    condición monótona (ej. suma $\leq S$ con elementos $\geq 0$, o
-    a lo sumo $K$ distintos).
+- **Cuándo usar:** Hallar el subarreglo más largo (o más corto, o contar cuántos subarreglos) que cumple una condición **monótona** al expandir `r` y contraer `l` (p. ej., suma $\le S$ cuando $a[i] \ge 0$).
+- **Cuándo no usar / alternativa:** **Jamás** usar esta ventana deslizante para suma de subarreglos si existen números **negativos** ($a[i] < 0$), porque quitar `a[l]` aumentaría la suma y rompería la monotonía (ver §0.3 y §3.4.2).
+- **Contrato:** Precondición obligatoria: $a[i] \ge 0$ para todo $i$ y `max_sum >= 0`. Retorna la mayor longitud de un subarreglo contiguo con suma $\le \text{max\_sum}$ (`0` si ninguno cumple). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N)$ tiempo (`l` y `r` avanzan a lo sumo $N$ veces) y $\mathcal{O}(1)$ memoria.
+- **Formato de entrada:** `N` y `max_sum`, seguidos de `N` enteros no negativos.
 
-  - **Monotonic Stack**: Hallar para cada posición $i$ el primer
-    índice a su derecha/izquierda que sea estrictamente mayor o menor
-    (ej. mayor rectángulo en un histograma, contribución de cada
-    elemento como mínimo/máximo de subarreglos).
+**Entrada:**
+```text
+6 8
+3 1 2 1 4 2
+```
 
-  - **Monotonic Deque**: Hallar el **mínimo o máximo de todas las
-    subventanas de tamaño fijo $K$** en tiempo lineal
-    $\mathcal{O}(N)$ sin usar Segment Tree ni `multiset`.
+**Salida:**
+```text
+4
+```
 
-- **Complejidad**: $\mathcal{O}(N)$ tiempo y $\mathcal{O}(N)$
-  espacio (cada elemento entra y sale de la pila/cola a lo sumo una
-  vez).
+**Cómo leer la entrada:**
+```cpp
+int n;
+ll max_sum;
+cin >> n >> max_sum;
+vll a(n);
+for (ll& x : a) cin >> x;
+```
 
-``` cpp
-// 1. Two Pointers: Subarreglo mas largo con suma <= max_sum (a[i] >= 0)
+**Implementación:**
+```cpp
+// 1. Two Pointers: Subarreglo mas largo con suma <= max_sum
+// (a[i] >= 0)
 int max_subarray_sum_bound(const vll& a, ll max_sum) {
   int n = sz(a), max_len = 0, l = 0;
   ll cur_sum = 0;
@@ -1071,9 +1439,48 @@ int max_subarray_sum_bound(const vll& a, ll max_sum) {
   }
   return max_len;
 }
+```
 
-// 2. Monotonic Stack: Indice del primer elemento > a[i] a la derecha
-// Retorna -1 si no existe. (Para < a[i], cambiar '<' por '>')
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << max_subarray_sum_bound(a, max_sum) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para contar **cuántos** subarreglos tienen suma $\le \text{max\_sum}$ (con $a[i] \ge 0$), en cada `r` sumar `(r - l + 1)` a un acumulador `ll` después del `while`.
+
+#### 3.3.2 Monotonic Stack: Primer Mayor/Menor a la Derecha o Izquierda (`next_greater_right`)
+
+- **Cuándo usar:** Encontrar para cada índice $i$ el primer índice $j > i$ (o $j < i$) con $a[j] > a[i]$ (o $<, \ge, \le$). Base de mayor rectángulo en histograma y técnica de contribuciones (§7.12).
+- **Cuándo no usar / alternativa:** Si los elementos cambian dinámicamente y se pide el primer índice $\ge X$ en un rango $[L, R]$, usar **Segment Tree walk** en $\mathcal{O}(\log N)$.
+- **Contrato:** Índices `0..N-1`. `next_greater_right(a)` retorna `nxt[0..N-1]` donde `nxt[i]` es el menor $j > i$ con `a[j] > a[i]`, o `-1` si no existe. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N` enteros.
+
+**Entrada:**
+```text
+6
+4 2 5 1 3 6
+```
+
+**Salida:**
+```text
+2 2 5 4 5 -1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vll a(n);
+for (ll& x : a) cin >> x;
+```
+
+**Implementación:**
+```cpp
+// 2. Monotonic Stack: Indice del primer elemento > a[i] a
+// la derecha
+// Retorna -1 si no existe. (Para < a[i], cambiar '<' por
+// '>')
 vi next_greater_right(const vll& a) {
   int n = sz(a);
   vi nxt(n, -1);
@@ -1087,16 +1494,58 @@ vi next_greater_right(const vll& a) {
   }
   return nxt;
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+vi nxt = next_greater_right(a);
+for (int i = 0; i < n; ++i)
+  cout << nxt[i] << (i + 1 == n ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Para hallar el primer elemento **menor** a la derecha, cambiar `a[st.top()] < a[i]` por `a[st.top()] > a[i]`; (2) para el primer mayor a la **izquierda**, recorrer de derecha a izquierda o consultar el tope de la pila antes de hacer `push(i)`.
+
+#### 3.3.3 Monotonic Deque: Mínimo/Máximo en Ventana Deslizante (`sliding_window_min`)
+
+- **Cuándo usar:** Calcular el mínimo (o máximo) de todas las subventanas contiguas de longitud fija $K$ en $\mathcal{O}(N)$, o acelerar DP con transiciones en rango $[i - K, i - 1]$.
+- **Cuándo no usar / alternativa:** Si la longitud de la ventana no es monótona (los extremos `L` y `R` retroceden arbitrariamente), usar **Sparse Table** (§4.2) en $\mathcal{O}(1)$ por consulta.
+- **Contrato:** Precondición: $1 \le K \le N$. Retorna un vector de tamaño $N - K + 1$ donde la posición $i$ contiene $\min(a[i..i+K-1])$. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N` y `K`, seguidos de `N` enteros.
+
+**Entrada:**
+```text
+6 3
+4 2 5 1 3 6
+```
+
+**Salida:**
+```text
+2 1 1 1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, k;
+cin >> n >> k;
+vll a(n);
+for (ll& x : a) cin >> x;
+```
+
+**Implementación:**
+```cpp
 // 3. Monotonic Deque: Minimo de cada ventana de longitud K
-// Retorna vector con N - K + 1 respuestas. (Para Maximo: cambiar >= por <=)
+// Retorna vector con N - K + 1 respuestas. (Para Maximo:
+// cambiar >= por <=)
 vll sliding_window_min(const vll& a, int k) {
   int n = sz(a);
-  deque<int> dq; // Guarda indices en orden creciente de valor
+  // Guarda indices en orden creciente de valor
+  deque<int> dq;
   vll ans;
   for (int i = 0; i < n; ++i) {
     if (!dq.empty() && dq.front() <= i - k) dq.pop_front();
-    while (!dq.empty() && a[dq.back()] >= a[i]) dq.pop_back();
+    while (!dq.empty() && a[dq.back()] >= a[i]) dq.pop_back(
+      );
     dq.push_back(i);
     if (i >= k - 1) ans.push_back(a[dq.front()]);
   }
@@ -1104,36 +1553,53 @@ vll sliding_window_min(const vll& a, int k) {
 }
 ```
 
-**Ejemplo de Input y Uso (Monotonic Stack & Sliding Window):**
+**Cómo llamarlo y producir la salida:**
+```cpp
+vll res = sliding_window_min(a, k);
+for (int i = 0; i < sz(res); ++i)
+  cout << res[i] << (i + 1 == sz(res) ? '\n' : ' ');
+```
 
-```
-Input:
-N = 6, K = 3
-A = [4, 2, 5, 1, 3, 6]
-```
-
-``` cpp
-int main() {
-  vll a = {4, 2, 5, 1, 3, 6};
-  vi ngr = next_greater_right(a); // [2, 2, 5, 4, 5, -1]
-  vll win = sliding_window_min(a, 3); // [2, 1, 1, 1]
-}
-```
+- **Trampas y adaptaciones:** (1) La `deque` guarda **índices** (no valores) para poder detectar cuándo `dq.front() <= i - k` sale de la ventana; (2) para ventana de **máximo**, cambiar `a[dq.back()] >= a[i]` por `<=`.
 
 ------------------------------------------------------------------------
 
 ### 3.4 Prefix Sum 1D (Arreglos y Cadenas) y Prefix Sum 2D (Submatrices en $\mathcal{O}(1)$)
 
-- **¿Cuándo usar?**: Cuando el arreglo o matriz es **estático** (no hay
-  actualizaciones entre consultas) y necesitas responder $Q$ consultas
-  de suma de un rango $\lbrack L,R\rbrack$ o de un rectángulo
-  $(r_{1},c_{1}) \rightarrow (r_{2},c_{2})$ en $\mathcal{O}(1)$.
+#### 3.4.1 Prefix Sum 1D (`PrefixSum`)
 
-- **Complejidad**: Preprocesamiento $\mathcal{O}(N)$ en 1D y
-  $\mathcal{O}(N \cdot M)$ en 2D; cada consulta `query` toma
-  $\mathcal{O}(1)$.
+- **Cuándo usar:** Responder $Q$ consultas de suma en un rango $[l, r]$ sobre un arreglo **estático** en $\mathcal{O}(1)$ por consulta.
+- **Cuándo no usar / alternativa:** Si hay actualizaciones del arreglo intercaladas con las consultas de suma, usar **Fenwick Tree** (§4.3.1) en $\mathcal{O}(\log N)$.
+- **Contrato:** El constructor recibe `a` (0-indexed), pero las consultas `query(l, r)` son **1-indexed inclusivas** ($1 \le l \le r \le N$). Si $l > r$, retorna `0`. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N)$, consulta $\mathcal{O}(1)$, memoria $\mathcal{O}(N)$.
+- **Formato de entrada:** `N Q`, luego `N` enteros y `Q` consultas `l r` (1-indexed).
 
-``` cpp
+**Entrada:**
+```text
+5 2
+2 4 1 3 5
+2 4
+1 5
+```
+
+**Salida:**
+```text
+8
+15
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, q;
+cin >> n >> q;
+vll a(n);
+for (ll& x : a) cin >> x;
+vector<pii> qs(q);
+for (auto& [l, r] : qs) cin >> l >> r;
+```
+
+**Implementación:**
+```cpp
 // 1. Prefix Sum 1D (1-indexed en las consultas [l, r])
 struct PrefixSum {
   vll pref;
@@ -1141,7 +1607,8 @@ struct PrefixSum {
     for (int i = 0; i < sz(a); ++i)
       pref[i + 1] = pref[i] + a[i];
   }
-  // Constructor para contar caracteres adyacentes iguales (CF 313B)
+  // Constructor para contar caracteres adyacentes iguales
+  // (CF 313B)
   PrefixSum(const string& s) : pref(sz(s) + 1, 0) {
     for (int i = 0; i + 1 < sz(s); ++i)
       pref[i + 1] = pref[i] + (s[i] == s[i + 1]);
@@ -1151,7 +1618,54 @@ struct PrefixSum {
     return (l > r) ? 0 : pref[r] - pref[l - 1];
   }
 };
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+PrefixSum ps(a);
+for (auto [l, r] : qs)
+  cout << ps.query(l, r) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Los prefijos deben guardarse siempre en `ll` (`vll pref`) aunque el arreglo original quepa en `int`; (2) si las consultas del enunciado son 0-based `[l, r]`, llamar `ps.query(l + 1, r + 1)`.
+
+#### 3.4.2 Prefix Sum 2D en Submatrices (`PrefixSum2D`)
+
+- **Cuándo usar:** Consultar la suma de cualquier submatriz rectangular $[r_1..r_2] \times [c_1..c_2]$ en una grilla estática en $\mathcal{O}(1)$.
+- **Cuándo no usar / alternativa:** Si la matriz recibe actualizaciones puntuales entre consultas, usar **Fenwick Tree 2D** (§4.3.2).
+- **Contrato:** El constructor recibe `mat` 0-indexed de dimensión $N \times M$; `query(r1, c1, r2, c2)` usa coordenadas **1-indexed inclusivas** ($1 \le r_1 \le r_2 \le N$, $1 \le c_1 \le c_2 \le M$). Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N \cdot M)$, consulta $\mathcal{O}(1)$, memoria $\mathcal{O}(N \cdot M)$.
+- **Formato de entrada:** `N M Q`, matriz de $N \times M$ enteros y `Q` consultas `r1 c1 r2 c2` (1-indexed).
+
+**Entrada:**
+```text
+2 3 2
+1 2 3
+4 5 6
+1 2 2 3
+1 1 2 2
+```
+
+**Salida:**
+```text
+16
+12
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m, q;
+cin >> n >> m >> q;
+vector<vll> mat(n, vll(m));
+for (int i = 0; i < n; ++i)
+  for (int j = 0; j < m; ++j) cin >> mat[i][j];
+vector< tuple<int, int, int, int> > qs(q);
+for (auto& [r1, c1, r2,
+  c2] : qs) cin >> r1 >> c1 >> r2 >> c2;
+```
+
+**Implementación:**
+```cpp
 // 2. Prefix Sum 2D (Submatrices 1-based [r1..r2][c1..c2])
 struct PrefixSum2D {
   vector<vll> p;
@@ -1171,20 +1685,144 @@ struct PrefixSum2D {
 };
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+PrefixSum2D ps2(mat);
+for (auto [r1, c1, r2, c2] : qs)
+  cout << ps2.query(r1, c1, r2, c2) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Al aplicar inclusión-exclusión 2D, recordar sumar de vuelta `+ p[r1 - 1][c1 - 1]` que fue restado dos veces.
+
+#### 3.4.3 Patrones de Prefijos (Suma $K$, Divisibles por $M$, Prefix XOR) y Kadane
+
+- **Cuándo usar:** Contar subarreglos con suma exacta $K$ (incluso con **negativos**), suma divisible por $M$, XOR igual a $K$, o hallar la máxima suma de un subarreglo contiguo no vacío (`kadane_max_subarray`).
+- **Cuándo no usar / alternativa:** Para subarreglo de suma $\le K$ con negativos, `count_subarrays_sum_k` solo cuenta igualdades exactas; usar árbol de orden (`ordered_multiset`, §2.6) o Fenwick con compresión sobre los prefijos.
+- **Contrato:** `kadane_max_subarray(a)` requiere `!a.empty()` y retorna el mayor elemento si todos son negativos. `count_subarrays_div_m(a, m)` requiere $m > 0$ y normaliza negativos con `((pref + x) % m + m) % m`. Dependencias: `safe_umap` (§2.5).
+- **Complejidad:** $\mathcal{O}(N)$ tiempo y $\mathcal{O}(N)$ memoria ($\mathcal{O}(1)$ memoria en Kadane).
+- **Formato de entrada:** `N K M`, seguido de `N` enteros (pueden ser negativos).
+
+**Entrada:**
+```text
+5 0 5
+1 -1 2 -2 3
+```
+
+**Salida:**
+```text
+3 3 3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+ll k, m;
+cin >> n >> k >> m;
+vll a(n);
+for (ll& x : a) cin >> x;
+```
+
+**Implementación:**
+```cpp
+// 3. Patrones de Prefijos: Subarreglos con Suma = K,
+// Divisibles por M,
+// Prefix XOR = K y Subarreglo de Suma Maxima (Kadane) en
+// O(N).
+ll count_subarrays_sum_k(const vll& a, ll k) {
+  safe_umap<ll, int> freq;
+  freq[0] = 1;
+  ll pref = 0, ans = 0;
+  for (ll x : a) {
+    pref += x;
+    auto it = freq.find(pref - k);
+    if (it != freq.end()) ans += it->se;
+    freq[pref]++;
+  }
+  return ans;
+}
+
+ll count_subarrays_div_m(const vll& a, ll m) {
+  vi freq(m, 0);
+  freq[0] = 1;
+  ll pref = 0, ans = 0;
+  for (ll x : a) {
+    pref = ((pref + x) % m + m) % m;
+    ans += freq[pref]++;
+  }
+  return ans;
+}
+
+ll count_subarrays_xor_k(const vi& a, int k) {
+  safe_umap<int, int> freq;
+  freq[0] = 1;
+  int px = 0;
+  ll ans = 0;
+  for (int x : a) {
+    px ^= x;
+    auto it = freq.find(px ^ k);
+    if (it != freq.end()) ans += it->se;
+    freq[px]++;
+  }
+  return ans;
+}
+
+// Kadane: mayor suma de un subarreglo contiguo NO vacio
+// (admite todo < 0)
+ll kadane_max_subarray(const vll& a) {
+  assert(!a.empty());
+  ll cur = a[0], best = a[0];
+  for (int i = 1; i < sz(a); ++i) {
+    cur = max(a[i], cur + a[i]);
+    best = max(best, cur);
+  }
+  return best;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+ll cnt_k = count_subarrays_sum_k(a, k);
+ll cnt_m = count_subarrays_div_m(a, m);
+ll mx_sum = kadane_max_subarray(a);
+cout << cnt_k << " " << cnt_m << " " << mx_sum << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Inicializar siempre `freq[0] = 1` antes de recorrer el arreglo para contar los subarreglos que empiezan en el índice 0; (2) no inicializar `best = 0` en Kadane si el subarreglo no puede ser vacío y todos los números son negativos.
+
 ------------------------------------------------------------------------
 
 ### 3.5 Difference Array 1D, Doble Difference Array (Greg and Array) y Difference Array 2D
 
-- **¿Cuándo usar?**: Cuando tienes muchas actualizaciones de suma en
-  rango (`sumar V a todo [L, R]` o a toda una submatriz) pero **todas
-  las consultas ocurren al final** (offline). Evita programar un Segment
-  Tree con Lazy Propagation.
+#### 3.5.1 Difference Array 1D y Doble Difference Array (`DiffArray1D`, `apply_double_diff`)
 
-- **Complejidad**: Cada actualización de rango/submatriz toma
-  $\mathcal{O}(1)$; reconstruir el arreglo final toma
-  $\mathcal{O}(N)$ (o $\mathcal{O}(N \cdot M)$ en 2D).
+- **Cuándo usar:** Aplicar $Q$ sumas en rango (`sumar val a [l, r]`) en $\mathcal{O}(1)$ cada una cuando **todas las consultas ocurren al final**, o aplicar rangos de operaciones sobre un arreglo (`apply_double_diff`, estilo *Greg and Array*).
+- **Cuándo no usar / alternativa:** Si hay consultas de suma intercaladas con actualizaciones de rango, usar **Lazy Segment Tree** (§4.5.1) o dos Fenwick Trees.
+- **Contrato:** Indexación **1-based** (`1..n`). `add_range(l, r, val)` suma `val` a `[l..r]`; `build()` devuelve `res[1..n]`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(1)$ por actualización; $\mathcal{O}(N)$ para `build()`.
+- **Formato de entrada:** `N Q`, seguidos de `Q` actualizaciones `l r val` (1-indexed).
 
-``` cpp
+**Entrada:**
+```text
+5 2
+1 3 10
+2 5 5
+```
+
+**Salida:**
+```text
+10 15 15 5 5
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, q;
+cin >> n >> q;
+vector<tuple<int, int, ll>> ops(q);
+for (auto& [l, r, v] : ops) cin >> l >> r >> v;
+```
+
+**Implementación:**
+```cpp
 // 1. Difference Array 1D (1-indexed [1..n])
 struct DiffArray1D {
   int n;
@@ -1196,14 +1834,18 @@ struct DiffArray1D {
   }
   vll build() const {
     vll res(n + 1, 0);
-    for (int i = 1; i <= n; ++i) res[i] = res[i - 1] + diff[i];
+    for (int i = 1; i <= n; ++i) res[i] = res[i - 1]
+      + diff[i];
     return res; // res[1..n]
   }
 };
 
-// 2. Doble Difference Array (Operaciones de rango sobre operaciones)
-// Se tienen M operaciones (sumar d_i en [l_i, r_i]) y K consultas
-// que aplican todas las operaciones desde la x_j hasta la y_j (CF 295A).
+// 2. Doble Difference Array (Operaciones de rango sobre
+// operaciones)
+// Se tienen M operaciones (sumar d_i en [l_i, r_i]) y K
+// consultas
+// que aplican todas las operaciones desde la x_j hasta la
+// y_j (CF 295A).
 struct Op { int l, r; ll d; };
 vll apply_double_diff(int n, int m, const vll& base_arr,
                       const vector<Op>& ops,
@@ -1215,18 +1857,66 @@ vll apply_double_diff(int n, int m, const vll& base_arr,
   DiffArray1D arr_diff(n);
   for (int i = 1; i <= m; ++i)
     if (op_cnt[i] > 0)
-      arr_diff.add_range(ops[i].l, ops[i].r, ops[i].d * op_cnt[i]);
+      arr_diff.add_range(ops[i].l, ops[i].r,
+        ops[i].d * op_cnt[i]);
 
   vll delta = arr_diff.build(), ans(n + 1, 0);
-  for (int i = 1; i <= n; ++i) ans[i] = base_arr[i] + delta[i];
+  for (int i = 1; i <= n; ++i) ans[i] = base_arr[i]
+    + delta[i];
   return ans;
 }
+```
 
-// 3. Difference Array 2D (Sumar 'val' al rectangulo [r1..r2][c1..c2])
+**Cómo llamarlo y producir la salida:**
+```cpp
+DiffArray1D da(n);
+for (auto [l, r, v] : ops) da.add_range(l, r, v);
+vll res = da.build();
+for (int i = 1; i <= n; ++i)
+  cout << res[i] << (i == n ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) El vector interno `diff` debe tener tamaño `n + 2` porque `add_range` accede a `diff[r + 1]` cuando `r == n`.
+
+#### 3.5.2 Difference Array 2D en Submatrices (`DiffArray2D`)
+
+- **Cuándo usar:** Sumar `val` a $Q$ rectángulos $[r_1..r_2] \times [c_1..c_2]$ en $\mathcal{O}(1)$ cada uno y reconstruir la matriz final una sola vez al terminar.
+- **Cuándo no usar / alternativa:** Si se intercalan actualizaciones rectangulares y consultas de submatriz, no basta un Difference Array estático.
+- **Contrato:** Coordenadas **1-based** ($1 \le r_1 \le r_2 \le N$, $1 \le c_1 \le c_2 \le M$). `build()` retorna matriz `(n + 1) x (m + 1)`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(1)$ por `add_rect`; $\mathcal{O}(N \cdot M)$ en `build()`.
+- **Formato de entrada:** `N M Q`, seguidos de `Q` rectángulos `r1 c1 r2 c2 val`.
+
+**Entrada:**
+```text
+2 3 2
+1 1 2 2 5
+1 2 2 3 3
+```
+
+**Salida:**
+```text
+5 8 3
+5 8 3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m, q;
+cin >> n >> m >> q;
+vector<tuple<int, int, int, int, ll>> ops(q);
+for (auto& [r1, c1, r2, c2, v] : ops)
+  cin >> r1 >> c1 >> r2 >> c2 >> v;
+```
+
+**Implementación:**
+```cpp
+// 3. Difference Array 2D (Sumar 'val' al rectangulo
+// [r1..r2][c1..c2])
 struct DiffArray2D {
   int n, m;
   vector<vll> d;
-  DiffArray2D(int n, int m) : n(n), m(m), d(n + 2, vll(m + 2, 0)) {}
+  DiffArray2D(int n, int m) : n(n), m(m), d(n + 2, vll(
+    m + 2, 0)) {}
   void add_rect(int r1, int c1, int r2, int c2, ll val) {
     d[r1][c1] += val;
     d[r1][c2 + 1] -= val;
@@ -1244,38 +1934,374 @@ struct DiffArray2D {
 };
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+DiffArray2D da2(n, m);
+for (auto [r1, c1, r2, c2, v] : ops)
+  da2.add_rect(r1, c1, r2, c2, v);
+auto mat = da2.build();
+for (int i = 1; i <= n; ++i)
+  for (int j = 1; j <= m; ++j)
+    cout << mat[i][j] << (j == m ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Recordar los signos de las 4 esquinas: `+val` en `(r1, c1)` y `(r2+1, c2+1)`, y `-val` en `(r1, c2+1)` y `(r2+1, c1)`.
+
+------------------------------------------------------------------------
+
+### 3.6 Algoritmos Greedy: Interval Scheduling, Greedy con Heap (Regret) y Argumento de Intercambio
+
+#### 3.6.1 Interval Scheduling (Selección Máxima de Intervalos Disjuntos)
+
+- **Cuándo usar:** Seleccionar la máxima cantidad de intervalos mutuamente disjuntos ordenando por menor extremo derecho $r_i$.
+- **Cuándo no usar / alternativa:** Si cada intervalo tiene un **peso/ganancia** arbitraria y quieres maximizar la suma de pesos, el greedy por extremo derecho falla; usar **DP con búsqueda binaria / Segment Tree** en $\mathcal{O}(N\log N)$.
+- **Contrato:** `interval_scheduling(ivs, strict_disjoint)` recibe pares `{l, r}`. Si `strict_disjoint = true`, intervalos que comparten borde ($[1, 2]$ y $[2, 3]$) chocan (`l > last_r`); si `false`, pueden tocarse en el borde (`l >= last_r`). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N\log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N` intervalos `l r`.
+
+**Entrada:**
+```text
+4
+1 3
+2 4
+3 5
+5 7
+```
+
+**Salida:**
+```text
+2 3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<pll> ivs(n);
+for (auto& [l, r] : ivs) cin >> l >> r;
+```
+
+**Implementación:**
+```cpp
+// 1. Interval Scheduling: maximo numero de intervalos
+// disjuntos
+int interval_scheduling(vector<pll> ivs,
+                        bool strict_disjoint = false) {
+  sort(all(ivs), [](const pll& a, const pll& b) {
+    return a.se != b.se ? a.se < b.se : a.fi < b.fi;
+  });
+  int cnt = 0;
+  ll last_r = -INF;
+  for (auto [l, r] : ivs) {
+    if (strict_disjoint ? (l > last_r) : (l >= last_r)) {
+      cnt++;
+      last_r = r;
+    }
+  }
+  return cnt;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << interval_scheduling(ivs, true) << " "
+     << interval_scheduling(ivs, false) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Nunca ordenar por extremo izquierdo $l_i$ ni por menor longitud $r_i - l_i$: ambos contraejemplos clásicos fallan.
+
+#### 3.6.2 Greedy con arrepentimiento (Moore-Hodgson con Max-Heap)
+
+- **Cuándo usar:** Maximizar la cantidad de tareas completadas a tiempo cuando cada tarea tiene duración $t_i \ge 0$ y fecha límite $d_i$.
+- **Cuándo no usar / alternativa:** Si cada tarea tiene una ganancia distinta $w_i$ además de $t_i$ y $d_i$, requiere DP tipo Knapsack sobre el tiempo ordenado por $d_i$.
+- **Contrato:** Ordena por `deadline` $d_i$ ascendente y mantiene las duraciones elegidas en un max-heap; si el tiempo acumulado supera $d_i$, descarta la tarea aceptada más larga (`pq.top()`). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N\log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N` pares `duracion deadline`.
+
+**Entrada:**
+```text
+4
+4 6
+2 5
+3 7
+1 7
+```
+
+**Salida:**
+```text
+3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<pll> tasks(n);
+for (auto& [t, d] : tasks) cin >> t >> d;
+```
+
+**Implementación:**
+```cpp
+// 2. Regret Greedy con Max-Heap (Moore-Hodgson):
+//    tasks[i] = {duracion t_i, deadline d_i}.
+int schedule_deadlines_heap(vector<pll> tasks) {
+  sort(all(tasks), [](const pll& a, const pll& b) {
+    return a.se < b.se;
+  });
+  priority_queue<ll> pq;
+  ll cur_time = 0;
+  for (auto [t, d] : tasks) {
+    cur_time += t;
+    pq.push(t);
+    if (cur_time > d) {
+      cur_time -= pq.top();
+      pq.pop();
+    }
+  }
+  return sz(pq);
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << schedule_deadlines_heap(tasks) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) El acumulador `cur_time` debe ser `ll` para no desbordar `int` cuando $t_i \le 10^9$.
+
+#### 3.6.3 Argumento de Intercambio de Smith (`exchange_argument_order`)
+
+- **Cuándo usar:** Ordenar tareas con duración $t_i$ y penalización por unidad de tiempo $w_i$ para minimizar $\sum w_i C_i$, donde $C_i$ es el tiempo de finalización acumulado.
+- **Cuándo no usar / alternativa:** Si hay precedencias (DAG de dependencias generales), el orden plano por $t_i / w_i$ no respeta topología (en árbol requiere fusión con DSU + heap).
+- **Contrato:** Compara dos tareas $a, b$ con producto cruzado en 128 bits `(i128)a.t * b.w < (i128)b.t * a.w` sin usar punto flotante. Retorna `{costo_minimo, orden_indices}`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N\log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N` tareas `t w id`.
+
+**Entrada:**
+```text
+3
+3 1 1
+1 4 2
+2 2 3
+```
+
+**Salida:**
+```text
+2 3 1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<JobEx> tasks(n);
+for (auto& x : tasks) cin >> x.t >> x.w >> x.id;
+```
+
+**Implementación:**
+```cpp
+// 3. Argumento de intercambio: minimizar suma(w_i * C_i)
+//    Ordena por menor razon t_i / w_i sin punto flotante.
+struct JobEx { int id; ll t, w; };
+vector<JobEx> exchange_argument_order(vector<JobEx> jobs) {
+  sort(all(jobs), [](const JobEx& a, const JobEx& b) {
+    i128 lhs = (i128)a.t * b.w, rhs = (i128)b.t * a.w;
+    return lhs != rhs ? lhs < rhs : a.id < b.id;
+  });
+  return jobs;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto ord = exchange_argument_order(tasks);
+for (int i = 0; i < sz(ord); ++i)
+  cout << ord[i].id << (i + 1 == sz(ord) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Tratar $w_i = 0, t_i > 0$ enviándolos al final; (2) el comparador debe usar `<` estricto (nunca `<=`) para no producir UB en `std::sort`.
+
+------------------------------------------------------------------------
+
+### 3.7 Barrido de Eventos / Intervalos 1D (Sweep-Line)
+
+#### 3.7.1 Máximo Solapamiento de Intervalos por Sweep-Line (`max_interval_overlap`)
+
+- **Cuándo usar:** Hallar la máxima cantidad de intervalos simultáneamente activos y el primer punto donde se alcanza dicho máximo.
+- **Cuándo no usar / alternativa:** Si necesitas actualizar y consultar solapamientos de rangos dinámicamente con inserciones y borrados intercalados sobre coordenadas fijas, usar **Lazy Segment Tree** (§4.5.1).
+- **Contrato:** Si `closed_ends = true` (intervalos cerrados $[l, r]$), la entrada `+1` procesa **antes** que la salida `-1` en la misma coordenada; si `false` (semiabiertos $[l, r)$), la salida `-1` procesa **antes** que la entrada `+1`. Retorna `{max_solapamiento, coordenada}`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N\log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N` intervalos `l r`.
+
+**Entrada:**
+```text
+4
+1 4
+2 6
+4 8
+10 12
+```
+
+**Salida:**
+```text
+3 2
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<pll> ivs(n);
+for (auto& [l, r] : ivs) cin >> l >> r;
+```
+
+**Implementación:**
+```cpp
+// 1. Maxima cantidad de intervalos solapados en un punto
+//    closed_ends = true para [l, r]; false para [l, r).
+int max_interval_overlap(const vector<pll>& ivs,
+                         bool closed_ends = true) {
+  vector<pair<ll, int>> ev;
+  ev.reserve(2 * sz(ivs));
+  for (auto [l, r] : ivs) {
+    ev.pb({l, +1});
+    ev.pb({r, -1});
+  }
+  sort(all(ev), [&](const auto& a, const auto& b) {
+    if (a.fi != b.fi) return a.fi < b.fi;
+    // En [l, r] entra (+1) antes de salir (-1);
+    // en [l, r) sale (-1) antes de entrar (+1).
+    return closed_ends ? (a.se > b.se) : (a.se < b.se);
+  });
+  int cur = 0, best = 0;
+  for (auto [x, d] : ev) {
+    cur += d;
+    best = max(best, cur);
+  }
+  return best;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << max_interval_overlap(ivs, true) << " "
+     << max_interval_overlap(ivs, false) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) El orden de desempate en `a.fi == b.fi` entre eventos de apertura y cierre es la causa #1 de WA en sweep-line.
+
+#### 3.7.2 Unión de Intervalos Cerrados y Longitud Cubierta (`merge_intervals`)
+
+- **Cuándo usar:** Colapsar una lista de intervalos cerrados $[l_i, r_i]$ posiblemente solapados en una lista ordenada de intervalos disjuntos y medir la longitud continua cubierta.
+- **Cuándo no usar / alternativa:** Si buscas intersección de todos los intervalos en vez de su unión, basta `[max(l_i), min(r_i)]` en $\mathcal{O}(N)$.
+- **Contrato:** Fusiona intervalos cuando `ivs[i].fi <= res.back().se`. Retorna `{intervalos_unidos, longitud_continua_total}` donde cada intervalo aporta `r - l`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N\log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N` intervalos `l r`.
+
+**Entrada:**
+```text
+4
+1 4
+2 6
+4 8
+10 12
+```
+
+**Salida:**
+```text
+9 2
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<pll> ivs(n);
+for (auto& [l, r] : ivs) cin >> l >> r;
+```
+
+**Implementación:**
+```cpp
+// 2. Union de intervalos cerrados [l, r] y longitud
+// cubierta
+pair<vector<pll>, ll> merge_intervals(vector<pll> ivs) {
+  if (ivs.empty()) return {{}, 0};
+  sort(all(ivs));
+  vector<pll> res = {ivs[0]};
+  for (int i = 1; i < sz(ivs); ++i) {
+    if (ivs[i].fi <= res.back().se)
+      res.back().se = max(res.back().se, ivs[i].se);
+    else
+      res.pb(ivs[i]);
+  }
+  ll total_len = 0;
+  for (auto [l, r] : res) total_len += (r - l);
+  return {res, total_len};
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto [merged, len] = merge_intervals(ivs);
+cout << len << " " << sz(merged) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si se cuenta la cantidad de **puntos enteros** cubiertos por intervalos cerrados $[l, r]$, cada intervalo aporta `(r - l + 1)` y dos intervalos contiguos `[1, 2]` y `[3, 4]` pueden fusionarse con `ivs[i].fi <= res.back().se + 1`.
+
 ------------------------------------------------------------------------
 
 ## Bloque 4: Estructuras de Datos Avanzadas (Consultas en Rango y Árboles)
 
 ### 4.1 Disjoint Set Union (DSU Clásico) y DSU con Rollback + Conectividad Dinámica Offline
 
-- **¿Cuándo usar?**:
+#### 4.1.1 Disjoint Set Union Clásico (`DSU`)
 
-  - **DSU Clásico**: Mantener componentes conexas al **agregar**
-    aristas, consultar si dos nodos están conectados, conocer el tamaño
-    de cada componente o detectar ciclos al armar un MST (Kruskal).
+- **Cuándo usar:** Mantener componentes conexas al agregar aristas, consultar si dos nodos pertenecen al mismo componente (`same(u, v)`), conocer el tamaño del componente (`get_size(u)`) o el total de componentes (`num_comp`).
+- **Cuándo no usar / alternativa:** Si el problema también **elimina** aristas, el DSU clásico con compresión de caminos no puede deshacer uniones; usar `RollbackDSU` + `DynCon` (§4.1.2) o `LinkCut` (§4.9).
+- **Contrato:** Nodos `1..N` (también admite `0` porque reserva `n + 1`). `unite(u, v)` retorna `true` si unió dos componentes distintos y `false` si ya estaban unidos. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N)$; `find`, `unite`, `same`, `get_size` en $\mathcal{O}(\alpha(N))$ amortizado; $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N M Q`, luego `M` aristas no dirigidas `u v` y después `Q` consultas de conectividad `u v`.
 
-  - **DSU con Rollback y Conectividad Dinámica**: Cuando en el grafo
-    **se agregan y también se ELIMINAN aristas**, y te piden el número
-    de componentes conexas tras cada operación (offline en
-    $\mathcal{O}(Q\log Q\log N)$ dividiendo en el árbol de tiempo).
+**Entrada:**
+```text
+5 3 3
+1 2
+2 3
+4 5
+1 3
+1 5
+4 5
+```
 
-- **Complejidad**: DSU clásico:
-  $\mathcal{O}(\alpha(N)) \approx \mathcal{O}(1)$ por operación. DSU
-  con Rollback (sin compresión de caminos, solo unión por rango):
-  $\mathcal{O}(\log N)$ por unión, $\mathcal{O}(1)$ por rollback.
+**Salida:**
+```text
+SI
+NO
+SI
+```
 
-``` cpp
+**Cómo leer la entrada:**
+```cpp
+int n, m, q;
+cin >> n >> m >> q;
+vector<pii> edges(m), queries(q);
+for (auto& [u, v] : edges) cin >> u >> v;
+for (auto& [u, v] : queries) cin >> u >> v;
+```
+
+**Implementación:**
+```cpp
 // 1. DSU Clasico (Path Compression + Union by Size)
 struct DSU {
   vi parent, sz;
   int num_comp;
-  DSU(int n) : parent(n + 1), sz(n + 1, 1), num_comp(n) {
+  DSU(int n) : parent(n + 1), num_comp(n) {
+    sz.assign(n + 1, 1);
     iota(all(parent), 0);
   }
   int find(int i) {
-    return (parent[i] == i) ? i : (parent[i] = find(parent[i]));
+    return (parent[i] == i) ? i : (parent[i] = find(
+      parent[i]));
   }
   bool unite(int i, int j) {
     int ri = find(i), rj = find(j);
@@ -1289,7 +2315,55 @@ struct DSU {
   bool same(int i, int j) { return find(i) == find(j); }
   int get_size(int i) { return sz[find(i)]; }
 };
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+DSU dsu(n);
+for (auto [u, v] : edges) dsu.unite(u, v);
+for (auto [u, v] : queries)
+  cout << (dsu.same(u, v) ? "SI" : "NO") << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Acceder siempre a las propiedades del componente a través de su representante `dsu.find(u)` (nunca `sz[u]` directo); (2) `num_comp` se inicializa en `n` (si usas nodos `1..n`, ignora el índice `0`).
+
+#### 4.1.2 DSU con Rollback y Conectividad Dinámica Offline (`RollbackDSU`, `DynCon`)
+
+- **Cuándo usar:** Responder el número de componentes conexas (o propiedades de DSU) tras una secuencia de **inserciones y eliminaciones de aristas** conocidas de antemano (offline) dividiendo en el árbol de intervalos de tiempo.
+- **Cuándo no usar / alternativa:** Si las operaciones son estrictamente **online** (forzadas por codificación de la respuesta anterior), usar **Link-Cut Tree** (§4.9) cuando el grafo se mantiene acíclico.
+- **Contrato:** Nodos `1..N`. En `DynCon(n)`, `add_edge(u, v)` agrega una arista activa y `rem_edge(u, v)` elimina una arista **actualmente activa**; `add_query()` registra una consulta y `solve()` retorna el vector de respuestas en orden cronológico. Dependencias: template base (§1.1).
+- **Complejidad:** `RollbackDSU`: `unite`/`find` en $\mathcal{O}(\log N)$ (sin compresión de caminos), `rollback` en $\mathcal{O}(1)$ por unión revertida. `DynCon::solve()`: $\mathcal{O}(Q \log Q \log N)$ tiempo y $\mathcal{O}(N + Q)$ memoria.
+- **Formato de entrada:** `N Q`, seguido de `Q` eventos: `+ u v` (agregar arista), `- u v` (borrar arista activa) o `?` (consultar número de componentes).
+
+**Entrada:**
+```text
+4 5
++ 1 2
++ 2 3
+?
+- 1 2
+?
+```
+
+**Salida:**
+```text
+2
+3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, q;
+cin >> n >> q;
+vector<tuple<char, int, int>> evs(q);
+for (auto& [op, u, v] : evs) {
+  cin >> op;
+  if (op != '?') cin >> u >> v;
+}
+```
+
+**Implementación:**
+```cpp
 // 2. DSU con Rollback + Dynamic Connectivity Offline
 struct RollbackDSU {
   vi p, r, hist;
@@ -1297,7 +2371,8 @@ struct RollbackDSU {
   RollbackDSU(int n) : p(n + 1), r(n + 1, 1), comp(n) {
     iota(all(p), 0);
   }
-  int find(int i) const { return (p[i] == i) ? i : find(p[i]); }
+  int find(int i) const {
+    return (p[i] == i) ? i : find(p[i]); }
   void unite(int i, int j) {
     i = find(i); j = find(j);
     if (i == j) return;
@@ -1343,7 +2418,8 @@ struct DynCon {
     }
     int snap = dsu.snapshot(), mid = (l + r) / 2;
     for (int i = mid; i < r; ++i)
-      if (mt[i] != -1 && mt[i] < l) dsu.unite(q[i].u, q[i].v);
+      if (mt[i] != -1 && mt[i] < l) dsu.unite(q[i].u,
+        q[i].v);
     go(l, mid); dsu.rollback(snap);
     for (int i = l; i < mid; ++i)
       if (mt[i] >= r) dsu.unite(q[i].u, q[i].v);
@@ -1359,47 +2435,63 @@ struct DynCon {
 };
 ```
 
-**Ejemplo de Input y Uso (Dynamic Connectivity):**
-
-```
-Input: N = 4 nodos.
-1) Conectar (1, 2) y (2, 3) -> Query (esperado: 2 componentes)
-2) Borrar (1, 2) -> Query (esperado: 3 componentes)
-```
-
-``` cpp
-int main() {
-  DynCon dc(4);
-  dc.add_edge(1, 2);
-  dc.add_edge(2, 3);
-  dc.add_query();
-  dc.rem_edge(1, 2);
-  dc.add_query();
-  vi res = dc.solve(); // res = {2, 3}
+**Cómo llamarlo y producir la salida:**
+```cpp
+DynCon dc(n);
+for (auto [op, u, v] : evs) {
+  if (op == '+') dc.add_edge(u, v);
+  else if (op == '-') dc.rem_edge(u, v);
+  else dc.add_query();
 }
+for (int ans : dc.solve()) cout << ans << '\n';
 ```
+
+- **Trampas y adaptaciones:** (1) No agregar compresión de caminos a `RollbackDSU::find`, porque destruiría el historial de `rollback`; (2) si pueden insertarse aristas paralelas idénticas, guardar un `vector<int>` de tiempos de inicio en `active[{u, v}]` en vez de un solo `int`.
 
 ------------------------------------------------------------------------
 
 ### 4.2 Sparse Table (RMQ e Idempotentes en $\mathcal{O}(1)$)
 
-- **¿Cuándo usar?**: Cuando el arreglo es **100% estático** (sin
-  modificaciones) y tienes muchas consultas ($Q \leq 10^{6}$) de
-  **Mínimo, Máximo, GCD, AND o OR** en un rango $\lbrack L,R\rbrack$.
-  Responder en $\mathcal{O}(1)$ puro evita el factor $\log N$ de un
-  Segment Tree.
+- **Cuándo usar:** Responder muchas consultas ($Q \le 10^6$) de **Mínimo, Máximo, GCD, AND u OR** en un rango $[L, R]$ sobre un arreglo **100% estático** en $\mathcal{O}(1)$ puro.
+- **Cuándo no usar / alternativa:** **No funciona** en $\mathcal{O}(1)$ para operaciones **no idempotentes** como la **suma** o **XOR** porque los dos bloques de longitud $2^j$ se solapan (usar `PrefixSum` §3.4.1). Si hay modificaciones en el arreglo, usar `IterSegTree` (§4.4.1).
+- **Contrato:** Arreglo y consultas **0-indexed** ($0 \le L \le R < N$, precondición: `N >= 1`). Cambiar `op(a, b)` a `max(a, b)` o `std::gcd(a, b)` según el problema. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N\log N)$ tiempo y memoria; consulta `query(L, R)` en $\mathcal{O}(1)$.
+- **Formato de entrada:** `N Q`, arreglo `a[0..N-1]` y `Q` consultas `L R` (0-indexed).
 
-- **Complejidad**: Construcción $\mathcal{O}(N\log N)$ tiempo y
-  memoria; cada consulta `query(L, R)` toma $\mathcal{O}(1)$.
+**Entrada:**
+```text
+5 2
+7 2 4 8 1
+1 3
+0 4
+```
 
-``` cpp
+**Salida:**
+```text
+2
+1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, q;
+cin >> n >> q;
+vll a(n);
+for (ll& x : a) cin >> x;
+vector<pii> qs(q);
+for (auto& [l, r] : qs) cin >> l >> r;
+```
+
+**Implementación:**
+```cpp
 struct SparseTable {
   int n, K;
   vector<vll> st;
   vi lg;
 
   ll op(ll a, ll b) const {
-    return min(a, b); // Cambiar a max(a, b) o std::gcd(a, b)
+    // Cambiar a max(a, b) o std::gcd(a, b)
+    return min(a, b);
   }
 
   SparseTable(const vll& a) {
@@ -1411,7 +2503,8 @@ struct SparseTable {
     st[0] = a;
     for (int j = 1; j < K; ++j)
       for (int i = 0; i + (1 << j) <= n; ++i)
-        st[j][i] = op(st[j - 1][i], st[j - 1][i + (1 << (j - 1))]);
+        st[j][i] = op(st[j - 1][i], st[j - 1][i + (1 << (
+          j - 1))]);
   }
 
   // Consulta en rango 0-indexed [L, R] inclusivo en O(1)
@@ -1422,28 +2515,56 @@ struct SparseTable {
 };
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+SparseTable st(a);
+for (auto [l, r] : qs)
+  cout << st.query(l, r) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Verificar siempre `L <= R` antes de llamar a `query(L, R)` (de lo contrario `R - L + 1 <= 0` indexa fuera de `lg`).
+
 ------------------------------------------------------------------------
 
 ### 4.3 Fenwick Tree / BIT 1D (con Binary Lifting `lower_bound`) y Fenwick Tree 2D
 
-- **¿Cuándo usar?**:
+#### 4.3.1 Fenwick Tree / BIT 1D con Binary Lifting (`Fenwick`)
 
-  - **Fenwick 1D**: Actualizaciones puntuales (`a[i] += delta`) y sumas
-    de rango $\lbrack L,R\rbrack$ dinámicas. Es $3 \times$ más
-    rápido y usa $4 \times$ menos memoria que un Segment Tree. Además
-    permite hallar el primer prefijo con suma $\geq K$ en
-    $\mathcal{O}(\log N)$.
+- **Cuándo usar:** Actualizaciones puntuales (`add(idx, delta)`) y sumas de rango (`query(l, r)`) dinámicas con constante mínima, o hallar en $\mathcal{O}(\log N)$ el primer índice cuyo prefijo suma $\ge K$ (`lower_bound(k)`).
+- **Cuándo no usar / alternativa:** No sirve para mínimo/máximo en rango arbitrario $[L, R]$ con actualizaciones arbitrarias (usar `IterSegTree` §4.4.1). `lower_bound(k)` exige que todos los valores almacenados sean **no negativos**.
+- **Contrato:** Indexación estrictamente **1-based** (`1 <= idx <= n`). `lower_bound(k)` retorna el menor índice $p \in [1, n]$ con $\text{query}(p) \ge k$, o `n + 1` si la suma total es $< k$. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N)$; `add`, `query`, `lower_bound` en $\mathcal{O}(\log N)$ tiempo; $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N Q`, `N` valores iniciales y `Q` consultas: `1 l r` (suma en `[l, r]`) o `2 k` (`lower_bound(k)`).
 
-  - **Fenwick 2D**: Actualizaciones puntuales en una matriz
-    $N \times M$ (`mat[x][y] += delta`) y suma de submatrices
-    rectangulares en $\mathcal{O}(\log N\log M)$ (para
-    $N,M \leq 2500$).
+**Entrada:**
+```text
+5 2
+2 1 3 4 2
+1 2 4
+2 6
+```
 
-- **Complejidad**: 1D: $\mathcal{O}(\log N)$ tiempo y
-  $\mathcal{O}(N)$ memoria. 2D: $\mathcal{O}(\log N\log M)$ tiempo y
-  $\mathcal{O}(N \cdot M)$ memoria.
+**Salida:**
+```text
+8
+3
+```
 
-``` cpp
+**Cómo leer la entrada:**
+```cpp
+int n, q;
+cin >> n >> q;
+vll a(n + 1);
+for (int i = 1; i <= n; ++i) cin >> a[i];
+vector<tuple<int, ll, ll>> qs(q);
+for (auto& [tp, x, y] : qs) {
+  cin >> tp >> x;
+  if (tp == 1) cin >> y;
+}
+```
+
+**Implementación:**
+```cpp
 // 1. Fenwick Tree 1D (1-indexed: 1 <= idx <= n)
 struct Fenwick {
   int n;
@@ -1461,7 +2582,8 @@ struct Fenwick {
   ll query(int l, int r) const { // Suma en [l..r]
     return (l > r) ? 0 : query(r) - query(l - 1);
   }
-  // Menor indice idx tal que query(1..idx) >= target (valores >= 0)
+  // Menor indice idx tal que query(1..idx) >= target
+  // (valores >= 0)
   int lower_bound(ll target) const {
     int idx = 0;
     ll cur = 0;
@@ -1474,12 +2596,58 @@ struct Fenwick {
     return idx + 1;
   }
 };
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+Fenwick ft(n);
+for (int i = 1; i <= n; ++i) ft.add(i, a[i]);
+for (auto [tp, x, y] : qs) {
+  if (tp == 1) cout << ft.query((int)x, (int)y) << '\n';
+  else cout << ft.lower_bound(x) << '\n';
+}
+```
+
+- **Trampas y adaptaciones:** (1) **Jamás** llamar `ft.add(0, delta)`: como `0 & -0 == 0`, produce un **bucle infinito**; si tus datos son 0-based, suma `+ 1` al índice.
+
+#### 4.3.2 Fenwick Tree 2D (`Fenwick2D`)
+
+- **Cuándo usar:** Actualizaciones puntuales `add(r, c, delta)` y consultas de suma en submatrices `[r1..r2] x [c1..c2]` dinámicas cuando $N, M \le 2500$.
+- **Cuándo no usar / alternativa:** Si $N, M = 10^5$ la matriz $N \times M$ da MLE; usar compresión 2D offline o CDQ Divide & Conquer.
+- **Contrato:** Coordenadas **1-based** (`1 <= r <= n`, `1 <= c <= m`). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\log N \log M)$ por `add` y `query`; $\mathcal{O}(N \cdot M)$ memoria.
+- **Formato de entrada:** `N M`, luego dos celdas a actualizar `(r, c, val)` y una consulta de submatriz `r1 c1 r2 c2`.
+
+**Entrada:**
+```text
+3 3
+1 1 5
+2 3 7
+1 1 2 3
+```
+
+**Salida:**
+```text
+12
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m, r1, c1, r2, c2;
+ll v1, v2;
+int u1r, u1c, u2r, u2c;
+cin >> n >> m >> u1r >> u1c >> v1 >> u2r >> u2c >> v2;
+cin >> r1 >> c1 >> r2 >> c2;
+```
+
+**Implementación:**
+```cpp
 // 2. Fenwick Tree 2D (1-indexed: 1 <= r <= n, 1 <= c <= m)
 struct Fenwick2D {
   int n, m;
   vector<vll> bit;
-  Fenwick2D(int n, int m) : n(n), m(m), bit(n + 1, vll(m + 1, 0)) {}
+  Fenwick2D(int n, int m) : n(n), m(m), bit(n + 1, vll(
+    m + 1, 0)) {}
 
   void add(int r, int c, ll delta) {
     for (int i = r; i <= n; i += i & -i)
@@ -1500,42 +2668,77 @@ struct Fenwick2D {
 };
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+Fenwick2D ft2(n, m);
+ft2.add(u1r, u1c, v1);
+ft2.add(u2r, u2c, v2);
+cout << ft2.query(r1, c1, r2, c2) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Verificar que $r, c \ge 1$ antes de llamar a `add(r, c, delta)` para evitar bucle infinito en 0.
+
 ------------------------------------------------------------------------
 
 ### 4.4 Segment Tree Clásico (Recursivo) y Segment Tree Iterativo
 
-- **¿Cuándo usar?**: Cuando necesitas actualizaciones puntuales
-  (`a[pos] = val`) y consultas en rango $\lbrack L,R\rbrack$ de
-  **cualquier operación asociativa** (mínimo, máximo, suma, GCD, XOR,
-  máxima suma de subarreglo, multiplicación de matrices).
+#### 4.4.1 Segment Tree Iterativo (`IterSegTree`)
 
-  - Usa el **Iterativo** si quieres escribir pocas líneas y máxima
-    velocidad en tiempo de ejecución ($2N$ de memoria).
+- **Cuándo usar:** Actualizaciones puntuales (`a[p] = val`) y consultas en rango `[l, r]` de cualquier operación asociativa (suma, min, max, gcd) con mitad de memoria (`2*N`) y $3\times$ menor constante que el recursivo.
+- **Cuándo no usar / alternativa:** Si la operación no es conmutativa (p. ej. multiplicación de matrices o concatenación de hashes), en el bucle `query` cuidar el orden `res_left = op(res_left, tree[l++])` y `res_right = op(tree[--r], res_right)` (o usar `SegTree` recursivo §4.4.2).
+- **Contrato:** Indexación **0-based** (`0 <= p < n`, consulta **inclusiva** `query(l, r)` en `[l, r]`). Ajustar `NEUT` (`0` para suma/gcd, `INF` para min, `-INF` para max) y `op(a, b)`. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N)$; `update` y `query` en $\mathcal{O}(\log N)$ tiempo; $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N Q`, arreglo inicial `a[0..N-1]` y `Q` operaciones: `1 p v` (asignar `a[p] = v`) o `2 l r` (suma en `[l, r]`).
 
-  - Usa el **Recursivo** si necesitas caminar sobre el árbol (*walk on
-    Segment Tree*) o extenderlo a Lazy.
+**Entrada:**
+```text
+5 3
+1 2 3 4 5
+2 1 3
+1 2 10
+2 1 3
+```
 
-- **Complejidad**: Construcción $\mathcal{O}(N)$; `update` y `query`
-  en $\mathcal{O}(\log N)$.
+**Salida:**
+```text
+2
+2
+```
 
-``` cpp
-// 1. Segment Tree Iterativo (0-indexed, ocupa solo 2*N de memoria)
+**Cómo leer la entrada:**
+```cpp
+int n, q;
+cin >> n >> q;
+vll a(n);
+for (ll& x : a) cin >> x;
+vector<tuple<int, int, ll>> ops(q);
+for (auto& [tp, x, y] : ops) cin >> tp >> x >> y;
+```
+
+**Implementación:**
+```cpp
+// 1. Segment Tree Iterativo (0-indexed, ocupa solo 2*N de
+// memoria)
 struct IterSegTree {
   int n;
-  const ll NEUTRAL = INF; // INF para min, -INF para max, 0 para suma
+  // INF para min, -INF para max, 0 para suma
+  const ll NEUTRAL = INF;
   vll t;
   ll op(ll a, ll b) const { return min(a, b); }
 
-  IterSegTree(const vll& a) : n(sz(a)), t(2 * sz(a), NEUTRAL) {
+  IterSegTree(const vll& a) : n(sz(a)), t(2 * sz(a),
+    NEUTRAL) {
     for (int i = 0; i < n; ++i) t[n + i] = a[i];
     for (int i = n - 1; i >= 1; --i)
       t[i] = op(t[i << 1], t[i << 1 | 1]);
   }
-  void update(int p, ll val) { // Asigna a[p] = val (0-indexed)
+  // Asigna a[p] = val (0-indexed)
+  void update(int p, ll val) {
     for (t[p += n] = val; p > 1; p >>= 1)
       t[p >> 1] = op(t[p], t[p ^ 1]);
   }
-  ll query(int l, int r) const { // Rango CERRADO 0-indexed [l, r]
+  // Rango CERRADO 0-indexed [l, r]
+  ll query(int l, int r) const {
     ll vl = NEUTRAL, vr = NEUTRAL;
     for (l += n, r += n + 1; l < r; l >>= 1, r >>= 1) {
       if (l & 1) vl = op(vl, t[l++]);
@@ -1544,7 +2747,52 @@ struct IterSegTree {
     return op(vl, vr);
   }
 };
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+IterSegTree st(a);
+for (auto [tp, x, y] : ops) {
+  if (tp == 1) st.update(x, y);
+  else cout << st.query(x, (int)y) << '\n';
+}
+```
+
+- **Trampas y adaptaciones:** (1) Aunque internamente el bucle convierte a semiabierto `[l, r + 1)`, la interfaz pública `query(l, r)` recibe un rango **cerrado** `[l, r]` 0-based.
+
+#### 4.4.2 Segment Tree Recursivo Clásico (`SegTree`)
+
+- **Cuándo usar:** Consultas y actualizaciones puntuales cuando la operación es **no conmutativa** (matrices, subarreglo de suma máxima en rango) o cuando necesitas hacer búsqueda binaria dentro del árbol (*Segment Tree walk*).
+- **Cuándo no usar / alternativa:** Si también hay actualizaciones en rango `[l, r]`, usar `LazySegTree` (§4.5.1).
+- **Contrato:** Indexación **0-based** (`0 <= l <= r < n`).Reserva `4 * n` nodos. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N)$; `update` y `query` en $\mathcal{O}(\log N)$; memoria $\mathcal{O}(4N)$.
+- **Formato de entrada:** `N`, arreglo `a[0..N-1]`, actualización `pos val` y consulta `l r` (0-indexed).
+
+**Entrada:**
+```text
+4
+5 2 8 6
+1 9
+0 2
+```
+
+**Salida:**
+```text
+22
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, pos, l, r;
+ll val;
+cin >> n;
+vll a(n);
+for (ll& x : a) cin >> x;
+cin >> pos >> val >> l >> r;
+```
+
+**Implementación:**
+```cpp
 // 2. Segment Tree Recursivo Clasico (0-indexed)
 struct SegTree {
   int n;
@@ -1576,45 +2824,68 @@ struct SegTree {
     return merge(query(v * 2, l, m, ql, qr),
                  query(v * 2 + 1, m + 1, r, ql, qr));
   }
-  void update(int pos, ll val) { update(1, 0, n - 1, pos, val); }
-  ll query(int ql, int qr) const { return query(1, 0, n - 1, ql, qr); }
+  void update(int pos, ll val) {
+    update(1, 0, n - 1, pos, val); }
+  ll query(int ql, int qr) const {
+    return query(1, 0, n - 1, ql, qr); }
 };
 ```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+SegTree st(a);
+st.update(pos, val);
+cout << st.query(l, r) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Nunca dimensionar el vector del árbol recursivo como `2 * n` (cuando `n` no es potencia de 2 puede acceder hasta casi `4 * n`); usar siempre `4 * n`.
 
 ------------------------------------------------------------------------
 
 ### 4.5 Segment Tree con Lazy Propagation, Segment Tree 2D y Persistent Segment Tree
 
-- **¿Cuándo usar?**:
+#### 4.5.1 Segment Tree con Lazy Propagation (`LazySegTree`)
 
-  - **Lazy Propagation**: Cuando tan pronto actualizas **todo un rango
-    $\lbrack L,R\rbrack$** (ej. sumar `val` a cada elemento en
-    $\lbrack L,R\rbrack$) también debes intercalar consultas de
-    suma/mínimo/máximo en rango en $\mathcal{O}(\log N)$.
+- **Cuándo usar:** Actualizaciones en rango (`add_range(l, r, val)`) y consultas en rango (`query_sum(l, r)`, `query_min(l, r)`) intercaladas dinámicamente.
+- **Cuándo no usar / alternativa:** Si todas las actualizaciones de rango ocurren antes de cualquier consulta, basta un `DiffArray1D` + `PrefixSum` (§3.5.1) en $\mathcal{O}(N)$.
+- **Contrato:** Indexación **0-based** (`0 <= l <= r < n`). `apply(node, l, r, v)` suma `v * (r - l + 1)` a `sum` y `v` a `mn` y `lazy`. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N)$; `add_range`, `query_sum`, `query_min` en $\mathcal{O}(\log N)$; memoria $\mathcal{O}(4N)$.
+- **Formato de entrada:** `N`, arreglo `a[0..N-1]`, operación `add_range(l1, r1, v)` y consulta `[l2, r2]`.
 
-  - **Segment Tree 2D**: Actualizaciones puntuales y consultas de
-    suma/mínimo/GCD en submatrices $(x_{0}..x_{1},y_{0}..y_{1})$
-    cuando la operación no tiene inverso (si es suma, prefiere Fenwick
-    2D).
+**Entrada:**
+```text
+5
+1 2 3 4 5
+1 3 10
+0 4
+```
 
-  - **Persistent Segment Tree**: Cuando necesitas **conservar todas las
-    versiones históricas** del arreglo tras cada actualización puntual,
-    o para hallar el **$K$-ésimo menor elemento en un subarreglo
-    $\lbrack L,R\rbrack$** sin actualizaciones en
-    $\mathcal{O}(\log N)$.
+**Salida:**
+```text
+45 1
+```
 
-- **Complejidad**: Lazy y Persistente: $\mathcal{O}(\log N)$ por
-  operación (Persistente usa $\mathcal{O}((N + Q)\log N)$ de memoria).
-  2D: $\mathcal{O}(\log N\log M)$.
+**Cómo leer la entrada:**
+```cpp
+int n, l1, r1, l2, r2;
+ll v;
+cin >> n;
+vll a(n);
+for (ll& x : a) cin >> x;
+cin >> l1 >> r1 >> v >> l2 >> r2;
+```
 
-``` cpp
-// 1. Segment Tree con Lazy Propagation (Suma en rango + Query Suma y Min)
+**Implementación:**
+```cpp
+// 1. Segment Tree con Lazy Propagation (Suma en rango +
+// Query Suma y Min)
 struct LazySegTree {
   int n;
   vll sum_t, min_t, lazy;
 
   LazySegTree(const vll& a)
-    : n(sz(a)), sum_t(4 * n, 0), min_t(4 * n, 0), lazy(4 * n, 0) {
+    : n(sz(a)), sum_t(4 * n, 0), min_t(4 * n, 0), lazy(
+      4 * n, 0) {
     if (n > 0) build(1, 0, n - 1, a);
   }
   void apply(int v, int l, int r, ll val) {
@@ -1641,7 +2912,8 @@ struct LazySegTree {
     build(v * 2 + 1, m + 1, r, a);
     pull(v);
   }
-  void add_range(int v, int l, int r, int ql, int qr, ll val) {
+  void add_range(int v, int l, int r, int ql, int qr,
+    ll val) {
     if (qr < l || r < ql) return;
     if (ql <= l && r <= qr) { apply(v, l, r, val); return; }
     push(v, l, r);
@@ -1669,11 +2941,56 @@ struct LazySegTree {
   void add_range(int ql, int qr, ll val) {
     add_range(1, 0, n - 1, ql, qr, val);
   }
-  ll query_sum(int ql, int qr) { return query_sum(1, 0, n - 1, ql, qr); }
-  ll query_min(int ql, int qr) { return query_min(1, 0, n - 1, ql, qr); }
+  ll query_sum(int ql, int qr) {
+    return query_sum(1, 0, n - 1, ql, qr); }
+  ll query_min(int ql, int qr) {
+    return query_min(1, 0, n - 1, ql, qr); }
 };
+```
 
-// 2. Segment Tree 2D Iterativo (0-indexed: [x0..x1][y0..y1])
+**Cómo llamarlo y producir la salida:**
+```cpp
+LazySegTree st(a);
+st.add_range(l1, r1, v);
+cout << st.query_sum(l2, r2) << " " << st.query_min(l2,
+  r2) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para soportar asignación en rango (`a[l..r] = v`) además de suma, mantener un booleano `has_set` y al aplicar un `set` limpiar el `lazy` de suma previo.
+
+#### 4.5.2 Segment Tree 2D Iterativo (`SegTree2D`)
+
+- **Cuándo usar:** Actualizaciones puntuales `update(x, y, val)` (reemplazo) y consultas rectangulares `[x0..x1] x [y0..y1]` de operaciones como suma, `min`, `max` o `gcd` donde Fenwick 2D no aplica por no ser invertible.
+- **Cuándo no usar / alternativa:** Si la operación es suma (`a[x][y] += delta`), `Fenwick2D` (§4.3.2) usa $4\times$ menos memoria y código.
+- **Contrato:** Coordenadas **0-based** (`0 <= x0 <= x1 < n`, `0 <= y0 <= y1 < m`). Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N \cdot M)$; `update` y `query` en $\mathcal{O}(\log N \log M)$; memoria $\mathcal{O}(4 N M)$.
+- **Formato de entrada:** `N M`, actualización `(x, y, val)` y consulta `x0 y0 x1 y1` (0-indexed).
+
+**Entrada:**
+```text
+3 3
+1 2 15
+0 0 2 2
+```
+
+**Salida:**
+```text
+3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vector<vll> mat(n, vll(m));
+for (int i = 0; i < n; ++i)
+  for (int j = 0; j < m; ++j) cin >> mat[i][j];
+```
+
+**Implementación:**
+```cpp
+// 2. Segment Tree 2D Iterativo (0-indexed:
+// [x0..x1][y0..y1])
 struct SegTree2D {
   int n, m;
   const ll NEUTRAL = 0;
@@ -1681,12 +2998,15 @@ struct SegTree2D {
   ll op(ll a, ll b) const { return a + b; }
 
   SegTree2D(const vector<vll>& a)
-    : n(sz(a)), m(n ? sz(a[0]) : 0), st(2 * n, vll(2 * m, 0)) {
+    : n(sz(a)), m(n ? sz(a[0]) : 0), st(2 * n, vll(2 * m,
+      0)) {
     for (int i = 0; i < n; ++i)
-      for (int j = 0; j < m; ++j) st[i + n][j + m] = a[i][j];
+      for (int j = 0; j < m; ++j) st[i + n][j + m]
+        = a[i][j];
     for (int i = 0; i < n; ++i)
       for (int j = m - 1; j > 0; --j)
-        st[i + n][j] = op(st[i + n][j << 1], st[i + n][j << 1 | 1]);
+        st[i + n][j] = op(st[i + n][j << 1],
+          st[i + n][j << 1 | 1]);
     for (int i = n - 1; i > 0; --i)
       for (int j = 0; j < 2 * m; ++j)
         st[i][j] = op(st[i << 1][j], st[i << 1 | 1][j]);
@@ -1694,19 +3014,22 @@ struct SegTree2D {
   void update(int x, int y, ll v) {
     st[x + n][y + m] = v;
     for (int j = y + m; j > 1; j >>= 1)
-      st[x + n][j >> 1] = op(st[x + n][j], st[x + n][j ^ 1]);
+      st[x + n][j >> 1] = op(st[x + n][j],
+        st[x + n][j ^ 1]);
     for (int i = x + n; i > 1; i >>= 1)
       for (int j = y + m; j > 0; j >>= 1)
         st[i >> 1][j] = op(st[i][j], st[i ^ 1][j]);
   }
   ll query(int x0, int x1, int y0, int y1) const {
     ll res = NEUTRAL;
-    for (int i0 = x0 + n, i1 = x1 + n + 1; i0 < i1; i0 >>= 1, i1 >>= 1) {
+    for (int i0 = x0 + n,
+      i1 = x1 + n + 1; i0 < i1; i0 >>= 1, i1 >>= 1) {
       int rows[2], q = 0;
       if (i0 & 1) rows[q++] = i0++;
       if (i1 & 1) rows[q++] = --i1;
       for (int k = 0; k < q; ++k)
-        for (int j0 = y0 + m, j1 = y1 + m + 1; j0 < j1; j0 >>= 1, j1 >>= 1) {
+        for (int j0 = y0 + m,
+          j1 = y1 + m + 1; j0 < j1; j0 >>= 1, j1 >>= 1) {
           if (j0 & 1) res = op(res, st[rows[k]][j0++]);
           if (j1 & 1) res = op(res, st[rows[k]][--j1]);
         }
@@ -1714,7 +3037,49 @@ struct SegTree2D {
     return res;
   }
 };
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+SegTree2D st(mat);
+cout << st.query(0, 1, 0, 1) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) `update(x, y, val)` **reemplaza** el valor de la celda `(x, y)` por `val`; si quieres sumar `delta`, hacer `t[x + n][y + m] += val`.
+
+#### 4.5.3 Persistent Segment Tree de Sumas en Versiones Históricas (`PersistentST`)
+
+- **Cuándo usar:** Clonar el arreglo en el tiempo al hacer actualizaciones puntuales (`create_version`) y consultar la suma en `[ql, qr]` sobre cualquier versión histórica en $\mathcal{O}(\log N)$.
+- **Cuándo no usar / alternativa:** Si necesitas hallar el **$k$-ésimo menor elemento en un subarreglo $[L, R]$**, esta estructura de sumas por posición no basta: usar `PersistentFreqST` (§4.5.4).
+- **Contrato:** Índices **0-based** (`0 <= pos < n`). `roots[0]` es la versión inicial; `create_version(ver, pos, val)` crea una nueva raíz en `roots.back()` y retorna su ID de versión. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N)$; cada actualización crea $\mathcal{O}(\log N)$ nodos nuevos en tiempo y memoria.
+- **Formato de entrada:** `N`, arreglo `a[0..N-1]`, actualización `pos val` sobre la versión 0, y rango `[l, r]` a consultar en versión 0 y versión 1.
+
+**Entrada:**
+```text
+4
+1 2 3 4
+2 10
+1 3
+```
+
+**Salida:**
+```text
+9 16
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, pos, l, r;
+ll val;
+cin >> n;
+vll a(n);
+for (ll& x : a) cin >> x;
+cin >> pos >> val >> l >> r;
+```
+
+**Implementación:**
+```cpp
 // 3. Persistent Segment Tree (Suma en versiones historicas)
 struct PersistentST {
   struct Node { ll val; int l, r; };
@@ -1756,7 +3121,8 @@ struct PersistentST {
     return query(t[v].l, tl, tm, ql, qr)
          + query(t[v].r, tm + 1, tr, ql, qr);
   }
-  // Crea una nueva version a partir de 'ver' y retorna su ID
+  // Crea una nueva version a partir de 'ver' y retorna su
+  // ID
   int create_version(int ver, int pos, ll val) {
     int new_root = update(roots[ver], 0, n - 1, pos, val);
     roots.pb(new_root);
@@ -1768,51 +3134,153 @@ struct PersistentST {
 };
 ```
 
-**Ejemplo de Input y Uso (Lazy SegTree y Persistent SegTree):**
-
+**Cómo llamarlo y producir la salida:**
+```cpp
+PersistentST pst(a);
+int v1 = pst.create_version(0, pos, val);
+cout << pst.query_version(0, l, r) << " "
+     << pst.query_version(v1, l, r) << '\n';
 ```
-Input: A = [1, 2, 3, 4, 5] (0-indexed)
-Lazy: sumar +10 en [1, 3] -> A = [1, 12, 13, 14, 5]. Query suma [0, 2] -> 26, min [1, 4] -> 5.
-Persistente: version 0 tiene A original. Version 1 cambia pos 2 a 100.
+
+- **Trampas y adaptaciones:** (1) Con $Q$ actualizaciones se crean $\approx Q (\lceil \log_2 N \rceil + 2)$ nodos; `reserve` evita realocaciones.
+
+#### 4.5.4 Persistent Segment Tree de Frecuencias: $k$-ésimo en Subarreglo (`PersistentFreqST`)
+
+- **Cuándo usar:** Responder online cuál es el **$k$-ésimo menor valor** en cualquier subarreglo estático `a[l..r]` (0-indexed, $k \ge 1$) en $\mathcal{O}(\log N)$.
+- **Cuándo no usar / alternativa:** Si el arreglo también sufre modificaciones puntuales entre consultas de $k$-ésimo, un árbol persistente de prefijos estático no basta (requiere Fenwick de Segment Trees dinámicos en $\mathcal{O}(\log^2 N)$).
+- **Contrato:** Arreglo `a` **0-indexed** (`0 <= l <= r < n`) y orden `1 <= k <= r - l + 1`. Comprime coordenadas internamente y devuelve el valor real `vals[idx]`. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N \log N)$ tiempo y memoria; `query_kth(l, r, k)` en $\mathcal{O}(\log N)$.
+- **Formato de entrada:** `N Q`, arreglo `a[0..N-1]` y `Q` consultas `l r k` (`0 <= l <= r < N`, `1 <= k <= r - l + 1`).
+
+**Entrada:**
+```text
+5 2
+50 10 40 20 30
+1 3 2
+0 4 4
 ```
 
-``` cpp
-int main() {
-  vll a = {1, 2, 3, 4, 5};
-  LazySegTree lst(a);
-  lst.add_range(1, 3, 10);
-  cout << lst.query_sum(0, 2) << " " << lst.query_min(1, 4) << "\n"; // 26 5
-
-  PersistentST pst(a);              // Version 0: [1, 2, 3, 4, 5]
-  int v1 = pst.create_version(0, 2, 100); // Version 1: [1, 2, 100, 4, 5]
-  cout << pst.query_version(0, 0, 4) << "\n"; // 15
-  cout << pst.query_version(v1, 0, 4) << "\n"; // 112
-}
+**Salida:**
+```text
+20
+40
 ```
+
+**Cómo leer la entrada:**
+```cpp
+int n, q;
+cin >> n >> q;
+vll a(n);
+for (ll& x : a) cin >> x;
+vector<tuple<int, int, int>> qs(q);
+for (auto& [l, r, k] : qs) cin >> l >> r >> k;
+```
+
+**Implementación:**
+```cpp
+// 4. Persistente de Frecuencias: k-esimo menor en
+// subarreglo [l..r] (0-indexed, k >= 1)
+struct PersistentFreqST {
+  struct Node { int cnt, l, r; };
+  int m; // Tamano del alfabeto de valores comprimidos
+  vll vals;
+  vector<Node> t;
+  vi roots;
+
+  PersistentFreqST(const vll& a) : vals(a) {
+    sort(all(vals));
+    vals.erase(unique(all(vals)), vals.end());
+    m = max(1, sz(vals));
+    t.reserve((sz(a) + 1) * 20);
+    roots.pb(build(0, m - 1));
+    for (ll x : a) {
+      int pos = lower_bound(all(vals), x) - vals.begin();
+      roots.pb(insert(roots.back(), 0, m - 1, pos));
+    }
+  }
+  int build(int tl, int tr) {
+    int v = sz(t); t.pb({0, 0, 0});
+    if (tl == tr) return v;
+    int tm = (tl + tr) / 2;
+    int left = build(tl, tm), right = build(tm + 1, tr);
+    t[v] = {0, left, right};
+    return v;
+  }
+  int insert(int prv, int tl, int tr, int pos) {
+    int v = sz(t); t.pb(t[prv]);
+    t[v].cnt++;
+    if (tl == tr) return v;
+    int tm = (tl + tr) / 2;
+    if (pos <= tm) { int nl = insert(t[prv].l, tl, tm, pos);
+      t[v].l = nl; }
+    else { int nr = insert(t[prv].r, tm + 1, tr, pos);
+      t[v].r = nr; }
+    return v;
+  }
+  int kth_idx(int vl, int vr, int tl, int tr, int k) const {
+    if (tl == tr) return tl;
+    int tm = (tl + tr) / 2;
+    int left_cnt = t[t[vr].l].cnt - t[t[vl].l].cnt;
+    if (k <= left_cnt) return kth_idx(t[vl].l, t[vr].l, tl,
+      tm, k);
+    return kth_idx(t[vl].r, t[vr].r, tm + 1, tr,
+      k - left_cnt);
+  }
+  // Retorna el k-esimo menor valor (1-indexed: 1 <= k <= r
+  // - l + 1) en a[l..r]
+  ll query_kth(int l, int r, int k) const {
+    return vals[kth_idx(roots[l], roots[r + 1], 0, m - 1,
+      k)];
+  }
+};
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+PersistentFreqST pfst(a);
+for (auto [l, r, k] : qs)
+  cout << pfst.query_kth(l, r, k) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Verificar siempre `1 <= k && k <= r - l + 1` antes de llamar a `query_kth(l, r, k)`.
 
 ------------------------------------------------------------------------
 
 ### 4.6 SQRT Decomposition y Algoritmo de Mo (con Optimización de Bloques)
 
-- **¿Cuándo usar?**:
+#### 4.6.1 SQRT Decomposition en Bloques (`SqrtDecomp`)
 
-  - **SQRT Decomposition**: Cuando la propiedad por bloques es más fácil
-    de mantener en $\mathcal{O}(\sqrt{N})$ que en un Segment Tree (ej.
-    contar cuántos elementos $\geq X$ hay en $\lbrack L,R\rbrack$
-    con actualizaciones puntuales manteniendo bloques ordenados).
+- **Cuándo usar:** Actualizar elementos y responder consultas en rango cuando la estructura por bloques de tamaño $B \approx \sqrt{N}$ es mucho más simple de adaptar que un Segment Tree (p. ej., mantener bloques ordenados para contar $< X$).
+- **Cuándo no usar / alternativa:** Para suma/mínimo estándar, `Fenwick` (§4.3.1) o `IterSegTree` (§4.4.1) son $\mathcal{O}(\log N)$ y más veloces.
+- **Contrato:** Indexación **0-based** (`0 <= l <= r < n`). `B = sqrt(n) + 1`. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N)$; `update` en $\mathcal{O}(1)$; `query` en $\mathcal{O}(\sqrt{N})$.
+- **Formato de entrada:** `N`, arreglo `a[0..N-1]`, actualización `idx delta` y consulta `l r` (0-indexed).
 
-  - **Algoritmo de Mo**: Cuando tienes **$Q$ consultas en rango
-    $\lbrack L,R\rbrack$ offline (sin actualizaciones)** de una
-    función difícil de combinar en un Segment Tree (ej. cantidad de
-    elementos distintos, suma de frecuencias al cuadrado
-    $\sum cnt\lbrack x\rbrack^{2}$, moda del rango), pero **es fácil
-    agregar o quitar 1 elemento en los bordes** (`add(idx)` / `del(idx)`
-    en $\mathcal{O}(1)$).
+**Entrada:**
+```text
+5
+1 2 3 4 5
+2 7
+1 3
+```
 
-- **Complejidad**:
-  $\mathcal{O}((N + Q)\sqrt{N} \cdot \mathrm{\text{costo}}(\mathrm{\text{add/del}}))$.
+**Salida:**
+```text
+13
+```
 
-``` cpp
+**Cómo leer la entrada:**
+```cpp
+int n, idx, l, r;
+ll delta;
+cin >> n;
+vll a(n);
+for (ll& x : a) cin >> x;
+cin >> idx >> delta >> l >> r;
+```
+
+**Implementación:**
+```cpp
 // 1. SQRT Decomposition en Bloques (0-indexed)
 struct SqrtDecomp {
   int n, B;
@@ -1831,26 +3299,77 @@ struct SqrtDecomp {
     if (bl == br) {
       for (int i = l; i <= r; ++i) sum += a[i];
     } else {
-      for (int i = l, end = (bl + 1) * B - 1; i <= end; ++i) sum += a[i];
+      for (int i = l, end = (
+        bl + 1) * B - 1; i <= end; ++i) sum += a[i];
       for (int i = bl + 1; i < br; ++i) sum += b[i];
       for (int i = br * B; i <= r; ++i) sum += a[i];
     }
     return sum;
   }
 };
+```
 
-// 2. Algoritmo de Mo (Offline con ordenamiento serpenteante par/impar)
-const int BLOCK_SIZE = 450; // ~ N / sqrt(Q) para N, Q <= 2e5
+**Cómo llamarlo y producir la salida:**
+```cpp
+SqrtDecomp sq(a);
+sq.update(idx, delta);
+cout << sq.query(l, r) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) En lugar de iterar `i` y comprobar `i % B == 0`, manejar por separado `b_l == b_r` y luego los bordes más los bloques completos `b_l + 1 .. b_r - 1` es $3\times$ más rápido.
+
+#### 4.6.2 Algoritmo de Mo Offline (`MoQuery`, `solve_mo`)
+
+- **Cuándo usar:** Responder $Q$ consultas **offline** sobre rangos `[l, r]` cuando no hay forma sencilla de fusionar dos mitades en un Segment Tree, pero agregar o quitar 1 elemento en los extremos del rango toma $\mathcal{O}(1)$ (frecuencias, elementos distintos, pares iguales).
+- **Cuándo no usar / alternativa:** Si las consultas son online o si agregar/quitar un elemento cuesta $\mathcal{O}(\log N)$ con $N, Q = 2 \cdot 10^5$ ($\mathcal{O}(N\sqrt{Q}\log N)$ suele dar TLE).
+- **Contrato:** Arreglo `a` y consultas `queries` son **0-indexed** (`0 <= l <= r < n`). Los valores de `a[i]` deben estar en `[0, MAX_VAL - 1]` (comprimir coordenadas con `CoordComp` §2.1 si superan $10^6$). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}((N + Q)\sqrt{N})$ tiempo y $\mathcal{O}(N + Q + V_{\max})$ memoria.
+- **Formato de entrada:** `N Q`, arreglo `a[0..N-1]` y `Q` consultas `l r` (0-indexed) pidiendo cuántos valores distintos hay en `a[l..r]`.
+
+**Entrada:**
+```text
+6 2
+1 2 1 3 2 4
+0 3
+1 4
+```
+
+**Salida:**
+```text
+3 3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, q;
+cin >> n >> q;
+vi a(n);
+for (int& x : a) cin >> x;
+vector<MoQuery> qs(q);
+for (int i = 0; i < q; ++i) {
+  cin >> qs[i].l >> qs[i].r;
+  qs[i].idx = i;
+}
+```
+
+**Implementación:**
+```cpp
+// 2. Algoritmo de Mo (Offline con ordenamiento serpenteante
+// par/impar)
+// ~ N / sqrt(Q) para N, Q <= 2e5
+const int BLOCK_SIZE = 450;
 struct MoQuery {
   int l, r, idx;
   bool operator<(const MoQuery& o) const {
     int b1 = l / BLOCK_SIZE, b2 = o.l / BLOCK_SIZE;
     if (b1 != b2) return b1 < b2;
-    return (b1 & 1) ? (r < o.r) : (r > o.r); // Optimiza el puntero R
+    // Optimiza el puntero R
+    return (b1 & 1) ? (r < o.r) : (r > o.r);
   }
 };
 
-// Ejemplo: Contar cantidad de elementos distintos en cada rango [l, r]
+// Ejemplo: Contar cantidad de elementos distintos en cada
+// rango [l, r]
 vll solve_mo(const vi& a, vector<MoQuery>& queries) {
   int max_val = *max_element(all(a));
   vi freq(max_val + 1, 0);
@@ -1867,7 +3386,8 @@ vll solve_mo(const vi& a, vector<MoQuery>& queries) {
   vll ans(sz(queries));
   int cur_l = 0, cur_r = -1;
 
-  // ¡IMPORTANTE! Primero expandir (cur_l--, cur_r++), luego contraer
+  // ¡IMPORTANTE! Primero expandir (cur_l--, cur_r++), luego
+  // contraer
   for (const auto& q : queries) {
     while (cur_l > q.l) add(--cur_l);
     while (cur_r < q.r) add(++cur_r);
@@ -1879,39 +3399,49 @@ vll solve_mo(const vi& a, vector<MoQuery>& queries) {
 }
 ```
 
-**Ejemplo de Input y Uso (Algoritmo de Mo):**
+**Cómo llamarlo y producir la salida:**
+```cpp
+vll ans = solve_mo(a, qs);
+for (int i = 0; i < q; ++i)
+  cout << ans[i] << (i + 1 == q ? '\n' : ' ');
+```
 
-```
-Input (0-indexed):
-A = [1, 2, 1, 3, 2]
-Q = 2 consultas: q0 = [0, 2] (distintos en {1,2,1} -> 2), q1 = [1, 4] (en {2,1,3,2} -> 3)
-```
-
-``` cpp
-int main() {
-  vi a = {1, 2, 1, 3, 2};
-  vector<MoQuery> q = {{0, 2, 0}, {1, 4, 1}};
-  vll res = solve_mo(a, q); // res = {2, 3}
-}
-```
+- **Trampas y adaptaciones:** (1) **Orden de los 4 `while`**: siempre expandir (`--cur_l`, `++cur_r`) **antes** de contraer (`cur_l++`, `cur_r--`); de lo contrario `cur_l` puede cruzar a `cur_r + 2` y causar conteos negativos.
 
 ------------------------------------------------------------------------
 
 ### 4.7 Treap (BST Aleatorizado) e Implicit Treap (Reversión y Suma en Rango)
 
-- **¿Cuándo usar?**:
+- **Cuándo usar:** Mantener un arreglo dinámico que soporte **revertir** un subarreglo `[l, r]`, **sumar** una constante a `[l, r]`, **cortar y mover** bloques a otra posición y consultar la **suma** de `[l, r]` en $\mathcal{O}(\log N)$.
+- **Cuándo no usar / alternativa:** Si no hay reversiones ni cortes/inserciones de posición (solo sumas y consultas en rango sobre índices fijos), usar `LazySegTree` (§4.5.1), que tiene constante mucho menor.
+- **Contrato:** Posiciones **0-based** (`0 <= l <= r < cnt(root)`). Llamar siempre a `push(t)` al inicio de `split` y `merge`, y a `pull(t)` antes de retornar. Dependencias: `rng` (§1.2).
+- **Complejidad:** $\mathcal{O}(\log N)$ tiempo esperado por operación; $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, arreglo `a[0..N-1]`, rango `l1 r1` a revertir y rango `l2 r2` a consultar su suma.
 
-  - **Implicit Treap (Treap con clave implícita por posición)**:
-    Representa un **arreglo dinámico** donde puedes **cortar y pegar
-    subarreglos, invertir el orden de un rango $\lbrack L,R\rbrack$
-    (`reverse`), sumar un valor a un rango $\lbrack L,R\rbrack$,
-    insertar o borrar elementos en cualquier posición, y consultar la
-    suma en $\lbrack L,R\rbrack$**, todo en $\mathcal{O}(\log N)$.
+**Entrada:**
+```text
+5
+1 2 3 4 5
+1 3
+0 2
+```
 
-- **Complejidad**: $\mathcal{O}(\log N)$ esperado por `split`,
-  `merge`, `insert`, `reverse_range`, `add_range` y `query_sum`.
+**Salida:**
+```text
+8
+```
 
-``` cpp
+**Cómo leer la entrada:**
+```cpp
+int n, l1, r1, l2, r2;
+cin >> n;
+vll a(n);
+for (ll& x : a) cin >> x;
+cin >> l1 >> r1 >> l2 >> r2;
+```
+
+**Implementación:**
+```cpp
 struct ImplicitTreap {
   struct Node {
     ll val, sum, lazy_add;
@@ -1919,7 +3449,8 @@ struct ImplicitTreap {
     bool rev;
     Node *l = nullptr, *r = nullptr;
     Node(ll v)
-      : val(v), sum(v), lazy_add(0), pr( (int)rng() ), cnt(1), rev(false) {}
+      : val(v), sum(v), lazy_add(0), pr( (int)rng() ), cnt(
+        1), rev(false) {}
   };
   using pnode = Node*;
   pnode root = nullptr;
@@ -1956,7 +3487,8 @@ struct ImplicitTreap {
     t->cnt = 1 + cnt(t->l) + cnt(t->r);
     t->sum = t->val + sum(t->l) + sum(t->r);
   }
-  // Divide 't' en 'l' (primeros k elementos) y 'r' (el resto)
+  // Divide 't' en 'l' (primeros k elementos) y 'r' (el
+  // resto)
   void split(pnode t, pnode& l, pnode& r, int k) {
     if (!t) { l = r = nullptr; return; }
     push(t);
@@ -1976,7 +3508,8 @@ struct ImplicitTreap {
     else { merge(r->l, l, r->l); t = r; }
     pull(t);
   }
-  void push_back(ll val) { merge(root, root, new Node(val)); }
+  void push_back(ll val) { merge(root, root, new Node(val));
+    }
 
   // Invierte el subarreglo 0-indexed [ql, qr]
   void reverse_range(int ql, int qr) {
@@ -2009,48 +3542,66 @@ struct ImplicitTreap {
 };
 ```
 
-**Ejemplo de Input y Uso (Implicit Treap):**
+**Cómo llamarlo y producir la salida:**
+```cpp
+rng.seed(42);
+ImplicitTreap tr;
+for (ll x : a) tr.push_back(x);
+tr.reverse_range(l1, r1);
+cout << tr.query_sum(l2, r2) << '\n';
+```
 
-```
-Input: Arreglo inicial [10, 20, 30, 40, 50] (0-indexed)
-1) Invertir rango [1, 3] -> [10, 40, 30, 20, 50]
-2) Consultar suma en [0, 2] -> 10 + 40 + 30 = 80
-```
-
-``` cpp
-int main() {
-  ImplicitTreap tr;
-  for (ll x : {10, 20, 30, 40, 50}) tr.push_back(x);
-  tr.reverse_range(1, 3);
-  cout << tr.query_sum(0, 2) << "\n"; // 80
-}
-```
+- **Trampas y adaptaciones:** (1) En `split(t, l, r, k)`, el parámetro `k` es la **cantidad de elementos** que quedan en el árbol izquierdo `l` (es decir, índices `0..k-1`), no un valor de llave.
 
 ------------------------------------------------------------------------
 
 ### 4.8 Consultas en Árboles: Heavy-Light Decomposition (HLD) y DSU on Tree (Sack)
 
-- **¿Cuándo usar?**:
+#### 4.8.1 Heavy-Light Decomposition (`HLD`)
 
-  - **Heavy-Light Decomposition (HLD)**: Cuando tienes un árbol con
-    valores en los nodos (o aristas) y debes responder **actualizaciones
-    y consultas a lo largo del camino simple entre cualquier par de
-    nodos $(u,v)$** y/o en el **subárbol completo de $u$**.
-    Descompone cualquier camino del árbol en a lo sumo
-    $\mathcal{O}(\log N)$ intervalos contiguos de un Segment Tree.
+- **Cuándo usar:** Resolver consultas en **caminos** (`query_path(u, v)`) y en **subárboles** (`query_subtree(u)`) con actualizaciones dinámicas de nodos cuando la operación no es invertible (como `max`, `min`, `gcd`) o cuando se combinan caminos y subárboles.
+- **Cuándo no usar / alternativa:** Si el árbol es estático y la operación es suma/XOR, basta `LCA` (§6.4.3) con sumas a la raíz; si solo hay updates en nodos y sumas en subárboles, basta Euler Tour + Fenwick (§0.3).
+- **Contrato:** Nodos **1-based** (`1..n`), valores iniciales `vals[1..n]`. Esta implementación incluye `update_node(u, val)` puntual; para actualizar todo un camino `u..v`, reemplazar el `IterSegTree` interno por `LazySegTree` (§4.5.1) e invocar `st.add_range(pos[head[u]], pos[u], val)` en el bucle de subida. Dependencias: `IterSegTree` (§4.4.1).
+- **Complejidad:** Construcción $\mathcal{O}(N \log N)$ (por las $N$ llamadas iniciales a `st.update`); `update_node` y `query_subtree` en $\mathcal{O}(\log N)$; `query_path` en $\mathcal{O}(\log^2 N)$.
+- **Formato de entrada:** `N`, valores `vals[1..N]`, `N - 1` aristas `u v`, una actualización `u_up new_val` y una consulta de camino `u_q v_q`.
 
-  - **DSU on Tree (Sack / Small-to-Large)**: Cuando tienes **consultas
-    offline sobre subárboles** (sin actualizaciones) donde contar
-    frecuencias por color/valor es fácil (ej. *“¿cuántos vértices en el
-    subárbol de $u$ tienen el color dominante?”*).
+**Entrada:**
+```text
+4
+1 2 3 4
+1 2
+1 3
+3 4
+3 10
+2 4
+```
 
-- **Complejidad**: HLD: Construcción $\mathcal{O}(N)$,
-  consulta/actualización en camino $\mathcal{O}(\log^{2}N)$, en
-  subárbol $\mathcal{O}(\log N)$. Sack: $\mathcal{O}(N\log N)$
-  total.
+**Salida:**
+```text
+1
+```
 
-``` cpp
-// 1. Heavy-Light Decomposition (HLD) + Segment Tree Iterativo
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vll vals(n + 1);
+for (int i = 1; i <= n; ++i) cin >> vals[i];
+vector<vi> g(n + 1);
+for (int i = 0; i < n - 1; ++i) {
+  int u, v;
+  cin >> u >> v;
+  g[u].pb(v); g[v].pb(u);
+}
+int u_up, u_q, v_q;
+ll new_val;
+cin >> u_up >> new_val >> u_q >> v_q;
+```
+
+**Implementación:**
+```cpp
+// 1. Heavy-Light Decomposition (HLD) + Segment Tree
+// Iterativo
 struct HLD {
   int n, timer = 0;
   vector<vi> adj;
@@ -2058,8 +3609,10 @@ struct HLD {
   IterSegTree st;
 
   HLD(int n, int root, const vector<vi>& g, const vll& vals)
-    : n(n), adj(g), par(n + 1), dep(n + 1, 0), heavy(n + 1, -1),
-      head(n + 1), pos(n + 1), sz_sub(n + 1, 1), st(vll(n, 0)) {
+    : n(n), adj(g), par(n + 1), dep(n + 1, 0), heavy(n + 1,
+      -1),
+      head(n + 1), pos(n + 1), sz_sub(n + 1, 1), st(vll(n,
+        0)) {
     par[root] = root;
     dfs_sz(root);
     dfs_hld(root, root);
@@ -2087,9 +3640,11 @@ struct HLD {
       if (v != par[u] && v != heavy[u])
         dfs_hld(v, v);
   }
-  void update_node(int u, ll val) { st.update(pos[u], val); }
+  void update_node(int u, ll val) { st.update(pos[u], val);
+    }
 
-  // Consulta en el camino entre u y v (minimo en este ejemplo)
+  // Consulta en el camino entre u y v (minimo en este
+  // ejemplo)
   ll query_path(int u, int v) const {
     ll res = st.NEUTRAL;
     for (; head[u] != head[v]; v = par[head[v]]) {
@@ -2098,9 +3653,11 @@ struct HLD {
     }
     if (dep[u] > dep[v]) swap(u, v);
     res = st.op(res, st.query(pos[u], pos[v]));
-    // NOTA: Si los pesos estan en las ARISTAS (guardados en el hijo),
+    // NOTA: Si los pesos estan en las ARISTAS (guardados en
+    // el hijo),
     // cambiar la linea anterior por:
-    // if (u != v) res = st.op(res, st.query(pos[u] + 1, pos[v]));
+    // if (u != v) res = st.op(res, st.query(pos[u] + 1,
+    // pos[v]));
     return res;
   }
   // Consulta en todo el subarbol de u en O(log N):
@@ -2108,12 +3665,58 @@ struct HLD {
     return st.query(pos[u], pos[u] + sz_sub[u] - 1);
   }
 };
+```
 
-// 2. DSU on Tree (Sack) — Consultas de frecuencia en subarboles en O(N log N)
+**Cómo llamarlo y producir la salida:**
+```cpp
+HLD hld(n, 1, g, vals);
+hld.update_node(u_up, new_val);
+cout << hld.query_path(u_q, v_q) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si los valores están en las **aristas** en lugar de los nodos, asignar el peso de cada arista al nodo hijo (el más profundo) y en la última etapa de `query_path` consultar `st.query(pos[u] + 1, pos[v])` para excluir el LCA `u`.
+
+#### 4.8.2 DSU on Tree / Small-to-Large en Subárboles (`pre_sack`, `dfs_sack`)
+
+- **Cuándo usar:** Responder consultas **offline** sobre todos los subárboles (p. ej., color más frecuente en el subárbol de $u$ o cantidad de valores distintos) en $\mathcal{O}(N \log N)$ sin estructuras pesadas.
+- **Cuándo no usar / alternativa:** Si hay actualizaciones de colores intercaladas con consultas online, Sack no aplica.
+- **Contrato:** Nodos **1-based** (`1..n`). Llenar `adj_s[1..n]` y `col_s[1..n]`, llamar `pre_sack(1, 0)` y luego `dfs_sack(1, 0, false)`. Respuestas en `ans_sack[1..n]`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N \log N)$ tiempo total y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, colores `col[1..N]` y `N - 1` aristas `u v` (raíz = 1).
+
+**Entrada:**
+```text
+4
+1 2 2 1
+1 2
+1 3
+3 4
+```
+
+**Salida:**
+```text
+2 3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vi cols(n + 1);
+for (int i = 1; i <= n; ++i) cin >> cols[i];
+vector<pii> edges(n - 1);
+for (auto& [u, v] : edges) cin >> u >> v;
+```
+
+**Implementación:**
+```cpp
+// 2. DSU on Tree (Sack) — Consultas de frecuencia en
+// subarboles en O(N log N)
 const int MAX_SACK = 200005;
 vi adj_s[MAX_SACK];
 int col_s[MAX_SACK], cnt_s[MAX_SACK], big_s[MAX_SACK];
-int tin_s[MAX_SACK], tout_s[MAX_SACK], ver_s[MAX_SACK], t_sack = 0;
+int tin_s[MAX_SACK], tout_s[MAX_SACK], ver_s[MAX_SACK],
+  t_sack = 0;
 
 int pre_sack(int u, int p) {
   int sz = 1, mx = 0;
@@ -2130,7 +3733,8 @@ int pre_sack(int u, int p) {
   return sz;
 }
 void add_node_sack(int u, int delta) {
-  cnt_s[col_s[u]] += delta; // Actualizar estructura de frecuencias
+  // Actualizar estructura de frecuencias
+  cnt_s[col_s[u]] += delta;
 }
 void dfs_sack(int u, int p, bool keep) {
   for (int v : adj_s[u])
@@ -2143,8 +3747,10 @@ void dfs_sack(int u, int p, bool keep) {
         add_node_sack(ver_s[t], +1);
   add_node_sack(u, +1);
 
-  // AQUI: cnt_s[c] tiene la cantidad exacta de nodos de color 'c'
-  // en el subarbol de 'u'. Responder todas las queries de 'u'.
+  // AQUI: cnt_s[c] tiene la cantidad exacta de nodos de
+  // color 'c'
+  // en el subarbol de 'u'. Responder todas las queries de
+  // 'u'.
 
   if (!keep)
     for (int t = tin_s[u]; t <= tout_s[u]; ++t)
@@ -2152,38 +3758,57 @@ void dfs_sack(int u, int p, bool keep) {
 }
 ```
 
-**Ejemplo de Input y Uso (Heavy-Light Decomposition):**
-
-```
-Input: Arbol de 5 nodos (raiz 1): aristas (1-2), (1-3), (2-4), (2-5).
-Valores en nodos 1..5: [10, 5, 20, 8, 2]
-Query minimo en el camino de 4 a 3 (pasa por 4 -> 2 -> 1 -> 3): min(8, 5, 10, 20) = 5.
-Update nodo 2 a valor 50 -> nuevo min en camino (4, 3) = min(8, 50, 10, 20) = 8.
-```
-
-``` cpp
-int main() {
-  int n = 5;
-  vector<vi> g(n + 1);
-  g[1] = {2, 3}; g[2] = {1, 4, 5}; g[3] = {1}; g[4] = {2}; g[5] = {2};
-  vll vals = {0, 10, 5, 20, 8, 2}; // 1-indexed (vals[0] ignorado)
-  HLD hld(n, 1, g, vals);
-  cout << hld.query_path(4, 3) << "\n"; // 5
-  hld.update_node(2, 50);
-  cout << hld.query_path(4, 3) << "\n"; // 8
+**Cómo llamarlo y producir la salida:**
+```cpp
+for (int i = 1; i <= n; ++i) {
+  adj_s[i].clear();
+  col_s[i] = cols[i];
 }
+for (auto [u, v] : edges) {
+  adj_s[u].pb(v); adj_s[v].pb(u);
+}
+t_sack = 0;
+pre_sack(1, 0);
+dfs_sack(1, 0, true);
+cout << cnt_s[col_s[1]] << " " << big_s[1] << '\n';
 ```
+
+- **Trampas y adaptaciones:** (1) Entre casos de prueba múltiples, limpiar `adj_s[1..n]`, `big_c[1..n] = 0`, `timer_s = 0` y asegurarse de que la raíz se llame con `keep = false` si quieres dejar `cnt_col` limpio en 0 al terminar.
 
 ------------------------------------------------------------------------
 
-
 ### 4.9 Link-Cut Tree (LCT — Bosques Dinámicos Online)
 
-- **¿Cuándo usar?**: Mantener una colección de árboles disjuntos (bosque dinámico) sujeta a modificaciones en tiempo real: agregar aristas (`link`), eliminar aristas (`cut`), verificar si dos nodos están en el mismo árbol (`connected`), hallar el ancestro común más cercano (`lca`) o cambiar la raíz del árbol (`make_root`).
-- **Complejidad**: $\mathcal{O}(\log N)$ amortizado por operación.
+- **Cuándo usar:** Mantener un bosque de árboles **online** bajo inserción de aristas (`link(u, v)`), borrado de aristas (`cut(u, v)`), prueba de conectividad (`connected(u, v)`), actualizaciones puntuales y sumas en el camino entre $u$ y $v$ (`query_path(u, v)`).
+- **Cuándo no usar / alternativa:** Si el árbol nunca cambia su topología de aristas, usar `HLD` (§4.8.1); si solo se pide conectividad y todas las operaciones se conocen de antemano, usar `DynCon` (§4.1.2). Link-Cut Tree solo mantiene **bosques** (sin ciclos).
+- **Contrato:** Nodos **1-based** (`1..n`). `link(u, v)` requiere `!connected(u, v)`; `cut(u, v)` requiere que la arista `(u, v)` exista actualmente. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\log N)$ amortizado por operación; $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, dos aristas `u1 v1`, `u2 v2` y un par `q1 q2`.
 
+**Entrada:**
+```text
+3
+1 2
+2 3
+1 3
+```
+
+**Salida:**
+```text
+1
+0
+```
+
+**Cómo leer la entrada:**
 ```cpp
-// Splay Tree Node. 'pp' apunta al padre del arbol representado
+int n, u1, v1, u2, v2, q1, q2;
+cin >> n >> u1 >> v1 >> u2 >> v2 >> q1 >> q2;
+```
+
+**Implementación:**
+```cpp
+// Splay Tree Node. 'pp' apunta al padre del arbol
+// representado
 struct LCTNode {
   LCTNode *p = 0, *pp = 0, *c[2] = {0, 0};
   bool flip = 0;
@@ -2198,10 +3823,12 @@ struct LCTNode {
   }
   void rot(int i, int b) {
     int h = i ^ b;
-    LCTNode *x = c[i], *y = (b == 2 ? x : x->c[h]), *z = (b ? y : x);
+    LCTNode *x = c[i], *y = (b == 2 ? x : x->c[h]), *z = (
+      b ? y : x);
     if ((y->p = p)) p->c[up()] = y;
     c[i] = z->c[i ^ 1];
-    if (b < 2) x->c[h] = y->c[h ^ 1], z->c[h ^ 1] = (b ? x : this);
+    if (b < 2) x->c[h] = y->c[h ^ 1], z->c[h ^ 1] = (
+      b ? x : this);
     y->c[i ^ 1] = (b ? this : x);
     fix(); x->fix(); y->fix();
     if (p) p->fix();
@@ -2245,7 +3872,8 @@ struct LinkCut {
     }
   }
   bool connected(int u, int v) {
-    return access(&node[u])->first() == access(&node[v])->first();
+    return access(&node[u])->first() == access(
+      &node[v])->first();
   }
   void link(int u, int v) {
     if (connected(u, v)) return;
@@ -2262,6 +3890,17 @@ struct LinkCut {
 };
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+LinkCut lct(n);
+lct.link(u1, v1);
+lct.link(u2, v2);
+cout << lct.connected(q1, q2) << '\n';
+lct.cut(u2, v2);
+cout << lct.connected(q1, q2) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Verificar siempre `!lct.connected(u, v)` antes de `lct.link(u, v)` porque crear un ciclo rompe la invariante de los Splay Trees auxiliares.
 
 ------------------------------------------------------------------------
 
@@ -2269,16 +3908,32 @@ struct LinkCut {
 
 ### 5.1 Rotación Cíclica Mínima / Minimum Expression (Duval/Booth $\mathcal{O}(N)$)
 
-- **¿Cuándo usar?**: Cuando puedes rotar una cadena circularmente (ej.
-  mover el primer carácter al final cualquier cantidad de veces) y
-  necesitas encontrar **el índice de inicio que produce la cadena
-  lexicográficamente menor** en $\mathcal{O}(N)$ (sirve también para
-  canonizar collares/ciclos isomorfos).
+- **Cuándo usar:** Encontrar el índice de inicio de la rotación cíclica lexicográficamente menor de una cadena $S$ en $\mathcal{O}(|S|)$ (canonización de collares o polígonos).
+- **Cuándo no usar / alternativa:** Si necesitas ordenar **todas** las rotaciones cíclicas de $S$, usar `SuffixArray` sobre $S + S$ (§5.6.1).
+- **Contrato:** `min_cyclic_rotation(s)` retorna el índice **0-based** $i \in [0, |S|-1]$ donde empieza la menor rotación. La cadena rotada es `s.substr(i) + s.substr(0, i)`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(|S|)$ tiempo y $\mathcal{O}(|S|)$ memoria.
+- **Formato de entrada:** Una cadena `s` sin espacios.
 
-- **Complejidad**: $\mathcal{O}(N)$ tiempo y memoria.
+**Entrada:**
+```text
+bbaab
+```
 
-``` cpp
-// Retorna el indice 0-based donde empieza la menor rotacion ciclica
+**Salida:**
+```text
+2 aabbb
+```
+
+**Cómo leer la entrada:**
+```cpp
+string s;
+cin >> s;
+```
+
+**Implementación:**
+```cpp
+// Retorna el indice 0-based donde empieza la menor rotacion
+// ciclica
 // Ejemplo: s = "bbaaca" -> retorna 2 (rotacion "aacabb")
 int min_cyclic_rotation(string s) {
   int n = sz(s);
@@ -2298,24 +3953,46 @@ int min_cyclic_rotation(string s) {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+int idx = min_cyclic_rotation(s);
+string rot = s.substr(idx) + s.substr(0, idx);
+cout << idx << " " << rot << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si todas las rotaciones mínimas empatan, el algoritmo de Duval retorna la primera aparición del bloque mínimo.
+
 ------------------------------------------------------------------------
 
 ### 5.2 Double Rolling Hash Polinomial y LCP con Búsqueda Binaria
 
-- **¿Cuándo usar?**: Cuando necesites **comparar si dos subcadenas
-  $S\lbrack l_{1}..r_{1}\rbrack$ y $S\lbrack l_{2}..r_{2}\rbrack$
-  son iguales en $\mathcal{O}(1)$**, verificar si una subcadena es
-  palíndromo en $\mathcal{O}(1)$ (hasheando $S$ y
-  $\mathrm{\text{rev}}(S)$), o **comparar lexicográficamente dos
-  subcadenas en $\mathcal{O}(\log N)$** hallando su Prefijo Común Más
-  Largo (LCP) con Búsqueda Binaria. Usa **dos primos simultáneos** para
-  que la probabilidad de colisión sea $\approx 10^{- 18}$.
+- **Cuándo usar:** Comparar subcadenas `s[l1..r1]` y `s[l2..r2]` por igualdad en $\mathcal{O}(1)$ y hallar su Mayor Prefijo Común (`lcp`) u orden lexicográfico (`cmp_substr`) en $\mathcal{O}(\log N)$.
+- **Cuándo no usar / alternativa:** Si solo necesitas comparar prefijos de la misma cadena con el prefijo global `s[0..n-1]`, usar **Z-Algorithm** (§5.4.1) que es determinista y $\mathcal{O}(N)$.
+- **Contrato:** Índices **0-based** (`0 <= l <= r < n`). `get(l, r)` retorna el par de hashes `(h1, h2)` de `s[l..r]`. El doble módulo reduce drásticamente la tasa de colisión accidental, pero con base fija un adversario que conozca `BASE` y `M1, M2` puede construir colisiones (aleatorizar `BASE` con `rd(257, 1e9)` si hay *open hacking*). Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N)$; `get(l, r)` en $\mathcal{O}(1)$; `lcp` y `cmp_substr` en $\mathcal{O}(\log N)$.
+- **Formato de entrada:** Una cadena `s` y dos rangos 0-based `l1 r1` y `l2 r2`.
 
-- **Complejidad**: Preprocesamiento $\mathcal{O}(N)$; `get_hash(l, r)`
-  en $\mathcal{O}(1)$; `lcp` y comparación lexicográfica en
-  $\mathcal{O}(\log N)$.
+**Entrada:**
+```text
+abracadabra
+0 3
+7 10
+```
 
-``` cpp
+**Salida:**
+```text
+1 4
+```
+
+**Cómo leer la entrada:**
+```cpp
+string s;
+int l1, r1, l2, r2;
+cin >> s >> l1 >> r1 >> l2 >> r2;
+```
+
+**Implementación:**
+```cpp
 struct PolyHash {
   static const ll M1 = 1000000007LL;
   static const ll M2 = 1000000009LL;
@@ -2342,7 +4019,8 @@ struct PolyHash {
     if (r2 < 0) r2 += M2;
     return {r1, r2};
   }
-  // Longitud del mayor prefijo comun entre s[i..n-1] y s[j..n-1] en O(log N)
+  // Longitud del mayor prefijo comun entre s[i..n-1] y
+  // s[j..n-1] en O(log N)
   int lcp(int i, int j) const {
     int low = 1, high = n - max(i, j), ans = 0;
     while (low <= high) {
@@ -2353,58 +4031,60 @@ struct PolyHash {
     }
     return ans;
   }
-  // Retorna true si s[l1..r1] < s[l2..r2] lexicograficamente en O(log N)
+  // Retorna true si s[l1..r1] < s[l2..r2]
+  // lexicograficamente en O(log N)
   bool cmp_substr(int l1, int r1, int l2, int r2) const {
     int len1 = r1 - l1 + 1, len2 = r2 - l2 + 1;
     int common = min({lcp(l1, l2), len1, len2});
-    if (common == len1 || common == len2) return len1 < len2;
+    if (common == len1 || common
+      == len2) return len1 < len2;
     return s[l1 + common] < s[l2 + common];
   }
 };
 ```
 
-**Ejemplo de Uso:**
-
-``` cpp
-int main() {
-  string s = "abracadabra";
-  PolyHash ph(s);
-  bool iguales = (ph.get(0, 3) == ph.get(7, 10)); // "abra" == "abra" (true)
-  int pref_comun = ph.lcp(0, 7);                  // 4 ("abra")
-}
+**Cómo llamarlo y producir la salida:**
+```cpp
+PolyHash ph(s);
+bool eq = (ph.get(l1, r1) == ph.get(l2, r2));
+int common = ph.lcp(l1, l2);
+cout << eq << " " << common << '\n';
 ```
+
+- **Trampas y adaptaciones:** (1) Nunca mapear `'a' -> 0` (si `'a' == 0`, entonces `"a"`, `"aa"` y `"aaa"` tendrían todas hash `0`).
 
 ------------------------------------------------------------------------
 
 ### 5.3 KMP (Función Prefijo $\pi$, Pattern Matching, Periodo) y Autómata KMP
 
-- **¿Cuándo usar?**:
+#### 5.3.1 KMP: Función Prefijo $\pi$ y Búsqueda de Patrón (`prefix_function`, `kmp_search`)
 
-  - **Función Prefijo ($\pi$) y KMP**: `pi[i]` es la longitud del
-    mayor prefijo propio de $S\lbrack 0..i\rbrack$ que también es
-    sufijo de $S\lbrack 0..i\rbrack$. Úsalo para:
+- **Cuándo usar:** Buscar todas las ocurrencias exactas de un patrón `pat` dentro de `text` en $\mathcal{O}(|T| + |P|)$ determinista, o hallar el periodo mínimo de una cadena ($k = n - \pi[n - 1]$).
+- **Cuándo no usar / alternativa:** Si hay **múltiples patrones** simultáneos ($P_1, \dots, P_k$) que buscar sobre el mismo texto, usar **Aho-Corasick** (§5.5.3).
+- **Contrato:** Índices **0-based**. `pi[i]` es la longitud del mayor prefijo propio de `s[0..i]` que también es sufijo de `s[0..i]`. `kmp_search(text, pat)` retorna los índices de inicio 0-based en `text` (vacío si no ocurre). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(|T| + |P|)$ tiempo y $\mathcal{O}(|P|)$ memoria.
+- **Formato de entrada:** Dos cadenas sin espacios: `text` y `pat`.
 
-    1)  Encontrar todas las ocurrencias de un patrón $P$ dentro de un
-        texto $T$ en $\mathcal{O}(|P| + |T|)$ determinista.
+**Entrada:**
+```text
+ababa
+aba
+```
 
-    2)  Hallar el **periodo mínimo** de una cadena:
-        $k = n - \pi\lbrack n - 1\rbrack$ (si
-        $n\:\operatorname{mod}\: k = = 0$, el bloque repetido es
-        $S\lbrack 0..k - 1\rbrack$).
+**Salida:**
+```text
+2
+0 2
+```
 
-    3)  Contar cuántas veces aparece cada prefijo como subcadena.
+**Cómo leer la entrada:**
+```cpp
+string text, pat;
+cin >> text >> pat;
+```
 
-  - **Autómata KMP**: Cuando haces **Programación Dinámica construyendo
-    un string carácter por carácter** (ej. *“¿cuántos strings de
-    longitud $N$ NO contienen al patrón $P$ como subcadena?”*).
-    `aut[estado][letra]` te dice a qué estado de KMP pasas en
-    $\mathcal{O}(1)$.
-
-- **Complejidad**: KMP: $\mathcal{O}(N + M)$ tiempo y
-  $\mathcal{O}(N)$ memoria. Autómata KMP:
-  $\mathcal{O}(|P| \cdot \Sigma)$ con $\Sigma = 26$.
-
-``` cpp
+**Implementación:**
+```cpp
 // 1. Funcion Prefijo pi[0..n-1] en O(N)
 vi prefix_function(const string& s) {
   int n = sz(s);
@@ -2418,7 +4098,8 @@ vi prefix_function(const string& s) {
   return pi;
 }
 
-// 2. Buscar todos los indices 0-based donde 'pat' ocurre en 'text'
+// 2. Buscar todos los indices 0-based donde 'pat' ocurre en
+// 'text'
 vi kmp_search(const string& text, const string& pat) {
   vi pi = prefix_function(pat), matches;
   int m = sz(pat), j = 0;
@@ -2432,8 +4113,47 @@ vi kmp_search(const string& text, const string& pat) {
   }
   return matches;
 }
+```
 
-// 3. Automata KMP: aut[i][c] = nuevo estado si llevamos 'i' chars de 'p'
+**Cómo llamarlo y producir la salida:**
+```cpp
+vi pos = kmp_search(text, pat);
+cout << sz(pos) << '\n';
+for (int i = 0; i < sz(pos); ++i)
+  cout << pos[i] << (i + 1 == sz(pos) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Si las cadenas pueden contener espacios, leer con `getline` en vez de `cin >>`; (2) el periodo $k = n - \pi[n - 1]$ es un periodo exacto completo si y solo si $n \bmod k == 0$.
+
+#### 5.3.2 Autómata KMP (`build_kmp_automaton`)
+
+- **Cuándo usar:** Construir el DFA completo del patrón `p` (`aut[estado][letra]`) para hacer **DP o exponenciación de matrices** contando cuántas cadenas de longitud $L$ contienen (o no contienen) a `p` como subcadena.
+- **Cuándo no usar / alternativa:** Si solo buscas `p` una vez en un texto fijo, `kmp_search` (§5.3.1) ahorra el factor $26$ de tiempo y memoria.
+- **Contrato:** Requiere alfabeto `'a'..'z'` minúsculas. `aut` tiene dimensión `(|p| + 1) x 26`; el estado `|p|` representa haber completado el patrón `p`. Dependencias: `prefix_function` (§5.3.1).
+- **Complejidad:** $\mathcal{O}(26 \cdot |P|)$ tiempo y memoria.
+- **Formato de entrada:** Un patrón `p` en minúsculas y un texto `t` para alimentar al autómata.
+
+**Entrada:**
+```text
+aba
+ababa
+```
+
+**Salida:**
+```text
+2
+```
+
+**Cómo leer la entrada:**
+```cpp
+string p, t;
+cin >> p >> t;
+```
+
+**Implementación:**
+```cpp
+// 3. Automata KMP: aut[i][c] = nuevo estado si llevamos 'i'
+// chars de 'p'
 //    coincidentes y agregamos la letra ('a' + c).
 vector<vi> build_kmp_automaton(const string& p) {
   int m = sz(p);
@@ -2451,26 +4171,49 @@ vector<vi> build_kmp_automaton(const string& p) {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto aut = build_kmp_automaton(p);
+int state = 0, hits = 0;
+for (char c : t) {
+  state = aut[state][c - 'a'];
+  if (state == sz(p)) hits++;
+}
+cout << hits << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si el alfabeto incluye mayúsculas o dígitos, ampliar la segunda dimensión de `26` al tamaño del alfabeto y ajustar `c - 'a'`.
+
 ------------------------------------------------------------------------
 
 ### 5.4 Z-Algorithm y Algoritmo de Manacher (Palíndromos Pares e Impares)
 
-- **¿Cuándo usar?**:
+#### 5.4.1 Z-Algorithm (`z_function`)
 
-  - **Z-Algorithm**: `z[i]` almacena directamente la **longitud del
-    prefijo común más largo entre toda la cadena $S$ y el sufijo que
-    empieza en $i$ ($S\lbrack i..n - 1\rbrack$)**. Más intuitivo que
-    KMP cuando el problema habla explícitamente de prefijos comunes con
-    sufijos.
+- **Cuándo usar:** Calcular en $\mathcal{O}(N)$ para todo $i \in [1, N-1]$ la longitud del Mayor Prefijo Común (`z[i]`) entre `s` y el sufijo `s[i..N-1]`.
+- **Cuándo no usar / alternativa:** Si necesitas el LCP entre **cualquier** par de sufijos `s[i..]` y `s[j..]`, usar `SuffixArray` + Kasai (§5.6.1) o `PolyHash` (§5.2).
+- **Contrato:** Índices **0-based**. Por convención `z[0] = 0` (algunos problemas definen `z[0] = n`; asignarlo manualmente si se requiere). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(|S|)$ tiempo y $\mathcal{O}(|S|)$ memoria.
+- **Formato de entrada:** Una cadena `s` sin espacios.
 
-  - **Algoritmo de Manacher**: Calcula en $\mathcal{O}(N)$ el **radio
-    del palíndromo más largo centrado en cada posición $i$** (tanto
-    para longitud impar como par). Permite saber todos los $O(N)$
-    palíndromos maximales de una cadena sin usar Hashing.
+**Entrada:**
+```text
+aabcaabx
+```
 
-- **Complejidad**: $\mathcal{O}(N)$ tiempo y memoria.
+**Salida:**
+```text
+0 1 0 0 3 1 0 0
+```
 
-``` cpp
+**Cómo leer la entrada:**
+```cpp
+string s;
+cin >> s;
+```
+
+**Implementación:**
+```cpp
 // 1. Z-Algorithm: z[i] = LCP(s[0..n-1], s[i..n-1])
 vi z_function(const string& s) {
   int n = sz(s), l = 0, r = 0;
@@ -2482,12 +4225,52 @@ vi z_function(const string& s) {
   }
   return z;
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+vi z = z_function(s);
+for (int i = 0; i < sz(z); ++i)
+  cout << z[i] << (i + 1 == sz(z) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Para buscar `pat` en `text` con Z-Algorithm, construir `pat + '#' + text` con un carácter separador `'#'` que no aparezca en ninguna de las dos cadenas.
+
+#### 5.4.2 Algoritmo de Manacher para Palíndromos Pares e Impares (`Manacher`)
+
+- **Cuándo usar:** Encontrar en $\mathcal{O}(|S|)$ el radio del mayor palíndromo centrado en cada carácter y entre cada par de caracteres adyacentes, y consultar si cualquier subcadena `s[l..r]` es palíndromo en $\mathcal{O}(1)$ (`is_pal(l, r)`).
+- **Cuándo no usar / alternativa:** Si necesitas contar cuántos palíndromos **distintos** existen o sus frecuencias como estados de un autómata, usar `PalindromicTree` / Eertree (§5.6.3).
+- **Contrato:** Índices **0-based** (`0 <= l <= r < |s|`). `is_pal(l, r)` responde en $\mathcal{O}(1)$; `max_pal_len()` retorna la longitud del mayor palíndromo en `s`. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(|S|)$ tiempo y memoria; `is_pal(l, r)` en $\mathcal{O}(1)$.
+- **Formato de entrada:** Una cadena `s` y dos índices `l r` (0-based).
+
+**Entrada:**
+```text
+babad
+0 2
+```
+
+**Salida:**
+```text
+3 1
+```
+
+**Cómo leer la entrada:**
+```cpp
+string s;
+int l, r;
+cin >> s >> l >> r;
+```
+
+**Implementación:**
+```cpp
 // 2. Manacher (Unificado con '#' para pares e impares)
 // Transforma "abba" -> "#a#b#b#a#".
-// En el vector retornado 'p', p[i] - 1 es la longitud real del mayor
+// En el vector retornado 'p', p[i] - 1 es la longitud real
+// del mayor
 // palindromo centrado en t[i].
-// Ademas, devuelve si s[l..r] (0-indexed) es palindromo en O(1)!
+// Ademas, devuelve si s[l..r] (0-indexed) es palindromo en
+// O(1)!
 struct Manacher {
   vi p;
   Manacher(const string& s) {
@@ -2497,7 +4280,9 @@ struct Manacher {
     p.assign(n, 0);
     for (int i = 0; i < n; ++i) {
       int k = (i > r) ? 1 : min(p[l + r - i], r - i + 1);
-      while (0 <= i - k && i + k < n && t[i - k] == t[i + k]) k++;
+      while (
+        0 <= i - k && i + k < n && t[i - k] == t[i
+          + k]) k++;
       p[i] = k--;
       if (i + k > r) { l = i - k; r = i + k; }
     }
@@ -2514,40 +4299,133 @@ struct Manacher {
 };
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+Manacher man(s);
+cout << man.max_pal_len() << " " << man.is_pal(l,
+  r) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) La cadena transformada interna `t` tiene tamaño `2 * |s| + 3` con centinelas `^` y `$`; usar siempre el método `is_pal(l, r)` para evitar errores de mapeo de índices.
+
 ------------------------------------------------------------------------
 
 ### 5.5 Trie (Strings y Trie Binario para Max XOR) y Aho-Corasick (Múltiples Patrones)
 
-- **¿Cuándo usar?**:
+#### 5.5.1 Trie de Strings: Prefijos y Palabras Exactas (`StringTrie`)
 
-  - **Trie de Strings**: Insertar un diccionario de cadenas y consultar
-    cuántas palabras tienen a $P$ como prefijo en
-    $\mathcal{O}(|P|)$.
+- **Cuándo usar:** Insertar un diccionario de cadenas y consultar cuántas palabras comparten un prefijo dado (`count_prefix(s)`) o cuántas veces se insertó exactamente `s` (`count_exact(s)`).
+- **Cuándo no usar / alternativa:** Si necesitas buscar todas las palabras del diccionario como subcadenas dentro de un texto largo, usar **Aho-Corasick** (§5.5.3) que agrega enlaces de fallo al Trie.
+- **Contrato:** Alfabeto `'a'..'z'` minúsculas. `count_prefix(s)` y `count_exact(s)` retornan `0` si el camino no existe. Dependencias: template base (§1.1).
+- **Complejidad:** `insert`, `count_prefix`, `count_exact` en $\mathcal{O}(|S|)$ tiempo; memoria $\mathcal{O}(26 \cdot \sum |S|)$.
+- **Formato de entrada:** `N` palabras a insertar, seguidas de un prefijo `pref` y una palabra `w` a consultar.
 
-  - **Trie Binario (BitTrie)**: Insertar/eliminar enteros de 60 bits y
-    hallar en $\mathcal{O}(\log(\max A))$ qué número $y$ del
-    conjunto **maximiza (o minimiza) $x \oplus y$**, o cuántos cumplen
-    $x \oplus y < K$.
+**Entrada:**
+```text
+3
+apple
+app
+banana
+ap
+ba
+```
 
-  - **Aho-Corasick**: Cuando te dan un **diccionario de múltiples
-    patrones $\left\{ P_{1},P_{2},\ldots,P_{k} \right\}$** y debes
-    buscar todas sus ocurrencias simultáneamente sobre un texto $T$ (o
-    hacer DP sobre el autómata para contar cadenas que contienen/evitan
-    un conjunto de palabras prohibidas).
+**Salida:**
+```text
+2 1
+```
 
-- **Complejidad**: Trie: $\mathcal{O}(|S|)$. BitTrie:
-  $\mathcal{O}(\mathrm{\text{MAX\_B}})$. Aho-Corasick: Construcción
-  $\mathcal{O}(\sum|P_{i}| \cdot \Sigma)$, búsqueda en texto
-  $\mathcal{O}(|T|)$.
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<string> words(n);
+for (auto& w : words) cin >> w;
+string pref, query_w;
+cin >> pref >> query_w;
+```
 
-``` cpp
-// 1. Trie Binario (Max XOR Pair con insercion y borrado)
+**Implementación:**
+```cpp
+// 0. Trie de Strings (Conteo de prefijos y palabras exactas
+// en O(|S|))
+struct StringTrie {
+  struct Node { int next[26], pref = 0, end_w = 0; Node() {
+    fill(begin(next), end(next), -1); } };
+  vector<Node> t = {Node()};
+  void insert(const string& s) {
+    int u = 0; t[u].pref++;
+    for (char c : s) {
+      int ch = c - 'a';
+      if (t[u].next[ch] == -1) { t[u].next[ch] = sz(t);
+        t.emplace_back(); }
+      u = t[u].next[ch]; t[u].pref++;
+    }
+    t[u].end_w++;
+  }
+  int count_prefix(const string& p) const {
+    int u = 0;
+    for (char c : p) {
+      int ch = c - 'a';
+      if (t[u].next[ch] == -1) return 0;
+      u = t[u].next[ch];
+    }
+    return t[u].pref;
+  }
+};
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+StringTrie st;
+for (const auto& w : words) st.insert(w);
+cout << st.count_prefix(pref) << " " << st.count_prefix(
+  query_w) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si la memoria es ajustada y el alfabeto es grande, reemplazar `int nxt[26]` por `map<char, int>` (paga $\mathcal{O}(\log \Sigma)$ pero ahorra memoria).
+
+#### 5.5.2 Trie Binario para Max/Min XOR Dinámico (`BitTrie`)
+
+- **Cuándo usar:** Mantener un multiconjunto dinámico de enteros bajo inserción (`update(x, +1)`), borrado (`update(x, -1)`) y consultar en $\mathcal{O}(B)$ qué elemento $y$ del conjunto maximiza `x ^ y` (`max_xor(x)`) o minimiza `x ^ y` (`min_xor(x)`).
+- **Cuándo no usar / alternativa:** Si el problema pide maximizar el XOR de un **subconjunto de elementos** (no de un único elemento $y$), usar **Base de XOR / Gauss Binario** (`XorBasis`, §7.6.2).
+- **Contrato:** Precondición obligatoria: el Trie **no debe estar vacío** al llamar `max_xor(x)` o `min_xor(x)`, y solo se debe borrar (`delta = -1`) un valor que haya sido insertado previamente. `B = 30` cubre $0 \le x < 2^{30}$ (cambiar `B = 61` para `ll`). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(B)$ tiempo por `update`, `max_xor`, `min_xor`; memoria $\mathcal{O}(N \cdot B)$.
+- **Formato de entrada:** `N` enteros a insertar y un entero `x` para consultar su máximo y mínimo XOR.
+
+**Entrada:**
+```text
+3
+3 10 5
+6
+```
+
+**Salida:**
+```text
+12 3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vll a(n);
+for (ll& v : a) cin >> v;
+ll x;
+cin >> x;
+```
+
+**Implementación:**
+```cpp
+// 1. Trie Binario (Max/Min XOR con insercion y borrado;
+// precondicion: no vacio)
 struct BitTrie {
   static const int B = 60; // 30 para int, 60 para long long
   struct Node { int ch[2] = {-1, -1}, cnt = 0; };
   vector<Node> t = {Node()};
 
-  void update(ll x, int delta) { // delta = +1 insertar, -1 borrar
+  // delta = +1 insertar, -1 borrar (x debe existir)
+  void update(ll x, int delta) {
     int u = 0;
     for (int b = B; b >= 0; --b) {
       int bit = (x >> b) & 1LL;
@@ -2559,7 +4437,8 @@ struct BitTrie {
       t[u].cnt += delta;
     }
   }
-  ll max_xor(ll x) const { // Retorna max(x ^ y) para 'y' en el Trie
+  // Retorna max(x ^ y) para 'y' activo en el Trie
+  ll max_xor(ll x) const {
     int u = 0;
     ll ans = 0;
     for (int b = B; b >= 0; --b) {
@@ -2573,9 +4452,67 @@ struct BitTrie {
     }
     return ans;
   }
+  // Retorna min(x ^ y) para 'y' activo en el Trie
+  ll min_xor(ll x) const {
+    int u = 0;
+    ll ans = 0;
+    for (int b = B; b >= 0; --b) {
+      int bit = (x >> b) & 1LL;
+      if (t[u].ch[bit] != -1 && t[t[u].ch[bit]].cnt > 0) {
+        u = t[u].ch[bit];
+      } else {
+        ans |= (1LL << b);
+        u = t[u].ch[bit ^ 1];
+      }
+    }
+    return ans;
+  }
 };
+```
 
-// 2. Aho-Corasick (Multi-Pattern Matching + Automaton en O(sum|P| * 26))
+**Cómo llamarlo y producir la salida:**
+```cpp
+BitTrie bt;
+for (ll v : a) bt.update(v, +1);
+cout << bt.max_xor(x) << " " << bt.min_xor(x) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para contar cuántos elementos $y$ cumplen $(x \oplus y) < K$, recorrer de `B` a `0`: si el bit de $K$ es `1`, sumar `cnt` de la rama donde `(x ^ y)` tiene bit `0` y bajar por la rama donde tiene bit `1`.
+
+#### 5.5.3 Autómata de Aho-Corasick para Múltiples Patrones (`AhoCorasick`)
+
+- **Cuándo usar:** Buscar simultáneamente un diccionario de patrones $P_1, \dots, P_k$ dentro de un texto $T$ en tiempo lineal, o hacer DP sobre el autómata para contar cadenas que evitan todas las palabras prohibidas.
+- **Cuándo no usar / alternativa:** Para un solo patrón, KMP (§5.3.1) no requiere la matriz `26 * sum(|P|)`.
+- **Contrato:** Alfabeto `'a'..'z'`. Llamar a `insert(s, id)` para cada patrón y **obligatoriamente** llamar a `build()` una sola vez antes de procesar textos o usar las transiciones `t[u].next[c]`. Dependencias: template base (§1.1).
+- **Complejidad:** `insert` en $\mathcal{O}(\sum |P_i|)$; `build` en $\mathcal{O}(26 \sum |P_i|)$; `count_matches(text)` en $\mathcal{O}(|T|)$.
+- **Formato de entrada:** `K` patrones en minúsculas, seguidos de un texto `text`.
+
+**Entrada:**
+```text
+3
+he she his
+ahishers
+```
+
+**Salida:**
+```text
+3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int k;
+cin >> k;
+vector<string> pats(k);
+for (int i = 0; i < k; ++i) cin >> pats[i];
+string text;
+cin >> text;
+```
+
+**Implementación:**
+```cpp
+// 2. Aho-Corasick (Multi-Pattern Matching + Automaton en
+// O(sum|P| * 26))
 struct AhoCorasick {
   struct Node {
     int next[26], link = 0, exit_link = 0, cnt = 0;
@@ -2593,7 +4530,8 @@ struct AhoCorasick {
       }
       u = t[u].next[ch];
     }
-    t[u].cnt++; // Cantidad de patrones que terminan exactamente en u
+    // Cantidad de patrones que terminan exactamente en u
+    t[u].cnt++;
   }
   void build() {
     queue<int> q;
@@ -2602,7 +4540,8 @@ struct AhoCorasick {
     while (!q.empty()) {
       int u = q.front(); q.pop();
       int f = t[u].link;
-      t[u].cnt += t[f].cnt; // Acumula ocurrencias de sufijos
+      // Acumula ocurrencias de sufijos
+      t[u].cnt += t[f].cnt;
       t[u].exit_link = (t[f].cnt > 0) ? f : t[f].exit_link;
       for (int c = 0; c < 26; ++c) {
         int v = t[u].next[c];
@@ -2610,12 +4549,14 @@ struct AhoCorasick {
           t[v].link = t[f].next[c];
           q.push(v);
         } else {
-          t[u].next[c] = t[f].next[c]; // Transicion directa de automata
+          // Transicion directa de automata
+          t[u].next[c] = t[f].next[c];
         }
       }
     }
   }
-  // Cuenta el total de apariciones de todos los patrones dentro de 'text'
+  // Cuenta el total de apariciones de todos los patrones
+  // dentro de 'text'
   ll count_matches(const string& text) const {
     int u = 0;
     ll total = 0;
@@ -2628,54 +4569,47 @@ struct AhoCorasick {
 };
 ```
 
-**Ejemplo de Input y Uso (Aho-Corasick):**
+**Cómo llamarlo y producir la salida:**
+```cpp
+AhoCorasick ac;
+for (int i = 0; i < k; ++i) ac.insert(pats[i]);
+ac.build();
+cout << ac.count_matches(text) << '\n';
+```
 
-```
-Input: Patrones = {"he", "she", "his", "hers"}, Texto = "ushers"
-Ocurrencias dentro de "ushers": "she" (1), "he" (1), "hers" (1) -> Total = 3.
-```
-
-``` cpp
-int main() {
-  AhoCorasick ac;
-  for (string p : {"he", "she", "his", "hers"}) ac.insert(p);
-  ac.build();
-  cout << ac.count_matches("ushers") << "\n"; // 3
-}
-```
+- **Trampas y adaptaciones:** (1) Si necesitas la frecuencia individual de **cada** patrón $P_i$ (en vez de la suma total), acumular visitas en los nodos durante el recorrido de `text` y propagar en orden inverso de BFS hacia `t[u].link`.
 
 ------------------------------------------------------------------------
 
 ### 5.6 Suffix Array + LCP, Suffix Automaton (SAM) y Palindromic Tree (Eertree)
 
-- **¿Cuándo usar?**:
+#### 5.6.1 Suffix Array y Arreglo LCP de Kasai (`SuffixArray`)
 
-  - **Suffix Array + LCP**: Ordena lexicográficamente todos los sufijos
-    de $S$ en $\mathcal{O}(N\log N)$ y calcula `lcp[i]` (prefijo
-    común más largo entre sufijos adyacentes en el orden).
+- **Cuándo usar:** Ordenar lexicográficamente todos los sufijos de $S$, calcular el LCP entre sufijos adyacentes (`lcp[i]`) y contar subcadenas distintas ($\frac{N(N+1)}{2} - \sum \text{lcp}[i]$) o buscar patrones con búsqueda binaria.
+- **Cuándo no usar / alternativa:** Si necesitas consultar el número de ocurrencias de subcadenas por longitud o el estado mínimo que las acepta, `SuffixAutomaton` (§5.6.2) es más directo.
+- **Contrato:** `sa` tiene tamaño `N + 1` porque incluye el sufijo vacío centinela en `sa[0] = N`; los sufijos reales están en `sa[1..N]`. `lcp[i]` es el LCP entre `sa[i]` y `sa[i - 1]`. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción de `sa` en $\mathcal{O}(N \log N)$ y `lcp` (Kasai) en $\mathcal{O}(N)$; memoria $\mathcal{O}(N)$.
+- **Formato de entrada:** Una cadena `s` sin espacios.
 
-    - *Fórmula clave*: Número de subcadenas distintas =
-      $\frac{N(N + 1)}{2} - \sum_{i = 1}^{N}\mathrm{\text{lcp}}\lbrack i\rbrack$.
+**Entrada:**
+```text
+banana
+```
 
-  - **Suffix Automaton (SAM)**: El arma definitiva de strings en
-    $\mathcal{O}(N)$. Comprime todas las subcadenas de $S$ en un DAG
-    de a lo sumo $2N - 1$ estados. Resuelve: número de subcadenas
-    distintas
-    ($\sum(len\lbrack u\rbrack - len\lbrack link\lbrack u\rbrack\rbrack)$),
-    cuántas veces aparece cualquier patrón $P$ en
-    $\mathcal{O}(|P|)$, $K$-ésima subcadena lexicográfica y
-    **Subcadena Común Más Larga (LCS)** entre dos strings en
-    $\mathcal{O}(N)$.
+**Salida:**
+```text
+5 3 1 0 4 2
+15
+```
 
-  - **Palindromic Tree (Eertree)**: Estructura donde cada nodo es un
-    **palíndromo distinto** de $S$ (a lo sumo $N + 2$ nodos). Cuenta
-    palíndromos distintos y cuántas veces aparece cada uno en
-    $\mathcal{O}(N)$.
+**Cómo leer la entrada:**
+```cpp
+string s;
+cin >> s;
+```
 
-- **Complejidad**: Suffix Array $\mathcal{O}(N\log N)$; SAM y Eertree
-  $\mathcal{O}(N)$.
-
-``` cpp
+**Implementación:**
+```cpp
 // 1. Suffix Array + LCP (Kasai) en O(N log N)
 struct SuffixArray {
   vi sa, lcp, rank;
@@ -2684,7 +4618,8 @@ struct SuffixArray {
     vi x(all(s) + 1), y(n), ws(max(n, lim));
     sa = lcp = rank = y;
     iota(all(sa), 0);
-    for (int j = 0, p = 0; p < n; j = max(1, j * 2), lim = p) {
+    for (int j = 0, p = 0; p < n; j = max(1, j * 2),
+      lim = p) {
       p = j;
       for (int i = 0; i < n; ++i)
         y[i] = (sa[i] - j >= 0 ? 0 : n) + sa[i] - j;
@@ -2695,23 +4630,68 @@ struct SuffixArray {
       swap(x, y); p = 1; x[sa[0]] = 0;
       for (int i = 1; i < n; ++i) {
         a = sa[i - 1]; b = sa[i];
-        x[b] = (y[a] == y[b] && y[a + j] == y[b + j]) ? p - 1 : p++;
+        x[b] = (
+          y[a] == y[b] && y[a + j] == y[b + j]) ? p - 1
+            : p++;
       }
     }
     for (int i = 1; i < n; ++i) rank[sa[i]] = i;
     for (int i = 0, j; i < n - 1; lcp[rank[i++]] = k)
-      for (k && k--, j = sa[rank[i] - 1]; s[i + k] == s[j + k]; k++);
+      for (k && k--,
+        j = sa[rank[i] - 1]; s[i + k] == s[j + k]; k++);
   }
-  // Nota: sa[0] es el sufijo vacio '$'. Los sufijos reales estan en sa[1..n].
+  // Nota: sa[0] es el sufijo vacio '$'. Los sufijos reales
+  // estan en sa[1..n].
   // lcp[i] = LCP(sa[i - 1], sa[i]) para i in [1..n].
 };
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+SuffixArray sa(s);
+for (int i = 1; i <= sz(s); ++i)
+  cout << sa.sa[i] << (i == sz(s) ? '\n' : ' ');
+ll n = sz(s), distinct = n * (n + 1) / 2;
+for (int i = 2; i <= sz(s); ++i) distinct -= sa.lcp[i];
+cout << distinct << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para el LCP entre dos sufijos cualesquiera `i` y `j` con `rk[i] < rk[j]`, construir una `SparseTable` (§4.2) sobre `lcp` y consultar el mínimo en `[rk[i] + 1, rk[j]]`.
+
+#### 5.6.2 Suffix Automaton (`SuffixAutomaton`)
+
+- **Cuándo usar:** Representar de forma comprimida todas las subcadenas de $S$ en a lo sumo $2|S| - 1$ estados: contar subcadenas distintas, hallar la **subcadena contigua común más larga** (`longest_common_substring`) entre $S$ y $T$, o contar cuántas veces aparece cada subcadena (`propagate_occurrences`).
+- **Cuándo no usar / alternativa:** No confundir `longest_common_substring` (subcadena **contigua** en $\mathcal{O}(|S| + |T|)$) con `lcs_string` (§8.1.2, subsecuencia no necesariamente contigua en $\mathcal{O}(|S| \cdot |T|)$).
+- **Contrato:** Estado raíz = `0`. Cada estado `u` representa todas las subcadenas de longitud en `[st[st[u].link].len + 1, st[u].len]`. `propagate_occurrences()` ordena por longitud para acumular `cnt` hacia `link`. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(|S| \log \Sigma)$ (con `map`); `propagate_occurrences` en $\mathcal{O}(|S| \log |S|)$ por el `sort`; `longest_common_substring` en $\mathcal{O}(|T| \log \Sigma)$.
+- **Formato de entrada:** Dos cadenas `s` y `t`.
+
+**Entrada:**
+```text
+ababa
+babxy
+```
+
+**Salida:**
+```text
+9 bab
+```
+
+**Cómo leer la entrada:**
+```cpp
+string s, t;
+cin >> s >> t;
+```
+
+**Implementación:**
+```cpp
 // 2. Suffix Automaton (SAM) en O(N)
 struct SuffixAutomaton {
   struct State {
     int len = 0, link = -1;
     int next[26];
-    ll cnt = 0; // Frecuencia de aparicion del estado (endpos size)
+    // Frecuencia de aparicion del estado (endpos size)
+    ll cnt = 0;
     State() { fill(begin(next), end(next), -1); }
   };
   vector<State> st;
@@ -2721,10 +4701,12 @@ struct SuffixAutomaton {
     st.reserve(2 * sz(s) + 1);
     st.emplace_back();
     for (char c : s) extend(c - 'a');
-    // Propagar frecuencias (cnt) de estados largos a sus suffix links:
+    // Propagar frecuencias (cnt) de estados largos a sus
+    // suffix links:
     vi ord(sz(st) - 1);
     iota(all(ord), 1);
-    sort(all(ord), [&](int a, int b) { return st[a].len > st[b].len; });
+    sort(all(ord), [&](int a, int b) {
+      return st[a].len > st[b].len; });
     for (int u : ord) st[st[u].link].cnt += st[u].cnt;
   }
   void extend(int c) {
@@ -2747,7 +4729,8 @@ struct SuffixAutomaton {
         int clone = sz(st);
         st.pb(st[q]);
         st[clone].len = st[p].len + 1;
-        st[clone].cnt = 0; // Los clones no suman nueva ocurrencia base
+        // Los clones no suman nueva ocurrencia base
+        st[clone].cnt = 0;
         while (p != -1 && st[p].next[c] == q) {
           st[p].next[c] = clone;
           p = st[p].link;
@@ -2764,7 +4747,8 @@ struct SuffixAutomaton {
       ans += st[i].len - st[st[i].link].len;
     return ans;
   }
-  // Subcadena comun mas larga (LCS) entre S y otro string T en O(|T|):
+  // Subcadena comun mas larga (LCS) entre S y otro string T
+  // en O(|T|):
   string longest_common_substring(const string& t) const {
     int v = 0, l = 0, best_len = 0, best_pos = 0;
     for (int i = 0; i < sz(t); ++i) {
@@ -2779,7 +4763,43 @@ struct SuffixAutomaton {
     return t.substr(best_pos - best_len + 1, best_len);
   }
 };
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+SuffixAutomaton sam(s);
+cout << sam.count_distinct_substrings() << " "
+     << sam.longest_common_substring(t) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si el alfabeto es fijo `'a'..'z'` y el tiempo es muy ajustado, cambiar `map<char, int> next` por `int next[26]` inicializado en `-1` para quitar el factor $\log \Sigma$.
+
+#### 5.6.3 Palindromic Tree / Eertree (`PalindromicTree`)
+
+- **Cuándo usar:** Construir en $\mathcal{O}(|S|)$ el árbol de todas las subcadenas palindrómicas **distintas** de $S$ (a lo sumo $|S|$ palíndromos distintos), manteniendo sus longitudes, enlaces sufijos (`link`) y frecuencias.
+- **Cuándo no usar / alternativa:** Si solo necesitas saber si `s[l..r]` es palíndromo o el palíndromo más largo global, `Manacher` (§5.4.2) es más corto.
+- **Contrato:** Alfabeto `'a'..'z'`. El nodo `1` es la raíz imaginaria de longitud `-1` y el nodo `2` es la raíz vacía de longitud `0`; los palíndromos reales son los nodos `3..sz(t)-1` (por lo que hay `sz(t) - 3` palíndromos distintos). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(|S|)$ tiempo y $\mathcal{O}(26 \cdot |S|)$ memoria.
+- **Formato de entrada:** Una cadena `s` en minúsculas.
+
+**Entrada:**
+```text
+abacaba
+```
+
+**Salida:**
+```text
+7 7
+```
+
+**Cómo leer la entrada:**
+```cpp
+string s;
+cin >> s;
+```
+
+**Implementación:**
+```cpp
 // 3. Palindromic Tree (Eertree) en O(N)
 struct PalindromicTree {
   struct Node {
@@ -2794,14 +4814,16 @@ struct PalindromicTree {
   int last = 1;
 
   PalindromicTree(const string& str) : s(str) {
-    st.pb(Node(-1, 0)); // Nodo 0: raiz de longitud impar (-1)
+    // Nodo 0: raiz de longitud impar (-1)
+    st.pb(Node(-1, 0));
     st.pb(Node(0, 0));  // Nodo 1: raiz de longitud par (0)
     for (int i = 0; i < sz(s); ++i) add(i);
     for (int i = sz(st) - 1; i >= 2; --i)
       st[st[i].link].cnt += st[i].cnt;
   }
   int get_link(int v, int i) const {
-    while (i - st[v].len - 1 < 0 || s[i - st[v].len - 1] != s[i])
+    while (
+      i - st[v].len - 1 < 0 || s[i - st[v].len - 1] != s[i])
       v = st[v].link;
     return v;
   }
@@ -2821,21 +4843,17 @@ struct PalindromicTree {
 };
 ```
 
-**Ejemplo de Input y Uso (Suffix Automaton):**
+**Cómo llamarlo y producir la salida:**
+```cpp
+PalindromicTree pt(s);
+int distinct_pals = sz(pt.st) - 2;
+int max_len = 0;
+for (int i = 2; i < sz(pt.st); ++i)
+  max_len = max(max_len, pt.st[i].len);
+cout << distinct_pals << " " << max_len << '\n';
+```
 
-```
-Input: S = "ababa", T = "babab"
-Subcadenas distintas de "ababa": 9 ("a", "b", "ab", "ba", "aba", "bab", "abab", "baba", "ababa")
-LCS("ababa", "babab"): "baba" (longitud 4)
-```
-
-``` cpp
-int main() {
-  SuffixAutomaton sam("ababa");
-  cout << sam.count_distinct_substrings() << "\n";     // 9
-  cout << sam.longest_common_substring("babab") << "\n"; // "baba"
-}
-```
+- **Trampas y adaptaciones:** (1) Para obtener el número total de ocurrencias de cada palíndromo en $S$, recorrer los nodos desde `sz(pt.t) - 1` hacia `3` haciendo `t[t[i].link].cnt += t[i].cnt`.
 
 ------------------------------------------------------------------------
 
@@ -2843,29 +4861,36 @@ int main() {
 
 ### 6.1 Recorridos BFS: Grid BFS (Flood Fill), Multi-Source BFS (Aristas Invertidas) y 0-1 BFS
 
-- **¿Cuándo usar?**:
+#### 6.1.1 Grid BFS / Flood Fill con Identificador de Componentes (`flood_fill_bfs`)
 
-  - **Grid BFS / Flood Fill con ID**: Recorrer un laberinto/matriz 2D
-    etiquetando cada componente conexa con un `id` único para
-    precalcular métricas de toda la sala (área, perímetro, cuadros `*`
-    en las paredes) y responder $Q$ consultas en $\mathcal{O}(1)$
-    (ej. CF 598D).
+- **Cuándo usar:** Etiquetar componentes conexas en una grilla $R \times C$ con movimiento en 4 direcciones (`dx4, dy4`) y precalcular una métrica por componente (`ans_comp[id]`) para responder consultas en $\mathcal{O}(1)$.
+- **Cuándo no usar / alternativa:** Si las celdas cambian dinámicamente (se abren paredes online), usar **DSU** (§4.1.1) aplanando `(r, c) -> r * m + c`.
+- **Contrato:** Grilla 0-indexed de tamaño `n_g x m_g` en `grid_g`. Inicializar `comp_g` en `-1` antes de recorrer las celdas `.`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(R \cdot C)$ tiempo y memoria.
+- **Formato de entrada:** `R C`, seguido de `R` cadenas de longitud `C` con `.` y `*`.
 
-  - **Multi-Source BFS con Inversión de Aristas**: Hallar para **todos
-    los nodos** la distancia mínima hacia **cualquier nodo de un
-    conjunto meta $T$**. En grafos dirigidos se invierten las aristas
-    ($u \rightarrow v$ pasa a $v \rightarrow u$) y se meten todas
-    las metas a la cola con `dist = 0` al inicio (ej. CF 1272E).
+**Entrada:**
+```text
+3 4
+****
+*..*
+****
+```
 
-  - **0-1 BFS (`std::deque`)**: Camino más corto cuando los pesos de las
-    aristas son **únicamente $0$ o $1$**. Si el peso es $0$ haces
-    `push_front`, si es $1$ haces `push_back`. Corre en
-    $\mathcal{O}(V + E)$ puro (sin el $\log V$ de Dijkstra).
+**Salida:**
+```text
+6
+```
 
-- **Complejidad**: $\mathcal{O}(V + E)$ (o $\mathcal{O}(N \cdot M)$
-  en grillas).
+**Cómo leer la entrada:**
+```cpp
+cin >> n_g >> m_g;
+for (int i = 0; i < n_g; ++i) cin >> grid_g[i];
+memset(comp_g, -1, sizeof(comp_g));
+```
 
-``` cpp
+**Implementación:**
+```cpp
 // 1. Grid BFS / Flood Fill con Identificador de Componentes
 const int MAX_R = 1005, MAX_C = 1005;
 int n_g, m_g, comp_g[MAX_R][MAX_C], ans_comp[MAX_R * MAX_C];
@@ -2881,10 +4906,12 @@ void flood_fill_bfs(int sr, int sc, int id) {
     auto [r, c] = q.front(); q.pop();
     for (int d = 0; d < 4; ++d) {
       int nr = r + dx4[d], nc = c + dy4[d];
-      if (nr < 0 || nr >= n_g || nc < 0 || nc >= m_g) continue;
+      if (nr < 0 || nr >= n_g || nc < 0 || nc
+        >= m_g) continue;
       if (grid_g[nr][nc] == '*') {
         metric++; // Ejemplo: contar paredes '*' adyacentes
-      } else if (grid_g[nr][nc] == '.' && comp_g[nr][nc] == -1) {
+      } else if (
+        grid_g[nr][nc] == '.' && comp_g[nr][nc] == -1) {
         comp_g[nr][nc] = id;
         q.push({nr, nc});
       }
@@ -2892,8 +4919,55 @@ void flood_fill_bfs(int sr, int sc, int id) {
   }
   ans_comp[id] = metric;
 }
+```
 
-// 2. Multi-Source BFS (con aristas invertidas adj_rev si es dirigido)
+**Cómo llamarlo y producir la salida:**
+```cpp
+flood_fill_bfs(1, 1, 1);
+cout << ans_comp[comp_g[1][1]] << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Marcar `comp_g[nr][nc] = id` **al encolar** (no al desencolar) para no insertar la misma celda múltiples veces y provocar TLE/MLE.
+
+#### 6.1.2 Multi-Source BFS y Aristas Invertidas (`multi_source_bfs`)
+
+- **Cuándo usar:** Hallar la distancia mínima desde cada nodo hacia el nodo más cercano de un conjunto de fuentes/salidas $S$ en un grafo sin pesos.
+- **Cuándo no usar / alternativa:** Si las aristas tienen pesos positivos arbitrarios, inicializar un **Dijkstra multi-fuente** (§6.3.1) metiendo todas las fuentes con distancia `0` al min-heap.
+- **Contrato:** Nodos 1-indexed (`1..n`). Si el grafo es dirigido y quieres ir *hacia* las salidas $S$, cargar las aristas al revés (`v -> u`) en `adj_rev`. `dist_ms[u] = -1` si es inalcanzable. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V + E)$ tiempo y memoria.
+- **Formato de entrada:** `N M K`, luego `K` fuentes y `M` aristas dirigidas `u v`.
+
+**Entrada:**
+```text
+4 3 1
+4
+1 2
+2 4
+3 4
+```
+
+**Salida:**
+```text
+2 1 1 0
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m, k;
+cin >> n >> m >> k;
+vi sources(k);
+for (int& s : sources) cin >> s;
+for (int i = 1; i <= n; ++i) adj_rev[i].clear();
+for (int i = 0; i < m; ++i) {
+  int u, v; cin >> u >> v;
+  adj_rev[v].pb(u);
+}
+```
+
+**Implementación:**
+```cpp
+// 2. Multi-Source BFS (con aristas invertidas adj_rev si es
+// dirigido)
 vi adj_rev[200005];
 int dist_ms[200005];
 
@@ -2911,8 +4985,55 @@ void multi_source_bfs(const vi& sources, int n) {
     }
   }
 }
+```
 
-// 3. 0-1 BFS en Grafo General o Grilla con Reconstruccion de Camino
+**Cómo llamarlo y producir la salida:**
+```cpp
+multi_source_bfs(sources, n);
+for (int i = 1; i <= n; ++i)
+  cout << dist_ms[i] << (i == n ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) No correr un BFS separado desde cada fuente ($\mathcal{O}(K(V+E))$ da TLE); meter las $K$ fuentes juntas en la cola inicial.
+
+#### 6.1.3 0-1 BFS con `std::deque` y Reconstrucción (`bfs_01`, `get_path_01`)
+
+- **Cuándo usar:** Camino más corto desde `s` cuando todos los pesos de arista son exclusivamente $0$ o $1$ (ej. laberintos donde romper pared o cambiar dirección cuesta $1$ y avanzar cuesta $0$).
+- **Cuándo no usar / alternativa:** Si hay pesos mayores que $1$ (como $\{0, 1, 2\}$), el `deque` pierde monotonía; usar **Dijkstra** (§6.3.1).
+- **Contrato:** Nodos 1-indexed (`1..n`). Arista de peso `0` se inserta con `push_front`, peso `1` con `push_back`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V + E)$ tiempo y memoria.
+- **Formato de entrada:** `N M S T`, seguido de `M` aristas dirigidas `u v w` ($w \in \{0, 1\}$).
+
+**Entrada:**
+```text
+4 4 1 4
+1 2 1
+1 3 0
+3 2 0
+2 4 1
+```
+
+**Salida:**
+```text
+1
+1 3 2 4
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m, s, t;
+cin >> n >> m >> s >> t;
+for (int i = 1; i <= n; ++i) adj01[i].clear();
+for (int i = 0; i < m; ++i) {
+  int u, v, w; cin >> u >> v >> w;
+  adj01[u].pb({v, w});
+}
+```
+
+**Implementación:**
+```cpp
+// 3. 0-1 BFS en Grafo General o Grilla con Reconstruccion
+// de Camino
 vector<pii> adj01[200005]; // {vecino, peso_0_o_1}
 int dist01[200005], par01[200005];
 
@@ -2937,69 +5058,65 @@ void bfs_01(int s, int n) {
 vi get_path_01(int target) {
   if (dist01[target] == INF_INT) return {};
   vi path;
-  for (int cur = target; cur != -1; cur = par01[cur]) path.pb(cur);
+  for (int cur = target; cur != -1; cur
+    = par01[cur]) path.pb(cur);
   reverse(all(path));
   return path;
 }
 ```
 
-**Ejemplo de Input y Uso (0-1 BFS):**
-
-```
-Input: N = 4 nodos, M = 4 aristas (u v w con w in {0, 1}):
-4 4
-1 2 1
-1 3 1
-2 3 0
-3 4 0
-Camino mas corto de 1 a 4: 1 -> 2 -> 3 -> 4 (costo total = 1 + 0 + 0 = 1).
+**Cómo llamarlo y producir la salida:**
+```cpp
+bfs_01(s, n);
+vi path = get_path_01(t);
+cout << dist01[t] << '\n';
+for (int i = 0; i < sz(path); ++i)
+  cout << path[i] << (i + 1 == sz(path) ? '\n' : ' ');
 ```
 
-``` cpp
-int main() {
-  int n = 4;
-  adj01[1] = {{2, 1}, {3, 1}};
-  adj01[2] = {{1, 1}, {3, 0}};
-  adj01[3] = {{1, 1}, {2, 0}, {4, 0}};
-  adj01[4] = {{3, 0}};
-  bfs_01(1, n);
-  vi path = get_path_01(4); // [1, 2, 3, 4], dist01[4] == 1
-}
-```
+- **Trampas y adaptaciones:** (1) Un mismo nodo puede entrar al `deque` primero con costo $+1$ y luego mejorarse con costo $+0$; verificar `dist01[u] + w < dist01[v]` antes de relajar.
 
 ------------------------------------------------------------------------
 
 ### 6.2 Patrones DFS: Grafo Bipartito, Ciclos, Euler Tour (`tin`/`tout`), DFS en Complemento y Conteo de Triángulos
 
-- **¿Cuándo usar?**:
+#### 6.2.1 Grafo Bipartito y 2-Coloreo por DFS (`dfs_bipartite`)
 
-  - **Bipartito (2-Coloreo)**: Dividir nodos en 2 grupos sin aristas
-    internas (equivalentemente: verificar que **no existan ciclos de
-    longitud impar**).
+- **Cuándo usar:** Determinar si un grafo no dirigido carece de ciclos de longitud impar y particionar sus nodos en dos conjuntos independientes (colores `1` y `2`).
+- **Cuándo no usar / alternativa:** Si las aristas se agregan online y quieres mantener bipartición con deshacer, usar **DSU con paridad / Rollback** (§4.1.2).
+- **Contrato:** Nodos 1-indexed (`1..n`) en `adj_dfs`. Inicializar `col_bip[1..n] = 0` y lanzar `dfs_bipartite(i, 1)` desde cada componente no visitada. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V + E)$ tiempo y memoria.
+- **Formato de entrada:** `N M`, seguido de `M` aristas no dirigidas `u v`.
 
-  - **Detección de Ciclos en Dirigido**: Verificar si hay dependencias
-    circulares usando 3 colores (`0 = no visitado`,
-    `1 = en la pila actual`, `2 = cerrado`).
+**Entrada:**
+```text
+4 4
+1 2
+2 3
+3 4
+4 1
+```
 
-  - **Euler Tour (`tin`/`tout`)**: Aplanar un árbol en un arreglo 1D
-    para que el subárbol de $u$ sea el intervalo contiguo
-    `[tin[u], tout[u]]` y responder si $u$ es ancestro de $v$ en
-    $\mathcal{O}(1)$.
+**Salida:**
+```text
+1
+1 2 1 2
+```
 
-  - **DFS en Grafo Complemento**: Cuando te dan las $M$ aristas
-    **prohibidas** de un grafo completo de $N = 2 \cdot 10^{5}$ nodos
-    y debes hallar las componentes conexas de las aristas **permitidas**
-    en $\mathcal{O}((N + M)\log N)$.
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+for (int i = 1; i <= n; ++i) { adj_dfs[i].clear();
+  col_bip[i] = 0; }
+for (int i = 0; i < m; ++i) {
+  int u, v; cin >> u >> v;
+  adj_dfs[u].pb(v); adj_dfs[v].pb(u);
+}
+```
 
-  - **Conteo de Triángulos en $\mathcal{O}(M\sqrt{M})$**: Contar todos
-    los ciclos de longitud 3 $(u,v,w)$ en un grafo disperso orientando
-    las aristas de menor a mayor grado.
-
-- **Complejidad**: Bipartito/Ciclos/Euler Tour: $\mathcal{O}(V + E)$;
-  Complemento: $\mathcal{O}((V + E)\log V)$; Triángulos:
-  $\mathcal{O}(M\sqrt{M})$.
-
-``` cpp
+**Implementación:**
+```cpp
 // 1. Grafo Bipartito (2-Coloreo con colores 1 y 2)
 vi adj_dfs[200005];
 int col_bip[200005]; // Inicializar en 0
@@ -3012,20 +5129,119 @@ bool dfs_bipartite(int u, int c) {
   }
   return true;
 }
+```
 
-// 2. Ciclo en Grafo Dirigido (0 = blanco, 1 = gris/activo, 2 = negro)
+**Cómo llamarlo y producir la salida:**
+```cpp
+bool ok = true;
+for (int i = 1; i <= n; ++i)
+  if (!col_bip[i] && !dfs_bipartite(i, 1)) ok = false;
+cout << ok << '\n';
+for (int i = 1; i <= n; ++i)
+  cout << col_bip[i] << (i == n ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Iterar `for (int i = 1; i <= n; ++i)` porque el grafo puede ser desconexo.
+
+#### 6.2.2 Detección de Ciclo en Grafo Dirigido con 3 Estados (`dfs_dir_cycle`)
+
+- **Cuándo usar:** Detectar si un grafo dirigido contiene algún ciclo dirigido usando coloreo de 3 estados (`0` no visitado, `1` en la pila recursiva actual, `2` cerrado).
+- **Cuándo no usar / alternativa:** Si además necesitas el orden topológico o comprimir los ciclos en un DAG, usar `topological_sort` (§6.5.1) o `TarjanSCC` (§6.5.3).
+- **Contrato:** Nodos 1-indexed (`1..n`) en `adj_dfs`. Un ciclo dirigido existe si y solo si se encuentra una arista hacia un nodo con `state_dir[v] == 1`. Dependencias: `adj_dfs` (§6.2.1).
+- **Complejidad:** $\mathcal{O}(V + E)$ tiempo y memoria.
+- **Formato de entrada:** `N M`, seguido de `M` aristas dirigidas `u v`.
+
+**Entrada:**
+```text
+3 3
+1 2
+2 3
+3 1
+```
+
+**Salida:**
+```text
+1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+for (int i = 1; i <= n; ++i) { adj_dfs[i].clear();
+  state_dir[i] = 0; }
+for (int i = 0; i < m; ++i) {
+  int u, v; cin >> u >> v;
+  adj_dfs[u].pb(v);
+}
+```
+
+**Implementación:**
+```cpp
+// 2. Ciclo en Grafo Dirigido (0 = blanco, 1 = gris/activo,
+// 2 = negro)
 int state_dir[200005];
 bool dfs_dir_cycle(int u) {
   state_dir[u] = 1;
   for (int v : adj_dfs[u]) {
-    if (state_dir[v] == 1) return true; // Back-edge encontrada
+    // Back-edge encontrada
+    if (state_dir[v] == 1) return true;
     if (state_dir[v] == 0 && dfs_dir_cycle(v)) return true;
   }
   state_dir[u] = 2;
   return false;
 }
+```
 
-// 3. Euler Tour en Arboles (tin, tout y ancestralidad en O(1))
+**Cómo llamarlo y producir la salida:**
+```cpp
+bool cyc = false;
+for (int i = 1; i <= n; ++i)
+  if (state_dir[i] == 0 && dfs_dir_cycle(i)) cyc = true;
+cout << cyc << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) En grafos dirigidos, ver un nodo ya visitado con `state_dir[v] == 2` (*cross-edge* o *forward-edge*) **no** es un ciclo; solo `state_dir[v] == 1` (*back-edge*) indica ciclo.
+
+#### 6.2.3 Euler Tour en Árboles y Ancestralidad en $\mathcal{O}(1)$ (`dfs_euler`, `is_ancestor`)
+
+- **Cuándo usar:** Aplanar un árbol en un arreglo contiguo donde el subárbol de cada nodo `u` ocupa exactamente el intervalo `[tin_e[u], tout_e[u]]`, permitiendo consultar en $\mathcal{O}(1)$ si `u` es ancestro de `v` o actualizar/consultar subárboles con Fenwick/Segment Tree.
+- **Cuándo no usar / alternativa:** Si las consultas son sobre **caminos** entre `u` y `v` con actualizaciones de peso, el rango `[tin, tout]` no representa caminos; usar **HLD** (§4.8).
+- **Contrato:** Árbol 1-indexed en `adj_dfs`. Reiniciar `timer_e = 0` antes de llamar `dfs_euler(root, 0)`. Dependencias: `adj_dfs` (§6.2.1).
+- **Complejidad:** $\mathcal{O}(N)$ preprocesamiento y $\mathcal{O}(1)$ por consulta `is_ancestor`.
+- **Formato de entrada:** `N`, seguido de `N - 1` aristas del árbol (raíz `1`) y dos nodos `u v`.
+
+**Entrada:**
+```text
+4
+1 2
+1 3
+2 4
+2 4
+```
+
+**Salida:**
+```text
+1 0
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+for (int i = 1; i <= n; ++i) adj_dfs[i].clear();
+for (int i = 0; i < n - 1; ++i) {
+  int u, v; cin >> u >> v;
+  adj_dfs[u].pb(v); adj_dfs[v].pb(u);
+}
+int u_q, v_q;
+cin >> u_q >> v_q;
+```
+
+**Implementación:**
+```cpp
+// 3. Euler Tour en Arboles (tin, tout y ancestralidad en
+// O(1))
 int tin_e[200005], tout_e[200005], timer_e = 0;
 void dfs_euler(int u, int p) {
   tin_e[u] = ++timer_e;
@@ -3036,9 +5252,57 @@ void dfs_euler(int u, int p) {
 bool is_ancestor(int u, int v) { // ¿u es ancestro de v?
   return tin_e[u] <= tin_e[v] && tout_e[v] <= tout_e[u];
 }
+```
 
-// 4. Componentes Conexas en el Grafo Complemento en O((N + M) log N)
-vector<vi> complement_components(int n, vector<vi>& forbidden_adj) {
+**Cómo llamarlo y producir la salida:**
+```cpp
+timer_e = 0;
+dfs_euler(1, 0);
+cout << is_ancestor(u_q, v_q) << " " << is_ancestor(v_q,
+  u_q) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Con este Euler Tour de $N$ tiempos (`++timer_e` solo al entrar), el tamaño del subárbol de `u` es `tout_e[u] - tin_e[u] + 1`.
+
+#### 6.2.4 Componentes Conexas en el Grafo Complemento (`complement_components`)
+
+- **Cuándo usar:** Hallar las componentes conexas de un grafo donde existen todas las $\binom{N}{2}$ aristas **excepto** $M$ aristas prohibidas dadas en la entrada ($N, M \le 2 \cdot 10^5$).
+- **Cuándo no usar / alternativa:** Si $N \le 2000$, construir la matriz de adyacencia explícita y hacer BFS normal en $\mathcal{O}(N^2)$ es más simple.
+- **Contrato:** Nodos 1-indexed (`1..n`). `forbidden_adj[u]` contiene los vecinos prohibidos de `u`. Mantiene los nodos aún no visitados en un `std::set<int>` y salta sobre los prohibidos. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}((N + M) \log N)$ tiempo y $\mathcal{O}(N + M)$ memoria.
+- **Formato de entrada:** `N M`, seguido de `M` aristas prohibidas `u v`.
+
+**Entrada:**
+```text
+4 4
+1 3
+1 4
+2 3
+2 4
+```
+
+**Salida:**
+```text
+2
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vector<vi> forb(n + 1);
+for (int i = 0; i < m; ++i) {
+  int u, v; cin >> u >> v;
+  forb[u].pb(v); forb[v].pb(u);
+}
+```
+
+**Implementación:**
+```cpp
+// 4. Componentes Conexas en el Grafo Complemento en O((N +
+// M) log N)
+vector<vi> complement_components(int n,
+  vector<vi>& forbidden_adj) {
   for (int i = 1; i <= n; ++i) sort(all(forbidden_adj[i]));
   set<int> unvis;
   for (int i = 1; i <= n; ++i) unvis.insert(i);
@@ -3065,8 +5329,51 @@ vector<vi> complement_components(int n, vector<vi>& forbidden_adj) {
   }
   return comps;
 }
+```
 
-// 5. Contar Triangulos (3-ciclos) en un grafo en O(M * sqrt(M))
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto comps = complement_components(n, forb);
+cout << sz(comps) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) El algoritmo es $\mathcal{O}((N + M)\log N)$ porque cada vez que `binary_search` da `true` se paga una de las $2M$ aristas prohibidas, y cuando da `false` el nodo se borra definitivamente del `set`.
+
+#### 6.2.5 Conteo de Triángulos ($K_3$) por Orientación de Grado (`count_triangles`)
+
+- **Cuándo usar:** Contar exactamente cuántos ciclos de longitud 3 ($u - v - w - u$) existen en un grafo simple no dirigido con $N, M \le 2 \cdot 10^5$.
+- **Cuándo no usar / alternativa:** Si el grafo tiene multiaristas o lazos, limpiar primero `edges` con `sort` + `unique` y descartar `u == v`.
+- **Contrato:** Nodos 1-indexed (`1..n`). Orienta cada arista desde el nodo de menor grado hacia el de mayor grado (desempatando por índice), garantizando grado de salida $\le \sqrt{2M}$ en el DAG resultante. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(M \sqrt{M})$ tiempo y $\mathcal{O}(N + M)$ memoria.
+- **Formato de entrada:** `N M`, seguido de `M` aristas `u v`.
+
+**Entrada:**
+```text
+4 5
+1 2
+2 3
+3 1
+3 4
+4 1
+```
+
+**Salida:**
+```text
+2
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vector<pii> edges(m);
+for (auto& [u, v] : edges) cin >> u >> v;
+```
+
+**Implementación:**
+```cpp
+// 5. Contar Triangulos (3-ciclos) en un grafo en O(M *
+// sqrt(M))
 ll count_triangles(int n, const vector<pii>& edges) {
   vi deg(n + 1, 0), mark(n + 1, 0);
   for (auto [u, v] : edges) { deg[u]++; deg[v]++; }
@@ -3086,26 +5393,53 @@ ll count_triangles(int n, const vector<pii>& edges) {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << count_triangles(n, edges) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) La misma orientación por grado sirve para enumerar ciclos de longitud 4 ($C_4$) en $\mathcal{O}(M \sqrt{M})$.
+
 ------------------------------------------------------------------------
 
 ### 6.3 Caminos Más Cortos: Dijkstra, Bellman-Ford / SPFA (Ciclo Negativo) y Floyd-Warshall
 
-- **¿Cuándo usar?**:
+#### 6.3.1 Dijkstra con Min-Heap y Reconstrucción (`dijkstra`, `get_path_dij`)
 
-  - **Dijkstra**: Un origen $S$ hacia todos los demás en grafos con
-    **pesos $\geq 0$**. $\mathcal{O}((V + E)\log V)$.
+- **Cuándo usar:** Caminos más cortos desde una fuente `s` en grafos dirigidos o no dirigidos con pesos **no negativos** ($w_e \ge 0$).
+- **Cuándo no usar / alternativa:** Si existe alguna arista con peso negativo ($w_e < 0$), Dijkstra falla; usar **Bellman-Ford** (§6.3.2).
+- **Contrato:** Nodos 1-indexed (`1..n`) en `adj_dij`. Inicializa `dist_dij` con `INF` ($10^{18}$). `get_path_dij(t)` devuelve `{}` si `t` es inalcanzable. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}((V + E) \log V)$ tiempo y $\mathcal{O}(V + E)$ memoria.
+- **Formato de entrada:** `N M S T`, seguido de `M` aristas dirigidas `u v w` ($w \ge 0$).
 
-  - **Bellman-Ford / SPFA**: Cuando existen **aristas con peso
-    negativo** o el problema pide **detectar y reconstruir un ciclo
-    negativo** (o buscar un ciclo de ganancia positiva negando los
-    pesos). $\mathcal{O}(V \cdot E)$.
+**Entrada:**
+```text
+4 4 1 4
+1 2 4
+1 3 1
+3 2 2
+2 4 5
+```
 
-  - **Floyd-Warshall**: Todos los pares de caminos más cortos $(u,v)$
-    en grafos pequeños ($V \leq 500$). Permite también cerrar
-    transitivamente un grafo o hallar el ciclo de menor peso.
-    $\mathcal{O}(V^{3})$.
+**Salida:**
+```text
+8
+1 3 2 4
+```
 
-``` cpp
+**Cómo leer la entrada:**
+```cpp
+int n, m, s, t;
+cin >> n >> m >> s >> t;
+for (int i = 1; i <= n; ++i) adj_dij[i].clear();
+for (int i = 0; i < m; ++i) {
+  int u, v; ll w; cin >> u >> v >> w;
+  adj_dij[u].pb({v, w});
+}
+```
+
+**Implementación:**
+```cpp
 // 1. Dijkstra con Reconstruccion de Camino (1-indexed)
 const int MAX_V_DIJ = 200005;
 vector<pair<int, ll>> adj_dij[MAX_V_DIJ]; // {vecino, peso}
@@ -3115,7 +5449,8 @@ int par_dij[MAX_V_DIJ];
 void dijkstra(int s, int n) {
   fill(dist_dij + 1, dist_dij + n + 1, INF);
   fill(par_dij + 1, par_dij + n + 1, -1);
-  priority_queue<pair<ll, int>, vector<pair<ll, int>>, greater<>> pq;
+  priority_queue<pair<ll, int>, vector<pair<ll, int>>,
+    greater<>> pq;
   dist_dij[s] = 0;
   pq.push({0, s});
   while (!pq.empty()) {
@@ -3133,16 +5468,64 @@ void dijkstra(int s, int n) {
 vi get_path_dij(int target) {
   if (dist_dij[target] == INF) return {};
   vi path;
-  for (int cur = target; cur != -1; cur = par_dij[cur]) path.pb(cur);
+  for (int cur = target; cur != -1; cur
+    = par_dij[cur]) path.pb(cur);
   reverse(all(path));
   return path;
 }
+```
 
-// 2. Bellman-Ford con Reconstruccion de Ciclo Negativo Alcanzable
-// (Si quieres detectar CUALQUIER ciclo negativo en el grafo aunque no sea
-// alcanzable desde 's', inicializa todos los d[1..n] = 0 en vez de INF).
+**Cómo llamarlo y producir la salida:**
+```cpp
+dijkstra(s, n);
+vi path = get_path_dij(t);
+cout << dist_dij[t] << '\n';
+for (int i = 0; i < sz(path); ++i)
+  cout << path[i] << (i + 1 == sz(path) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) La guarda `if (d > dist_dij[u]) continue;` es obligatoria para mantener complejidad $\mathcal{O}(E \log V)$ sin `decrease-key`.
+
+#### 6.3.2 Bellman-Ford con Reconstrucción de Ciclo Negativo (`bellman_ford_cycle`)
+
+- **Cuándo usar:** Caminos más cortos con pesos negativos y detección/reconstrucción explícita de un ciclo negativo alcanzable desde `s`.
+- **Cuándo no usar / alternativa:** Si todos los pesos son $\ge 0$, usar `dijkstra` (§6.3.1).
+- **Contrato:** Nodos 1-indexed (`1..n`). Satura `d[e.v] = max(-INF, d[e.u] + e.w)` para evitar overflow a `LLONG_MIN`. Si retorna `true`, `cycle` contiene los vértices del ciclo negativo en orden dirigido. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V \cdot E)$ tiempo y $\mathcal{O}(V + E)$ memoria.
+- **Formato de entrada:** `N M S`, seguido de `M` aristas dirigidas `u v w`.
+
+**Entrada:**
+```text
+3 3 1
+1 2 1
+2 3 -3
+3 1 1
+```
+
+**Salida:**
+```text
+1 3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m, s;
+cin >> n >> m >> s;
+vector<BFEdge> edges(m);
+for (auto& e : edges) cin >> e.u >> e.v >> e.w;
+```
+
+**Implementación:**
+```cpp
+// 2. Bellman-Ford con Reconstruccion de Ciclo Negativo
+// Alcanzable
+// (Si quieres detectar CUALQUIER ciclo negativo en el grafo
+// aunque no sea
+// alcanzable desde 's', inicializa todos los d[1..n] = 0 en
+// vez de INF).
 struct BFEdge { int u, v; ll w; };
-bool bellman_ford_cycle(int s, int n, const vector<BFEdge>& edges,
+bool bellman_ford_cycle(int s, int n,
+  const vector<BFEdge>& edges,
                         vll& d, vi& neg_cycle) {
   d.assign(n + 1, INF);
   vi p(n + 1, -1);
@@ -3151,15 +5534,18 @@ bool bellman_ford_cycle(int s, int n, const vector<BFEdge>& edges,
   for (int i = 1; i <= n; ++i) {
     x = -1;
     for (const auto& e : edges) {
-      if (d[e.u] < INF && d[e.u] + e.w < d[e.v]) {
-        d[e.v] = max(-INF, d[e.u] + e.w);
+      if (d[e.u] >= INF) continue;
+      ll nd = max(-INF, d[e.u] + e.w);
+      if (nd < d[e.v]) {
+        d[e.v] = nd;
         p[e.v] = e.u;
         x = e.v;
       }
     }
   }
   if (x == -1) return false; // No hay ciclo negativo
-  for (int i = 0; i < n; ++i) x = p[x]; // Entrar con certeza al ciclo
+  // Entrar con certeza al ciclo
+  for (int i = 0; i < n; ++i) x = p[x];
   neg_cycle.clear();
   for (int cur = x; ; cur = p[cur]) {
     neg_cycle.pb(cur);
@@ -3168,10 +5554,56 @@ bool bellman_ford_cycle(int s, int n, const vector<BFEdge>& edges,
   reverse(all(neg_cycle));
   return true;
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+vll d; vi cyc;
+bool has_neg = bellman_ford_cycle(s, n, edges, d, cyc);
+cout << has_neg << " " << sz(cyc) - 1 << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Retroceder `n` veces con `x = p[x]` antes de reconstruir el ciclo es indispensable porque el último nodo relajado en la iteración $N$ puede estar en una cola que sale del ciclo negativo y no dentro del ciclo mismo; (2) para detectar cualquier ciclo negativo global sin importar `s`, inicializar `d[1..n] = 0`.
+
+#### 6.3.3 Floyd-Warshall Todos contra Todos (`floyd_warshall`)
+
+- **Cuándo usar:** Distancias mínimas entre **todos los pares** de vértices $(i, j)$ en grafos pequeños ($V \le 400$–$500$), o clausura transitiva.
+- **Cuándo no usar / alternativa:** Si $V > 500$ y los pesos son no negativos, correr `dijkstra` desde cada nodo cuesta $\mathcal{O}(V(V + E)\log V)$.
+- **Contrato:** Matriz `d` 1-indexed de tamaño `(n + 1) x (n + 1)`, inicializada con `d[i][i] = 0` y `d[i][j] = INF` si no hay arista. Al finalizar, `d[i][i] < 0` indica que `i` pertenece a un ciclo negativo. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V^3)$ tiempo y $\mathcal{O}(V^2)$ memoria.
+- **Formato de entrada:** `N M`, seguido de `M` aristas dirigidas `u v w`.
+
+**Entrada:**
+```text
+3 3
+1 2 4
+2 3 5
+1 3 12
+```
+
+**Salida:**
+```text
+9
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vector<vll> d(n + 1, vll(n + 1, INF));
+for (int i = 1; i <= n; ++i) d[i][i] = 0;
+for (int i = 0; i < m; ++i) {
+  int u, v; ll w; cin >> u >> v >> w;
+  d[u][v] = min(d[u][v], w);
+}
+```
+
+**Implementación:**
+```cpp
 // 3. Floyd-Warshall (All-Pairs Shortest Path en O(V^3))
 void floyd_warshall(int n, vector<vll>& d) {
-  // Precondicion: d[i][i] = 0, d[u][v] = min_peso (o INF si no hay arista)
+  // Precondicion: d[i][i] = 0, d[u][v] = min_peso (o INF si
+  // no hay arista)
   for (int k = 1; k <= n; ++k)
     for (int i = 1; i <= n; ++i)
       if (d[i][k] < INF)
@@ -3181,63 +5613,56 @@ void floyd_warshall(int n, vector<vll>& d) {
 }
 ```
 
-**Ejemplo de Input y Uso (Dijkstra y Bellman-Ford):**
-
-```
-Input Dijkstra (4 nodos, 4 aristas):
-4 4
-1 2 2
-2 3 1
-1 3 5
-3 4 3
-Ruta 1 -> 4: [1, 2, 3, 4], costo = 6.
+**Cómo llamarlo y producir la salida:**
+```cpp
+floyd_warshall(n, d);
+cout << d[1][3] << '\n';
 ```
 
-``` cpp
-int main() {
-  int n = 4;
-  adj_dij[1] = {{2, 2}, {3, 5}};
-  adj_dij[2] = {{1, 2}, {3, 1}};
-  adj_dij[3] = {{2, 1}, {1, 5}, {4, 3}};
-  adj_dij[4] = {{3, 3}};
-  dijkstra(1, n);
-  vi path = get_path_dij(4); // [1, 2, 3, 4], dist_dij[4] == 6
-}
-```
+- **Trampas y adaptaciones:** (1) El nodo intermedio `k` **siempre** debe ser el bucle más externo (`for k ... for i ... for j`); (2) al leer la entrada, hacer `d[u][v] = min(d[u][v], w)` por si vienen aristas paralelas.
 
 ------------------------------------------------------------------------
 
 ### 6.4 Árboles: Diámetro (Doble BFS), MST (Kruskal y Prim), LCA Binary Lifting y Centroid Decomposition
 
-- **¿Cuándo usar?**:
+#### 6.4.1 Diámetro de un Árbol por Doble BFS (`bfs_farthest`, `get_diameter_path`)
 
-  - **Diámetro de un Árbol (Doble BFS)**: Hallar el camino más largo
-    entre cualquier par de nodos de un árbol y reconstruir su ruta en
-    $\mathcal{O}(N)$ (el centro del árbol está en la mitad de este
-    camino).
+- **Cuándo usar:** Hallar el camino simple más largo (y su centro) en un árbol sin pesos (o con pesos no negativos).
+- **Cuándo no usar / alternativa:** Si el árbol tiene aristas de **peso negativo**, el truco de los 2 BFS falla; usar **DP en árboles** (§8.3) guardando las dos mayores ramas hacia abajo desde cada nodo.
+- **Contrato:** Árbol 1-indexed (`1..n`) en `adj_tr`. `get_diameter_path(n)` devuelve todos los nodos en la ruta del diámetro; su longitud en aristas es `sz(path) - 1`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N)$ tiempo y memoria.
+- **Formato de entrada:** `N`, seguido de `N - 1` aristas del árbol `u v`.
 
-  - **MST (Kruskal / Prim)**: Conectar todos los nodos de un grafo con
-    el menor costo total de aristas en $\mathcal{O}(E\log E)$.
+**Entrada:**
+```text
+5
+1 2
+2 3
+2 4
+4 5
+```
 
-  - **LCA con Binary Lifting**: Responder en $\mathcal{O}(\log N)$
-    cuál es el **Ancestro Común Más Bajo** entre $u$ y $v$, cuál es
-    el **$k$-ésimo ancestro** de $u$, o cuál es la
-    **distancia/número de aristas entre $u$ y $v$** en un árbol
-    estático.
+**Salida:**
+```text
+3
+5 4 2 1
+```
 
-  - **Centroid Decomposition**: Divide y vencerás sobre árboles. Crea un
-    “árbol de centroides” de altura $\mathcal{O}(\log N)$ para contar
-    caminos que cumplen cierta propiedad (ej. caminos de longitud
-    exactamente $K$) o actualizar/consultar el nodo marcado más
-    cercano en $\mathcal{O}(\log N)$.
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+for (int i = 1; i <= n; ++i) adj_tr[i].clear();
+for (int i = 0; i < n - 1; ++i) {
+  int u, v; cin >> u >> v;
+  adj_tr[u].pb(v); adj_tr[v].pb(u);
+}
+```
 
-- **Complejidad**: Diámetro $\mathcal{O}(N)$; Kruskal/Prim
-  $\mathcal{O}(E\log E)$; LCA y Centroid Decomposition:
-  Preprocesamiento $\mathcal{O}(N\log N)$, consultas
-  $\mathcal{O}(\log N)$.
-
-``` cpp
-// 1. Diametro de un Arbol (Doble BFS con reconstruccion de ruta)
+**Implementación:**
+```cpp
+// 1. Diametro de un Arbol (Doble BFS con reconstruccion de
+// ruta)
 vi adj_tr[200005];
 int par_tr[200005];
 
@@ -3263,17 +5688,64 @@ vi get_diameter_path(int n) {
   pii p1 = bfs_farthest(1, n);
   pii p2 = bfs_farthest(p1.fi, n);
   vi path;
-  for (int cur = p2.fi; cur != -1; cur = par_tr[cur]) path.pb(cur);
+  for (int cur = p2.fi; cur != -1; cur
+    = par_tr[cur]) path.pb(cur);
   reverse(all(path));
-  return path; // Longitud del diametro en aristas = sz(path) - 1
+  // Longitud del diametro en aristas = sz(path) - 1
+  return path;
 }
+```
 
-// 2. Kruskal MST (usa struct DSU de la seccion 4.1)
+**Cómo llamarlo y producir la salida:**
+```cpp
+vi path = get_diameter_path(n);
+cout << sz(path) - 1 << '\n';
+for (int i = 0; i < sz(path); ++i)
+  cout << path[i] << (i + 1 == sz(path) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) El centro del árbol (nodo que minimiza la máxima distancia al resto) es `path[sz(path) / 2]`.
+
+#### 6.4.2 Árbol Generador Mínimo de Kruskal (`kruskal_mst`)
+
+- **Cuándo usar:** Hallar el subgrafo conexo acíclico de menor peso total (MST) en un grafo no dirigido pesado.
+- **Cuándo no usar / alternativa:** Si el grafo es dirigido y buscas una arborescencia desde una raíz fija, Kruskal no aplica; usar `directed_mst` (§6.7).
+- **Contrato:** Nodos 1-indexed (`1..n`). Retorna el costo total del MST y llena `mst` con las $N - 1$ aristas elegidas, o retorna `-1` si el grafo es desconexo. Dependencias: `DSU` (§4.1.1).
+- **Complejidad:** $\mathcal{O}(E \log E)$ tiempo y $\mathcal{O}(V + E)$ memoria.
+- **Formato de entrada:** `N M`, seguido de `M` aristas `u v w`.
+
+**Entrada:**
+```text
+4 5
+1 2 1
+2 3 2
+3 4 3
+4 1 4
+1 3 5
+```
+
+**Salida:**
+```text
+6 3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vector<KrEdge> edges(m), mst;
+for (auto& e : edges) cin >> e.u >> e.v >> e.w;
+```
+
+**Implementación:**
+```cpp
+// 2. Kruskal MST (requiere DSU de la seccion 4.1)
 struct KrEdge {
   int u, v; ll w;
   bool operator<(const KrEdge& o) const { return w < o.w; }
 };
-ll kruskal_mst(int n, vector<KrEdge>& edges, vector<KrEdge>& mst) {
+ll kruskal_mst(int n, vector<KrEdge>& edges,
+  vector<KrEdge>& mst) {
   sort(all(edges));
   DSU dsu(n);
   ll cost = 0;
@@ -3281,8 +5753,56 @@ ll kruskal_mst(int n, vector<KrEdge>& edges, vector<KrEdge>& mst) {
     if (dsu.unite(e.u, e.v)) { cost += e.w; mst.pb(e); }
   return (dsu.num_comp == 1) ? cost : -1;
 }
+```
 
-// 3. LCA (Lowest Common Ancestor) + K-th Ancestor + Distancia en Arbol
+**Cómo llamarlo y producir la salida:**
+```cpp
+ll cost = kruskal_mst(n, edges, mst);
+cout << cost << " " << sz(mst) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para Maximum Spanning Tree, invertir el comparador (`w > o.w`); (2) si el problema pide un *Minimum Spanning Forest*, ignorar el chequeo `dsu.num_comp == 1` y usar `cost` directamente.
+
+#### 6.4.3 LCA, $K$-ésimo Ancestro y Distancia por Binary Lifting (`LCA`)
+
+- **Cuándo usar:** Responder consultas de Ancestro Común Más Bajo (`lca(u, v)`), $k$-ésimo ancestro (`kth_ancestor(u, k)`) y distancia en aristas (`dist(u, v)`) en un árbol estático.
+- **Cuándo no usar / alternativa:** Si los pesos o valores de los nodos cambian dinámicamente y necesitas consultar agregados en caminos, usar **HLD** (§4.8).
+- **Contrato:** Árbol 1-indexed (`1..n`). El padre de la raíz `root` se define como `root` mismo, por lo que pedir un ancestro más arriba de la raíz se satura en `root`. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N \log N)$ tiempo y memoria; cada consulta en $\mathcal{O}(\log N)$.
+- **Formato de entrada:** `N`, seguido de `N - 1` aristas del árbol (raíz `1`) y dos nodos `u v`.
+
+**Entrada:**
+```text
+5
+1 2
+1 3
+2 4
+2 5
+4 5
+```
+
+**Salida:**
+```text
+2 2
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<vi> adj(n + 1);
+for (int i = 0; i < n - 1; ++i) {
+  int u, v; cin >> u >> v;
+  adj[u].pb(v); adj[v].pb(u);
+}
+int u_q, v_q;
+cin >> u_q >> v_q;
+```
+
+**Implementación:**
+```cpp
+// 3. LCA (Lowest Common Ancestor) + K-th Ancestor +
+// Distancia en Arbol
 struct LCA {
   int n, LOG;
   vi dep;
@@ -3314,15 +5834,62 @@ struct LCA {
     u = kth_ancestor(u, dep[u] - dep[v]);
     if (u == v) return u;
     for (int j = LOG - 1; j >= 0; --j)
-      if (up[u][j] != up[v][j]) { u = up[u][j]; v = up[v][j]; }
+      if (up[u][j] != up[v][j]) { u = up[u][j];
+        v = up[v][j]; }
     return up[u][0];
   }
   int dist(int u, int v) const {
     return dep[u] + dep[v] - 2 * dep[lca(u, v)];
   }
 };
+```
 
-// 4. Centroid Decomposition (Arbol de Centroides en O(N log N))
+**Cómo llamarlo y producir la salida:**
+```cpp
+LCA lca(n, 1, adj);
+cout << lca.lca(u_q, v_q) << " " << lca.dist(u_q,
+  v_q) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para encontrar el nodo en el camino de `u` a `v` a distancia `d` desde `u` ($0 \le d \le \text{dist}(u, v)$): sea $w = \text{lca}(u, v)$; si $d \le \text{dep}[u] - \text{dep}[w]$ es `kth_ancestor(u, d)`, si no es `kth_ancestor(v, dist(u, v) - d)`.
+
+#### 6.4.4 Descomposición por Centroides (`CentroidDecomp`)
+
+- **Cuándo usar:** Contar caminos en un árbol que cumplen una propiedad global (longitud exacta $K$, XOR igual a $X$, etc.) o mantener el nodo marcado más cercano en $\mathcal{O}(\log N)$ por actualización/consulta.
+- **Cuándo no usar / alternativa:** Si las consultas son simplemente sobre un camino entre `u` y `v` dados en la entrada, usar `LCA` (§6.4.3) o `HLD` (§4.8).
+- **Contrato:** Árbol 1-indexed (`1..n`). Construye el árbol de centroides de altura $\le \lceil \log_2 N \rceil$, donde `par_c[c]` es el padre de `c` en el árbol de centroides (`0` en la raíz). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N \log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N - 1` aristas `u v`.
+
+**Entrada:**
+```text
+5
+1 2
+2 3
+3 4
+4 5
+```
+
+**Salida:**
+```text
+3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<vi> adj(n + 1);
+for (int i = 0; i < n - 1; ++i) {
+  int u, v; cin >> u >> v;
+  adj[u].pb(v); adj[v].pb(u);
+}
+```
+
+**Implementación:**
+```cpp
+// 4. Centroid Decomposition (Arbol de Centroides en O(N log
+// N))
 struct CentroidDecomp {
   int n;
   vector<vi> adj;
@@ -3330,7 +5897,8 @@ struct CentroidDecomp {
   vector<bool> rem;
 
   CentroidDecomp(int n, const vector<vi>& g)
-    : n(n), adj(g), sz_c(n + 1, 0), par_c(n + 1, 0), rem(n + 1, false) {
+    : n(n), adj(g), sz_c(n + 1, 0), par_c(n + 1, 0), rem(
+      n + 1, false) {
     build(1, 0);
   }
   int dfs_sz(int u, int p) {
@@ -3348,7 +5916,8 @@ struct CentroidDecomp {
   void build(int u, int p) {
     int tot = dfs_sz(u, 0);
     int c = get_centroid(u, 0, tot);
-    par_c[c] = p; // Padre en el arbol de centroides (0 si es la raiz)
+    // Padre en el arbol de centroides (0 si es la raiz)
+    par_c[c] = p;
     rem[c] = true;
     for (int v : adj[c])
       if (!rem[v]) build(v, c);
@@ -3356,64 +5925,63 @@ struct CentroidDecomp {
 };
 ```
 
-**Ejemplo de Input y Uso (LCA y Distancia en Árbol):**
+**Cómo llamarlo y producir la salida:**
+```cpp
+CentroidDecomp cd(n, adj);
+int root_c = 1;
+while (cd.par_c[root_c] != 0) root_c = cd.par_c[root_c];
+cout << root_c << '\n';
+```
 
-```
-Input: Arbol de 5 nodos (raiz 1): 1-2, 2-3, 3-4, 3-5.
-Consultas: lca(4, 5) -> 3, dist(1, 4) -> 3, kth_ancestor(4, 2) -> 2.
-```
-
-``` cpp
-int main() {
-  int n = 5;
-  vector<vi> adj(n + 1);
-  auto add = [&](int u, int v) { adj[u].pb(v); adj[v].pb(u); };
-  add(1, 2); add(2, 3); add(3, 4); add(3, 5);
-  LCA tree_lca(n, 1, adj);
-  cout << tree_lca.lca(4, 5) << " " << tree_lca.dist(1, 4) << " "
-       << tree_lca.kth_ancestor(4, 2) << "\n"; // 3 3 2
-}
-```
+- **Trampas y adaptaciones:** (1) En el árbol de centroides, cualquier camino original $u \leftrightarrow v$ pasa por su ancestro común más bajo en el árbol de centroides, que está a lo sumo a $\mathcal{O}(\log N)$ saltos por `par_c`.
 
 ------------------------------------------------------------------------
 
-### 6.5 Conectividad, DAGs y 2-SAT: Topological Sort, Puentes/Articulación, Biconexas, SCC (Tarjan), 2-SAT y Camino Euleriano
+### 6.5 Conectividad, DAGs y 2-SAT: Topological Sort, Puentes/Articulación, SCC (Tarjan) y 2-SAT
 
-- **¿Cuándo usar?**:
+#### 6.5.1 Orden Topológico de Kahn por BFS (`topological_sort`)
 
-  - **Orden Topológico (Kahn BFS)**: Ordenar tareas con dependencias
-    ($u \rightarrow v$ significa $u$ antes que $v$) en un DAG, o
-    detectar si hay un ciclo dirigido (`sz(order) < n`). Si piden el
-    **orden topológico lexicográficamente menor**, cambia `queue<int>`
-    por `priority_queue<int, vi, greater<int>>`.
+- **Cuándo usar:** Obtener una permutación lineal de los nodos de un DAG donde toda arista $u \to v$ cumple que $u$ aparece antes que $v$ (ideal para DP sobre DAGs o verificar si existe un ciclo dirigido).
+- **Cuándo no usar / alternativa:** Si el grafo tiene ciclos y necesitas procesarlo por bloques, primero comprimirlo en un DAG con `TarjanSCC` (§6.5.3).
+- **Contrato:** Nodos 1-indexed (`1..n`). Si `sz(order) < n`, el grafo dirigido **tiene al menos un ciclo** y no admite orden topológico. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V + E)$ tiempo y memoria.
+- **Formato de entrada:** `N M`, seguido de `M` aristas dirigidas `u v`.
 
-  - **Puentes y Puntos de Articulación (Tarjan No Dirigido)**: Hallar
-    aristas críticas (`low[v] > tin[u]`) o vértices críticos
-    (`low[v] >= tin[u]`) cuya eliminación desconecta el grafo no
-    dirigido.
+**Entrada:**
+```text
+4 4
+1 2
+1 3
+2 4
+3 4
+```
 
-  - **SCC (Componentes Fuertemente Conexas - Tarjan Dirigido)**:
-    Comprimir un grafo dirigido con ciclos en un **DAG de componentes**
-    (donde dentro de cada SCC todo nodo llega a todo otro nodo).
+**Salida:**
+```text
+1 2 3 4
+```
 
-  - **2-SAT**: Asignar valores booleanos $\left\{ V,F \right\}$ a
-    $N$ variables sujetas a cláusulas de tamaño 2 ($a \vee b$,
-    $a \Rightarrow b$, $a = b$, $a \neq b$). Se resuelve en
-    $\mathcal{O}(N + M)$ usando Tarjan SCC.
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vector<vi> adj(n + 1);
+for (int i = 0; i < m; ++i) {
+  int u, v; cin >> u >> v;
+  adj[u].pb(v);
+}
+```
 
-  - **Camino / Ciclo Euleriano (Hierholzer)**: Recorrer **todas las
-    aristas del grafo exactamente una vez** en $\mathcal{O}(V + E)$.
-
-- **Complejidad**: Todos estos algoritmos toman $\mathcal{O}(V + E)$
-  tiempo y memoria.
-
-``` cpp
-// 1. Orden Topologico (Kahn BFS — detecta ciclos si sz(order) < n)
+**Implementación:**
+```cpp
+// 1. Orden Topologico (Kahn BFS — detecta ciclos si
+// sz(order) < n)
 vi topological_sort(int n, const vector<vi>& adj) {
   vi in_deg(n + 1, 0), order;
   for (int u = 1; u <= n; ++u)
     for (int v : adj[u]) in_deg[v]++;
-  queue<int> q; // Usar Min-Heap si piden orden lexicografico menor
+  // Usar Min-Heap si piden orden lexicografico menor
+  queue<int> q;
   for (int i = 1; i <= n; ++i)
     if (in_deg[i] == 0) q.push(i);
   while (!q.empty()) {
@@ -3424,8 +5992,54 @@ vi topological_sort(int n, const vector<vi>& adj) {
   }
   return order;
 }
+```
 
-// 2. Puentes y Puntos de Articulacion en Grafo No Dirigido (Tarjan)
+**Cómo llamarlo y producir la salida:**
+```cpp
+vi ord = topological_sort(n, adj);
+for (int i = 0; i < sz(ord); ++i)
+  cout << ord[i] << (i + 1 == sz(ord) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Si el problema pide el **orden topológico lexicográficamente menor**, cambiar `queue<int> q` por `priority_queue<int, vi, greater<int>> q` ($\mathcal{O}((V+E)\log V)$).
+
+#### 6.5.2 Puentes y Puntos de Articulación de Tarjan (`BridgesAndCuts`)
+
+- **Cuándo usar:** Encontrar todas las aristas cuya eliminación desconecta el grafo (**puentes**, `low[v] > tin[u]`) y los vértices cuya eliminación desconecta el grafo (**puntos de articulación**, `low[v] >= tin[u]`).
+- **Cuándo no usar / alternativa:** Si necesitas el árbol comprimido de componentes biconexas por vértices, usar `BlockCutTree` (§6.8).
+- **Contrato:** Nodos 1-indexed (`1..n`). Maneja correctamente **aristas paralelas** ignorando únicamente la primera ocurrencia de la arista hacia el padre (`skipped_parent`), e ignora auto-bucles (`v == u`). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V + E)$ tiempo y memoria.
+- **Formato de entrada:** `N M`, seguido de `M` aristas no dirigidas `u v`.
+
+**Entrada:**
+```text
+4 4
+1 2
+2 3
+3 1
+3 4
+```
+
+**Salida:**
+```text
+1 1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vector<vi> adj(n + 1);
+for (int i = 0; i < m; ++i) {
+  int u, v; cin >> u >> v;
+  adj[u].pb(v); adj[v].pb(u);
+}
+```
+
+**Implementación:**
+```cpp
+// 2. Puentes y Puntos de Articulacion en Grafo No Dirigido
+// (Tarjan)
 struct BridgesAndCuts {
   int n, timer = 0;
   vi tin, low;
@@ -3433,15 +6047,19 @@ struct BridgesAndCuts {
   vector<pii> bridges;
 
   BridgesAndCuts(int n, const vector<vi>& adj)
-    : n(n), tin(n + 1, 0), low(n + 1, 0), is_cut(n + 1, false) {
+    : n(n), tin(n + 1, 0), low(n + 1, 0), is_cut(n + 1,
+      false) {
     for (int i = 1; i <= n; ++i)
       if (!tin[i]) dfs(i, -1, adj);
   }
   void dfs(int u, int p, const vector<vi>& adj) {
     tin[u] = low[u] = ++timer;
     int children = 0;
+    bool skipped_parent = false;
     for (int v : adj[u]) {
-      if (v == p) continue;
+      if (v == u) continue;
+      if (v == p && !skipped_parent) {
+        skipped_parent = true; continue; }
       if (tin[v]) {
         low[u] = min(low[u], tin[v]);
       } else {
@@ -3455,9 +6073,57 @@ struct BridgesAndCuts {
     if (p == -1 && children > 1) is_cut[u] = true;
   }
 };
+```
 
-// 3. Tarjan SCC (Componentes Fuertemente Conexas en Grafo Dirigido)
-// Nota: comp_id[u] queda en orden topologico INVERSO (scc_cnt..1)
+**Cómo llamarlo y producir la salida:**
+```cpp
+BridgesAndCuts bc(n, adj);
+int cuts = 0;
+for (int i = 1; i <= n; ++i) if (bc.is_cut[i]) cuts++;
+cout << sz(bc.bridges) << " " << cuts << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) La raíz del árbol DFS (`p == -1`) es punto de articulación si y solo si tiene `children > 1` en el árbol DFS (no en la lista de adyacencia).
+
+#### 6.5.3 Componentes Fuertemente Conexas de Tarjan (`TarjanSCC`)
+
+- **Cuándo usar:** Particionar un grafo dirigido en sus Componentes Fuertemente Conexas maximales (`comp_id[u]`) en una sola pasada DFS para condensarlo en un DAG.
+- **Cuándo no usar / alternativa:** Si el grafo es no dirigido, las componentes se hallan con BFS/DFS o `DSU` (§4.1.1).
+- **Contrato:** Nodos 1-indexed (`1..n`). `scc_cnt` es la cantidad de SCCs (`1..scc_cnt`). Tarjan emite las SCCs en **orden topológico inverso** (los pozos/sinks reciben menor `comp_id` y las fuentes mayor `comp_id`). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V + E)$ tiempo y memoria.
+- **Formato de entrada:** `N M`, seguido de `M` aristas dirigidas `u v`.
+
+**Entrada:**
+```text
+4 4
+1 2
+2 1
+2 3
+3 4
+```
+
+**Salida:**
+```text
+3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vector<vi> adj(n + 1);
+for (int i = 0; i < m; ++i) {
+  int u, v; cin >> u >> v;
+  adj[u].pb(v);
+}
+```
+
+**Implementación:**
+```cpp
+// 3. Tarjan SCC (Componentes Fuertemente Conexas en Grafo
+// Dirigido)
+// Nota: comp_id[u] queda en orden topologico INVERSO
+// (scc_cnt..1)
 struct TarjanSCC {
   int n, timer = 0, scc_cnt = 0;
   vi tin, low, comp_id, st;
@@ -3491,7 +6157,44 @@ struct TarjanSCC {
     }
   }
 };
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+TarjanSCC scc(n, adj);
+cout << scc.scc_cnt << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Al actualizar `low[u]` con un vecino ya visitado `v`, verificar obligatoriamente `if (in_st[v])` (si `v` ya salió de la pila en otra SCC cerrada, ignorarlo).
+
+#### 6.5.4 Solucionador 2-SAT en Tiempo Lineal (`TwoSAT`)
+
+- **Cuándo usar:** Asignar valores booleanos a $N$ variables ($x_0, \dots, x_{N-1}$) sujetas a cláusulas de disyunción de 2 literales $(a \lor b)$, implicación $(a \Rightarrow b)$, igualdad $(a = b)$ o desigualdad $(a \neq b)$.
+- **Cuándo no usar / alternativa:** Si las cláusulas tienen 3 o más literales (3-SAT), el problema es NP-completo.
+- **Contrato:** Variables **0-indexed** (`0..n-1`). `solve()` retorna `false` si alguna variable e inverso caen en la misma SCC; si retorna `true`, la asignación válida queda en `ans[0..n-1]`. Dependencias: `TarjanSCC` (§6.5.3).
+- **Complejidad:** $\mathcal{O}(N + M)$ tiempo y memoria.
+- **Formato de entrada:** `N`, luego dos índices de variables `a b` que deben ser iguales y distintas a `c`.
+
+**Entrada:**
+```text
+3
+0 1 2
+```
+
+**Salida:**
+```text
+1
+1 1 0
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, a, b, c;
+cin >> n >> a >> b >> c;
+```
+
+**Implementación:**
+```cpp
 // 4. 2-SAT Solver en O(N + M) (Variables 0-indexed: 0..n-1)
 struct TwoSAT {
   int n;
@@ -3500,9 +6203,12 @@ struct TwoSAT {
 
   TwoSAT(int n) : n(n), adj(2 * n + 1), ans(n, false) {}
   // Nodo para variable 'x' (0..n-1):
-  // Si val == true -> nodo (x + 1); si val == false -> nodo (x + 1 + n)
-  int var_node(int x, bool val) const { return val ? (x + 1) : (x + 1 + n); }
-  int neg(int u) const { return (u <= n) ? (u + n) : (u - n); }
+  // Si val == true -> nodo (x + 1); si val == false -> nodo
+  // (x + 1 + n)
+  int var_node(int x, bool val) const {
+    return val ? (x + 1) : (x + 1 + n); }
+  int neg(int u) const {
+    return (u <= n) ? (u + n) : (u - n); }
 
   void add_imp(int u, int v) {
     adj[u].pb(v);
@@ -3527,113 +6233,83 @@ struct TwoSAT {
     for (int i = 0; i < n; ++i) {
       int u = i + 1, nu = i + 1 + n;
       if (scc.comp_id[u] == scc.comp_id[nu]) return false;
-      // En Tarjan, menor comp_id significa mas abajo en el DAG (sink)
+      // En Tarjan, menor comp_id significa mas abajo en el
+      // DAG (sink)
       ans[i] = (scc.comp_id[u] < scc.comp_id[nu]);
     }
     return true;
   }
 };
-
-// 5. Camino / Ciclo Euleriano Dirigido (Hierholzer en O(V + E))
-// Condicion: A lo sumo 1 nodo con out - in == 1 (inicio),
-// a lo sumo 1 nodo con in - out == 1 (fin), y el resto in == out.
-vi eulerian_directed(int n, int m, const vector<pii>& edges) {
-  vector<vi> adj(n + 1);
-  vi in(n + 1, 0), out(n + 1, 0);
-  for (auto [u, v] : edges) { adj[u].pb(v); out[u]++; in[v]++; }
-
-  int start = 1, plus1 = 0, minus1 = 0;
-  for (int i = 1; i <= n; ++i) {
-    if (out[i] > 0 && start == 1 && out[start] == 0) start = i;
-    if (out[i] - in[i] == 1) { plus1++; start = i; }
-    else if (in[i] - out[i] == 1) minus1++;
-    else if (in[i] != out[i]) return {};
-  }
-  if (!((plus1 == 0 && minus1 == 0) || (plus1 == 1 && minus1 == 1)))
-    return {};
-
-  vi path, st = {start};
-  while (!st.empty()) {
-    int u = st.back();
-    if (!adj[u].empty()) {
-      int v = adj[u].back();
-      adj[u].pop_back();
-      st.pb(v);
-    } else {
-      path.pb(u);
-      st.pop_back();
-    }
-  }
-  if (sz(path) != m + 1) return {}; // El grafo de aristas no era conexo
-  reverse(all(path));
-  return path;
-}
 ```
 
-**Ejemplo de Input y Uso (2-SAT):**
+**Cómo llamarlo y producir la salida:**
+```cpp
+TwoSAT sat(n);
+sat.set_val(a, true);
+sat.make_eq(a, b);
+sat.make_diff(b, c);
+bool ok = sat.solve();
+cout << ok << '\n';
+for (int i = 0; i < n; ++i)
+  cout << sat.ans[i] << (i + 1 == n ? '\n' : ' ');
+```
 
-```
-Input: 3 variables booleanas (x0, x1, x2).
-Clausulas: (x0 = True OR x1 = True), (x0 != x1), (x1 = True => x2 = False).
-```
-
-``` cpp
-int main() {
-  TwoSAT sat(3);
-  sat.add_or(0, true, 1, true);   // x0 v x1
-  sat.make_diff(0, 1);            // x0 != x1
-  sat.add_or(1, false, 2, false); // x1 => !x2 (equivale a !x1 v !x2)
-  if (sat.solve()) {
-    // sat.ans[0], sat.ans[1], sat.ans[2] contiene una asignacion valida
-  }
-}
-```
+- **Trampas y adaptaciones:** (1) Para prohibir que $x$ e $y$ sean ambas verdaderas ($\neg(x \land y)$), llamar `add_or(x, false, y, false)`.
 
 ------------------------------------------------------------------------
 
-### 6.6 Flujos y Matching: Dinic, Min-Cost Max-Flow (MCMF), Kuhn (MCBM) + König, Algoritmo Húngaro, Stoer-Wagner y Blossom
+### 6.6 Flujos y Matching: Dinic, Min-Cost Max-Flow (MCMF), Kuhn + König, Algoritmo Húngaro y Blossom
 
-- **¿Cuándo usar?**:
+#### 6.6.1 Flujo Máximo y Corte Mínimo de Dinic (`Dinic`)
 
-  - **Dinic**: Flujo Máximo / Corte Mínimo en redes con capacidades.
-    Corre en $\mathcal{O}(V^{2}E)$ general y
-    **$\mathcal{O}(E\sqrt{V})$ en redes unitarias / Matching
-    Bipartito** (¡el más rápido para Matching Bipartito grande!).
+- **Cuándo usar:** Calcular el flujo máximo $s \to t$ y reconstruir el corte mínimo $s-t$ (`left_of_min_cut`), emparejamiento bipartito en $\mathcal{O}(E\sqrt{V})$, o problemas de selección de proyectos (*Project Selection*).
+- **Cuándo no usar / alternativa:** Si cada arista tiene además un costo por unidad de flujo y buscas costo mínimo, usar `MCMF` (§6.6.2).
+- **Contrato:** Nodos 1-indexed (`1..n`). Para aristas no dirigidas de capacidad `cap`, cambiar el `0` de la arista reversa en `add_edge` por `cap`. Llamar `left_of_min_cut(u)` después de `max_flow()`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V^2 E)$ en redes generales; $\mathcal{O}(E \sqrt{V})$ en redes unitarias / matching bipartito.
+- **Formato de entrada:** `N M S T`, seguido de `M` aristas dirigidas `u v cap`.
 
-  - **Min-Cost Max-Flow (MCMF)**: Cuando cada arista tiene **capacidad
-    $cap$ y costo por unidad $cost$**, y quieres enviar la máxima
-    cantidad de flujo (o exactamente $K$ unidades) de $S$ a $T$
-    minimizando el costo total.
+**Entrada:**
+```text
+4 5 1 4
+1 2 10
+1 3 10
+2 3 2
+2 4 8
+3 4 9
+```
 
-  - **Kuhn ($\mathcal{O}(V \cdot E)$) + Teorema de König**: Matching
-    Bipartito corto de programar cuando $N,M \leq 2000$. Incluye
-    reconstrucción de **Minimum Vertex Cover** y **Maximum Independent
-    Set** en grafos bipartitos.
+**Salida:**
+```text
+17
+```
 
-  - **Algoritmo Húngaro ($\mathcal{O}(N^{3})$)**: Problema de
-    Asignación $N \times M$: emparejar cada fila con una columna
-    distinta minimizando (o maximizando) la suma de costos de la matriz.
-    Más rápido y directo que MCMF en matrices densas.
+**Cómo leer la entrada:**
+```cpp
+int n, m, s, t;
+cin >> n >> m >> s >> t;
+Dinic din(n, s, t);
+for (int i = 0; i < m; ++i) {
+  int u, v; ll c; cin >> u >> v >> c;
+  din.add_edge(u, v, c);
+}
+```
 
-  - **Blossom ($\mathcal{O}(V^{3})$)**: **Maximum Matching en Grafos
-    Generales (NO bipartitos)** (contiene ciclos impares).
-
-- **Complejidad**: Dinic $\mathcal{O}(V^{2}E)$ (o
-  $\mathcal{O}(E\sqrt{V})$); MCMF $\mathcal{O}(F \cdot E\log V)$;
-  Húngaro $\mathcal{O}(N^{2}M)$; Blossom $\mathcal{O}(VE)$.
-
-``` cpp
-// 1. Dinic (Max Flow + Min Cut + Bipartite Matching en O(E sqrt(V)))
+**Implementación:**
+```cpp
+// 1. Dinic (Max Flow + Min Cut + Bipartite Matching en O(E
+// sqrt(V)))
 struct Dinic {
   struct Edge { int to, rev; ll cap, flow = 0; };
   int n, s, t;
   vector<vector<Edge>> g;
   vi lvl, ptr;
 
-  Dinic(int n, int s, int t) : n(n), s(s), t(t), g(n + 1), lvl(n + 1), ptr(n + 1) {}
+  Dinic(int n, int s, int t) : n(n), s(s), t(t), g(n + 1),
+    lvl(n + 1), ptr(n + 1) {}
   void add_edge(int u, int v, ll cap) {
     g[u].pb({v, sz(g[v]), cap, 0});
-    g[v].pb({u, sz(g[u]) - 1, 0, 0}); // Cambiar 0 por cap si es no dirigido
+    // Cambiar 0 por cap si es no dirigido
+    g[v].pb({u, sz(g[u]) - 1, 0, 0});
   }
   bool bfs() {
     fill(all(lvl), -1);
@@ -3653,7 +6329,8 @@ struct Dinic {
     if (pushed == 0 || u == t) return pushed;
     for (int& cid = ptr[u]; cid < sz(g[u]); ++cid) {
       auto& e = g[u][cid];
-      if (lvl[u] + 1 != lvl[e.to] || e.cap - e.flow == 0) continue;
+      if (lvl[u] + 1 != lvl[e.to] || e.cap - e.flow
+        == 0) continue;
       ll tr = dfs(e.to, min(pushed, e.cap - e.flow));
       if (tr == 0) continue;
       e.flow += tr;
@@ -3670,12 +6347,57 @@ struct Dinic {
     }
     return flow;
   }
-  // Retorna true si 'u' queda del lado de la fuente S en el Min-Cut
+  // Retorna true si 'u' queda del lado de la fuente S en el
+  // Min-Cut
   // (Llamar DESPUES de max_flow()):
   bool left_of_min_cut(int u) const { return lvl[u] != -1; }
 };
+```
 
-// 2. Min-Cost Max-Flow (MCMF con SPFA/Potenciales)
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << din.max_flow() << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) El puntero `int& cid = ptr[u]` (*current arc optimization*) es indispensable: sin referencia `&`, Dinic degrada a $\mathcal{O}(V E^2)$ y da TLE.
+
+#### 6.6.2 Flujo Máximo de Costo Mínimo (`MCMF`)
+
+- **Cuándo usar:** Enviar flujo desde `s` hasta `t` (o a lo sumo `max_f` unidades) minimizando el costo total $\sum f_e \cdot \text{cost}_e$ en una red sin ciclos de costo negativo.
+- **Cuándo no usar / alternativa:** Si solo necesitas asignación 1-a-1 entre $N$ filas y $M$ columnas en grafo bipartito denso, el `hungarian` (§6.6.4) es más rápido y corto.
+- **Contrato:** Nodos 1-indexed (`1..n`). La arista reversa se crea automáticamente con capacidad `0` y costo `-cost`. `solve(s, t, max_f)` retorna `{flujo_enviado, costo_minimo}`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(F \cdot k E)$ práctico con SPFA (donde $F$ es el flujo total).
+- **Formato de entrada:** `N M S T`, seguido de `M` aristas `u v cap cost`.
+
+**Entrada:**
+```text
+4 4 1 4
+1 2 2 1
+1 3 2 5
+2 3 1 1
+3 4 3 1
+```
+
+**Salida:**
+```text
+3 15
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m, s, t;
+cin >> n >> m >> s >> t;
+MCMF mcmf(n);
+for (int i = 0; i < m; ++i) {
+  int u, v; ll cap, cost; cin >> u >> v >> cap >> cost;
+  mcmf.add_edge(u, v, cap, cost);
+}
+```
+
+**Implementación:**
+```cpp
+// 2. Min-Cost Max-Flow (MCMF con SPFA; requiere red sin
+// ciclos negativos)
 struct MCMF {
   struct Edge { int to, rev; ll cap, cost, flow = 0; };
   int n;
@@ -3703,17 +6425,21 @@ struct MCMF {
       in_q[u] = false;
       for (int i = 0; i < sz(g[u]); ++i) {
         auto& e = g[u][i];
-        if (e.cap - e.flow > 0 && dist[u] + e.cost < dist[e.to]) {
+        if (e.cap - e.flow > 0 && dist[u]
+          + e.cost < dist[e.to]) {
           dist[e.to] = dist[u] + e.cost;
           par_u[e.to] = u; par_e[e.to] = i;
-          cap_pushed[e.to] = min(cap_pushed[u], e.cap - e.flow);
-          if (!in_q[e.to]) { q.push(e.to); in_q[e.to] = true; }
+          cap_pushed[e.to] = min(cap_pushed[u],
+            e.cap - e.flow);
+          if (!in_q[e.to]) { q.push(e.to);
+            in_q[e.to] = true; }
         }
       }
     }
     return dist[t] != INF;
   }
-  // Retorna {flujo_total, costo_minimo} enviando a lo sumo max_f
+  // Retorna {flujo_total, costo_minimo} enviando a lo sumo
+  // max_f
   pll solve(int s, int t, ll max_f = INF) {
     ll flow = 0, cost = 0;
     while (flow < max_f && spfa(s, t)) {
@@ -3729,10 +6455,157 @@ struct MCMF {
     return {flow, cost};
   }
 };
+```
 
-// 3. Algoritmo Hungaro (Asignacion N x M de Costo Minimo en O(N^2 * M))
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto [fl, co] = mcmf.solve(s, t);
+cout << fl << " " << co << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para **Max-Cost Max-Flow** en un DAG, insertar los costos negados (`-cost`) y negar el costo retornado.
+
+#### 6.6.3 Matching Bipartito de Kuhn y Reconstrucción de König (`BipartiteMVC`)
+
+- **Cuándo usar:** Emparejamiento máximo en grafos bipartitos pequeños/medianos ($N_1 \cdot E \le 10^7$) y reconstrucción explícita de los vértices del **Minimum Vertex Cover** (o Maximum Independent Set) mediante el Teorema de König.
+- **Cuándo no usar / alternativa:** Si $N_1, N_2 \approx 5 \cdot 10^4$, Kuhn $\mathcal{O}(N_1 E)$ puede dar TLE; usar `Dinic` (§6.6.1) en $\mathcal{O}(E\sqrt{V})$.
+- **Contrato:** Lado izquierdo `1..n1`, lado derecho `1..n2`. `min_vertex_cover()` retorna `{cov_l, cov_r}` donde $|\text{cov}_l| + |\text{cov}_r| = \text{max\_matching}()$. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N_1 \cdot E)$ para el matching; $\mathcal{O}(N_1 + N_2 + E)$ para la reconstrucción de König.
+- **Formato de entrada:** `N1 N2 M`, seguido de `M` aristas `u v` ($u \in [1..N_1], v \in [1..N_2]$).
+
+**Entrada:**
+```text
+3 3 4
+1 1
+1 2
+2 2
+3 2
+```
+
+**Salida:**
+```text
+2
+1 1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n1, n2, m;
+cin >> n1 >> n2 >> m;
+BipartiteMVC bip(n1, n2);
+for (int i = 0; i < m; ++i) {
+  int u, v; cin >> u >> v;
+  bip.add_edge(u, v);
+}
+```
+
+**Implementación:**
+```cpp
+// 2b. Kuhn (Matching Bipartito en O(N1 * E)) +
+// Reconstruccion de Konig (Min Vertex Cover)
+// Lado izquierdo: 1..n1, Lado derecho: 1..n2.
+struct BipartiteMVC {
+  int n1, n2;
+  vector<vi> adj;
+  vi mt_l, mt_r, vis_l, vis_r;
+  int timer = 0;
+
+  BipartiteMVC(int n1, int n2)
+    : n1(n1), n2(n2), adj(n1 + 1), mt_l(n1 + 1, 0),
+      mt_r(n2 + 1, 0), vis_l(n1 + 1, 0), vis_r(n2 + 1, 0) {}
+
+  // u in [1..n1], v in [1..n2]
+  void add_edge(int u, int v) { adj[u].pb(v); }
+
+  bool dfs(int u) {
+    if (vis_l[u] == timer) return false;
+    vis_l[u] = timer;
+    for (int v : adj[u]) {
+      if (!mt_r[v] || dfs(mt_r[v])) {
+        mt_l[u] = v; mt_r[v] = u;
+        return true;
+      }
+    }
+    return false;
+  }
+  int max_matching() {
+    int matched = 0;
+    for (int u = 1; u <= n1; ++u)
+      if (!mt_l[u]) { ++timer; if (dfs(u)) matched++; }
+    return matched;
+  }
+  void dfs_konig(int u) {
+    vis_l[u] = 1;
+    for (int v : adj[u]) {
+      if (!vis_r[v] && mt_l[u] != v) {
+        vis_r[v] = 1;
+        if (mt_r[v] && !vis_l[mt_r[v]]) dfs_konig(mt_r[v]);
+      }
+    }
+  }
+  // Retorna {nodos_izquierda_en_MVC, nodos_derecha_en_MVC}
+  // (Teorema de Konig)
+  pair<vi, vi> min_vertex_cover() {
+    max_matching();
+    fill(all(vis_l), 0); fill(all(vis_r), 0);
+    for (int u = 1; u <= n1; ++u)
+      if (!mt_l[u]) dfs_konig(u);
+    vi cov_l, cov_r;
+    for (int u = 1; u <= n1; ++u) if (!vis_l[u]) cov_l.pb(
+      u);
+    for (int v = 1; v <= n2; ++v) if (vis_r[v]) cov_r.pb(v);
+    return {cov_l, cov_r};
+  }
+};
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto [cov_l, cov_r] = bip.min_vertex_cover();
+cout << sz(cov_l) + sz(cov_r) << '\n';
+cout << sz(cov_l) << " " << sz(cov_r) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) El **Maximum Independent Set** bipartito es exactamente el complemento del Minimum Vertex Cover: los nodos con `vis_l[u] == 1` a la izquierda y `vis_r[v] == 0` a la derecha.
+
+#### 6.6.4 Algoritmo Húngaro de Asignación de Costo Mínimo (`hungarian`)
+
+- **Cuándo usar:** Asignar cada una de las $N$ filas a una columna distinta entre $M$ columnas ($N \le M \le 500$) minimizando la suma de costos $\sum_{i=1}^N a[i][\text{match}[i]]$.
+- **Cuándo no usar / alternativa:** Si el grafo bipartito es muy disperso con capacidades $> 1$, usar `MCMF` (§6.6.2).
+- **Contrato:** Matriz `a` **1-indexed** de dimensión `(n + 1) x (m + 1)` con `n <= m`.admite costos negativos o cero. Retorna `{costo_minimo, match_row}`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N^2 M)$ tiempo y $\mathcal{O}(N M)$ memoria.
+- **Formato de entrada:** `N M`, seguido de la matriz `N x M` de costos.
+
+**Entrada:**
+```text
+3 3
+10 2 8
+3 9 4
+7 5 1
+```
+
+**Salida:**
+```text
+6
+2 1 3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vector<vll> a(n + 1, vll(m + 1, 0));
+for (int i = 1; i <= n; ++i)
+  for (int j = 1; j <= m; ++j) cin >> a[i][j];
+```
+
+**Implementación:**
+```cpp
+// 3. Algoritmo Hungaro (Asignacion N x M de Costo Minimo en
+// O(N^2 * M))
 // Matriz 'a' 1-indexed de tamano (n+1) x (m+1) con n <= m.
-// Para MAXIMIZAR costo: negar todos los valores de la matriz antes de llamar.
+// Para MAXIMIZAR costo: negar todos los valores de la
+// matriz antes de llamar.
 pair<ll, vi> hungarian(int n, int m, const vector<vll>& a) {
   vll u(n + 1, 0), v(m + 1, 0);
   vi p(m + 1, 0), way(m + 1, 0);
@@ -3765,11 +6638,60 @@ pair<ll, vi> hungarian(int n, int m, const vector<vll>& a) {
     } while (j0);
   }
   vi match_row(n + 1, 0);
-  for (int j = 1; j <= m; ++j) if (p[j] > 0) match_row[p[j]] = j;
-  return {-v[0], match_row}; // {costo_minimo, columna_asignada_a_cada_fila}
+  for (int j = 1; j <= m; ++j) if (
+    p[j] > 0) match_row[p[j]] = j;
+  // {costo_minimo, columna_asignada_a_cada_fila}
+  return {-v[0], match_row};
 }
+```
 
-// 4. Blossom (Max Matching en Grafo General No Bipartito en O(V^3))
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto [cost, match_r] = hungarian(n, m, a);
+cout << cost << '\n';
+for (int i = 1; i <= n; ++i)
+  cout << match_r[i] << (i == n ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Si $N > M$, transponer la matriz antes de llamar; (2) para **maximizar** la ganancia total, negar todas las entradas `a[i][j] = -a[i][j]` y tomar `-cost`.
+
+#### 6.6.5 Matching Máximo en Grafo General: Algoritmo Blossom de Edmonds (`Blossom`)
+
+- **Cuándo usar:** Hallar el máximo número de parejas disjuntas en un grafo no dirigido **general (no bipartito, con posibles ciclos impares)** para $V \le 500$.
+- **Cuándo no usar / alternativa:** Si el grafo es bipartito, usar `Dinic` (§6.6.1) o `BipartiteMVC` (§6.6.3); en grafos no bipartitos el teorema de König NO se cumple.
+- **Contrato:** Nodos 1-indexed (`1..n`). `solve()` retorna el número de parejas emparejadas y deja en `match[u]` la pareja del nodo `u` (`0` si quedó libre). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V^3)$ tiempo y $\mathcal{O}(V + E)$ memoria.
+- **Formato de entrada:** `N M`, seguido de `M` aristas no dirigidas `u v`.
+
+**Entrada:**
+```text
+4 4
+1 2
+2 3
+3 1
+3 4
+```
+
+**Salida:**
+```text
+2
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+Blossom bl(n);
+for (int i = 0; i < m; ++i) {
+  int u, v; cin >> u >> v;
+  bl.add_edge(u, v);
+}
+```
+
+**Implementación:**
+```cpp
+// 4. Blossom (Max Matching en Grafo General No Bipartito en
+// O(V^3))
 struct Blossom {
   int n, timer = 0;
   vector<vi> adj;
@@ -3778,9 +6700,11 @@ struct Blossom {
 
   Blossom(int n)
     : n(n), adj(n + 1), match(n + 1, 0), p(n + 1, 0),
-      base(n + 1, 0), vis(n + 1, 0), in_q(n + 1, 0), in_b(n + 1, 0) {}
+      base(n + 1, 0), vis(n + 1, 0), in_q(n + 1, 0), in_b(
+        n + 1, 0) {}
 
-  void add_edge(int u, int v) { adj[u].pb(v); adj[v].pb(u); }
+  void add_edge(int u, int v) { adj[u].pb(v); adj[v].pb(u);
+    }
 
   int lca(int u, int v) {
     ++timer;
@@ -3847,39 +6771,53 @@ struct Blossom {
         }
       }
     }
-    return ans; // Cantidad de parejas; match[u] indica pareja de u
+    // Cantidad de parejas; match[u] indica pareja de u
+    return ans;
   }
 };
 ```
 
-**Ejemplo de Input y Uso (Dinic Max Flow & Min-Cost Max-Flow):**
-
-```
-Input Dinic: 4 nodos (Fuente S = 1, Sumidero T = 4).
-Aristas (u v cap): (1 2 40), (1 4 20), (2 4 20), (2 3 30), (3 4 10).
-Flujo maximo de 1 a 4 = 20 (directo 1->4) + 20 (1->2->4) + 10 (1->2->3->4) = 50.
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << bl.solve() << '\n';
 ```
 
-``` cpp
-int main() {
-  Dinic mf(4, 1, 4);
-  mf.add_edge(1, 2, 40);
-  mf.add_edge(1, 4, 20);
-  mf.add_edge(2, 4, 20);
-  mf.add_edge(2, 3, 30);
-  mf.add_edge(3, 4, 10);
-  cout << mf.max_flow() << "\n"; // 50
-}
-```
+- **Trampas y adaptaciones:** (1) No agregar dos veces la arista en la entrada porque `add_edge(u, v)` ya inserta ambas direcciones.
 
 ------------------------------------------------------------------------
 
-
 ### 6.7 Árbol Generador Mínimo Dirigido (Directed MST / Arborescence)
 
-- **¿Cuándo usar?**: En un grafo dirigido con pesos (positivos o negativos), hallar el árbol generador con menor peso total enraizado en un nodo $R$, tal que todo nodo sea alcanzable desde $R$ siguiendo aristas dirigidas (Algoritmo de Chu-Liu-Edmonds).
-- **Complejidad**: $\mathcal{O}(E \log V)$.
+- **Cuándo usar:** Hallar la arborescencia dirigida de peso mínimo enraizada en `root` que alcance todos los demás nodos en un grafo **dirigido** con pesos.
+- **Cuándo no usar / alternativa:** Si el grafo es no dirigido, usar `kruskal_mst` (§6.4.2).
+- **Contrato:** Nodos **0-indexed** (`0..n-1`). Retorna `{costo_total, parent_edge}`, o `{-1, {}}` si algún nodo es inalcanzable desde `root`. Usa *Skew Heaps* con propagación perezosa y `RollbackDSU` (§4.1.2). Dependencias: `RollbackDSU` (§4.1.2).
+- **Complejidad:** $\mathcal{O}(E \log V)$ tiempo y $\mathcal{O}(V + E)$ memoria.
+- **Formato de entrada:** `N M root`, seguido de `M` aristas dirigidas 0-indexed `u v w`.
 
+**Entrada:**
+```text
+4 5 0
+0 1 10
+0 2 10
+1 2 2
+2 3 3
+3 1 4
+```
+
+**Salida:**
+```text
+15
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m, root;
+cin >> n >> m >> root;
+vector<DirEdge> edges(m);
+for (auto& e : edges) cin >> e.u >> e.v >> e.w;
+```
+
+**Implementación:**
 ```cpp
 // Edmonds' Chu-Liu-Edmonds en O(E log V) con Skew Heaps
 struct DirEdge { int u, v; ll w; };
@@ -3907,11 +6845,12 @@ void skew_pop(SkewNode*& a) {
 }
 
 // Retorna {costo_total, parent_edge} (-1 si no es conexo)
-pair<ll, vi> directed_mst(int n, int root, vector<DirEdge>& edges) {
-  struct RollbackDSU {
+pair<ll, vi> directed_mst(int n, int root,
+  vector<DirEdge>& edges) {
+  struct ArbUF {
     vi p, r;
     vector<pair<int, int>> hist;
-    RollbackDSU(int n) : p(n), r(n, 0) { iota(all(p), 0); }
+    ArbUF(int n) : p(n), r(n, 0) { iota(all(p), 0); }
     int find(int i) { return p[i] == i ? i : find(p[i]); }
     bool unite(int i, int j) {
       i = find(i); j = find(j);
@@ -3933,7 +6872,8 @@ pair<ll, vi> directed_mst(int n, int root, vector<DirEdge>& edges) {
   } uf(n);
 
   vector<SkewNode*> heap(n, 0);
-  for (auto& e : edges) heap[e.v] = skew_merge(heap[e.v], new SkewNode{e});
+  for (auto& e : edges) heap[e.v] = skew_merge(heap[e.v],
+    new SkewNode{e});
   ll res = 0;
   vi seen(n, -1), path(n), par(n, -1);
   seen[root] = root;
@@ -3970,17 +6910,57 @@ pair<ll, vi> directed_mst(int n, int root, vector<DirEdge>& edges) {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto [cost, par_e] = directed_mst(n, root, edges);
+cout << cost << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) A diferencia del resto del bloque de grafos, esta implementación de Edmonds es **0-indexed** (`0..n-1`); restar `1` a `u, v, root` si la entrada viene 1-indexed.
+
 ### 6.8 Componentes Biconexas y Block-Cut Tree
 
-- **¿Cuándo usar?**: En un grafo no dirigido, descomponer el grafo en bloques (componentes 2-vértice conexas, donde ningún vértice individual puede desconectar el bloque) y puntos de articulación. Construir el **Block-Cut Tree**, un árbol bipartito alternando entre puntos de articulación y componentes biconexas, sobre el cual se responden consultas de caminos seguros y puentes en $\mathcal{O}(\log V)$.
-- **Complejidad**: $\mathcal{O}(V + E)$.
+- **Cuándo usar:** Comprimir un grafo no dirigido general en el árbol bipartito entre nodos originales (`1..N`) y bloques biconexos (`N+1..N+sz(blocks)`), por ejemplo para saber si todo camino simple entre `u` y `v` debe pasar por un punto de articulación `c`.
+- **Cuándo no usar / alternativa:** Si solo necesitas las componentes 2-arista-conexas (sin aristas puente), basta colapsar componentes separadas por `BridgesAndCuts::bridges` (§6.5.2).
+- **Contrato:** Nodos 1-indexed (`1..n`). Tras `build()`, `bct_adj` tiene `bct_nodes = n + sz(blocks)` vértices: una arista $(u, N + b)$ en `bct_adj` indica que el vértice original `u` pertenece al bloque `b`. Maneja correctamente nodos aislados y aristas paralelas. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V + E)$ tiempo y memoria.
+- **Formato de entrada:** `N M`, seguido de `M` aristas no dirigidas `u v`.
 
+**Entrada:**
+```text
+5 5
+1 2
+2 3
+3 1
+3 4
+4 5
+```
+
+**Salida:**
+```text
+3 2
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+BlockCutTree bct(n);
+for (int i = 0; i < m; ++i) {
+  int u, v; cin >> u >> v;
+  bct.add_edge(u, v);
+}
+```
+
+**Implementación:**
 ```cpp
 struct BlockCutTree {
-  int n;
-  vector<vi> adj, bct_adj;
+  struct Edge { int to, id; };
+  int n, m = 0;
+  vector<vector<Edge>> adj;
+  vector<vi> bct_adj, blocks;
   vi dfn, low, is_cut, bct_id;
-  vector<pii> st;
+  vector<pair<pii, int>> st;
   int timer = 0, bct_nodes = 0;
   vector<vector<pii>> biconn_edges;
 
@@ -3988,27 +6968,42 @@ struct BlockCutTree {
     low(n + 1, 0), is_cut(n + 1, 0), bct_id(n + 1, 0) {}
 
   void add_edge(int u, int v) {
-    adj[u].push_back(v); adj[v].push_back(u);
+    if (u == v) return;
+    ++m;
+    adj[u].push_back({v, m});
+    adj[v].push_back({u, m});
   }
-  void dfs(int u, int p = 0) {
+  void dfs(int u, int p_edge = 0) {
     dfn[u] = low[u] = ++timer;
+    if (adj[u].empty()) {
+      blocks.push_back({u});
+      return;
+    }
     int children = 0;
-    for (int v : adj[u]) {
-      if (v == p) continue;
-      if (dfn[v]) low[u] = min(low[u], dfn[v]);
-      else {
+    for (auto [v, id] : adj[u]) {
+      if (id == p_edge) continue;
+      if (dfn[v]) {
+        low[u] = min(low[u], dfn[v]);
+        if (dfn[v] < dfn[u]) st.push_back({{u, v}, id});
+      } else {
         children++;
-        st.push_back({u, v});
-        dfs(v, u);
+        st.push_back({{u, v}, id});
+        dfs(v, id);
         low[u] = min(low[u], low[v]);
         if (low[v] >= dfn[u]) {
-          is_cut[u] = (p != 0 || children > 1);
+          if (p_edge != 0 || children > 1) is_cut[u] = 1;
           biconn_edges.push_back({});
+          vi comp_v;
           while (true) {
-            auto edge = st.back(); st.pop_back();
+            auto [edge, eid] = st.back(); st.pop_back();
             biconn_edges.back().push_back(edge);
-            if (edge == pii{u, v}) break;
+            comp_v.push_back(edge.fi);
+            comp_v.push_back(edge.se);
+            if (eid == id) break;
           }
+          sort(all(comp_v));
+          comp_v.erase(unique(all(comp_v)), comp_v.end());
+          blocks.push_back(comp_v);
         }
       }
     }
@@ -4016,16 +7011,13 @@ struct BlockCutTree {
   void build() {
     for (int i = 1; i <= n; ++i) if (!dfn[i]) dfs(i);
     int cuts = 0;
-    for (int i = 1; i <= n; ++i) if (is_cut[i]) bct_id[i] = ++cuts;
+    for (int i = 1; i <= n; ++i) if (
+      is_cut[i]) bct_id[i] = ++cuts;
     bct_nodes = cuts;
-    bct_adj.resize(cuts + sz(biconn_edges) + 1);
+    bct_adj.assign(cuts + sz(blocks) + 1, {});
 
-    for (int b = 0; b < sz(biconn_edges); ++b) {
+    for (const auto& verts : blocks) {
       int block_node = ++bct_nodes;
-      set<int> verts;
-      for (auto [u, v] : biconn_edges[b]) {
-        verts.insert(u); verts.insert(v);
-      }
       for (int u : verts) {
         if (is_cut[u]) {
           bct_adj[bct_id[u]].push_back(block_node);
@@ -4037,22 +7029,63 @@ struct BlockCutTree {
 };
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+bct.build();
+int cuts = 0;
+for (int i = 1; i <= n; ++i) if (bct.is_cut[i]) cuts++;
+cout << sz(bct.blocks) << " " << cuts << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Un vértice `c` es obligatorio en todo camino simple entre `u` y `v` ($c \neq u, v$) si y solo si `c` es punto de articulación (`is_cut[c] == 1`) y `c` está en el camino del árbol `bct_adj` entre `u` y `v`.
+
 ### 6.9 Camino y Ciclo Euleriano (Hierholzer)
 
-- **¿Cuándo usar?**: Encontrar un camino o ciclo que visite **cada arista del grafo exactamente una vez**.
-  - **Grafo Dirigido**: Existe ciclo euleriano si para todo nodo $\operatorname{in}(u) = \operatorname{out}(u)$. Existe camino si a lo sumo un nodo tiene $\operatorname{out} - \operatorname{in} = 1$ (inicio) y uno $\operatorname{in} - \operatorname{out} = 1$ (fin).
-  - **Grafo No Dirigido**: Existe ciclo si todos los grados son pares; existe camino si exactamente 0 o 2 nodos tienen grado impar.
-- **Complejidad**: $\mathcal{O}(V + E)$.
+- **Cuándo usar:** Encontrar un recorrido que utilice **exactamente una vez cada arista** de un grafo dirigido (con posibles multiaristas y auto-bucles), como en reconstrucción de cadenas por $k$-mers (grafos de De Bruijn).
+- **Cuándo no usar / alternativa:** Si buscas visitar cada **vértice** exactamente una vez (Camino Hamiltoniano), el problema es NP-completo y requiere `tsp_subset_dp` (§8.2.2) para $N \le 20$.
+- **Contrato:** Nodos 1-indexed (`1..n`). `find_tour()` verifica grados de entrada/salida, reinicia su estado interno y retorna los $M + 1$ vértices del recorrido en orden, o `{}` si el grafo no es euleriano (o tiene aristas en componentes desconectadas). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V + E)$ tiempo y memoria.
+- **Formato de entrada:** `N M`, seguido de `M` aristas dirigidas `u v`.
 
+**Entrada:**
+```text
+3 4
+1 2
+2 3
+3 1
+1 3
+```
+
+**Salida:**
+```text
+1 2 3 1 3
+```
+
+**Cómo leer la entrada:**
 ```cpp
-// Hierholzer para Grafo Dirigido con multiaristas (1-indexed)
+int n, m;
+cin >> n >> m;
+EulerianDirected eu(n);
+for (int i = 0; i < m; ++i) {
+  int u, v; cin >> u >> v;
+  eu.add_edge(u, v);
+}
+```
+
+**Implementación:**
+```cpp
+// Hierholzer Canónico para Grafo Dirigido con multiaristas
+// (1-indexed)
+// Nota: find_tour() reinicia cur_edge y used_edge, por lo
+// que admite llamadas repetidas.
 struct EulerianDirected {
   int n, m = 0;
   vector<vector<pii>> adj; // {v, edge_id}
   vi in_deg, out_deg, cur_edge;
   vector<bool> used_edge;
 
-  EulerianDirected(int n) : n(n), adj(n + 1), in_deg(n + 1, 0),
+  EulerianDirected(int n) : n(n), adj(n + 1), in_deg(n + 1,
+    0),
     out_deg(n + 1, 0), cur_edge(n + 1, 0) {}
 
   void add_edge(int u, int v) {
@@ -4060,23 +7093,30 @@ struct EulerianDirected {
     out_deg[u]++; in_deg[v]++;
   }
   vi find_tour() {
+    if (m == 0) return {1};
+    fill(all(cur_edge), 0);
     used_edge.assign(m + 1, false);
     int start = 1, one_out = 0, one_in = 0;
     for (int i = 1; i <= n; ++i) {
-      if (out_deg[i] - in_deg[i] == 1) { one_out++; start = i; }
+      if (out_deg[i] - in_deg[i] == 1) { one_out++;
+        start = i; }
       else if (in_deg[i] - out_deg[i] == 1) one_in++;
-      else if (in_deg[i] != out_deg[i]) return {}; // Imposible
+      // Imposible
+      else if (in_deg[i] != out_deg[i]) return {};
     }
-    if (!(one_out == 0 && one_in == 0) && !(one_out == 1 && one_in == 1))
+    if (!(one_out == 0 && one_in == 0) && !(
+      one_out == 1 && one_in == 1))
       return {};
 
     for (int i = 1; i <= n; ++i)
-      if (out_deg[i] > 0 && one_out == 0) { start = i; break; }
+      if (out_deg[i] > 0 && one_out == 0) { start = i;
+        break; }
 
     vi path, st = {start};
     while (!st.empty()) {
       int u = st.back();
-      while (cur_edge[u] < sz(adj[u]) && used_edge[adj[u][cur_edge[u]].second])
+      while (cur_edge[u] < sz(
+        adj[u]) && used_edge[adj[u][cur_edge[u]].second])
         cur_edge[u]++;
       if (cur_edge[u] < sz(adj[u])) {
         auto [v, id] = adj[u][cur_edge[u]++];
@@ -4094,150 +7134,52 @@ struct EulerianDirected {
 };
 ```
 
-### 6.10 Flujos Avanzados y Matching: Push-Relabel, Algoritmo Húngaro y Blossom
-
-- **Push-Relabel (Highest-Label Preflow-Push)**: Para redes de flujo densas ($V \le 5000, E \le 50000$) donde Dinic sufre por caminos aumentantes largos. $\mathcal{O}(V^2 \sqrt{E})$.
-- **Algoritmo Húngaro (Hungarian)**: Problema de asignación óptima: emparejar $N$ trabajadores con $N$ tareas con costo total mínimo/máximo en una matriz $N \times N$. $\mathcal{O}(N^3)$ (mucho más rápido y sencillo que modelar con MCMF).
-- **Algoritmo de Blossom (Edmonds)**: Emparejamiento máximo en grafos generales **no bipartitos** (resuelve los ciclos impares contrayendo los "blossoms"). $\mathcal{O}(V^2 E)$.
-
+**Cómo llamarlo y producir la salida:**
 ```cpp
-// 1. Algoritmo Hungaro (Min/Max Weight Bipartite Matching en O(N^3))
-// Matriz de costo C de 0..n-1 x 0..n-1.
-// Para MAXIMIZAR: pasar costos negativos (-C[i][j]).
-template<typename T = ll>
-struct Hungarian {
-  const T INF = numeric_limits<T>::max() / 2;
-  int n;
-  vector<vector<T>> cost;
-  Hungarian(int n) : n(n), cost(n + 1, vector<T>(n + 1, 0)) {}
+vi tour = eu.find_tour();
+for (int i = 0; i < sz(tour); ++i)
+  cout << tour[i] << (i + 1 == sz(tour) ? '\n' : ' ');
+```
 
-  void set_cost(int i, int j, T c) { cost[i + 1][j + 1] = c; }
+- **Trampas y adaptaciones:** (1) Para grafo **no dirigido**, existe camino euleriano si a lo sumo 2 vértices tienen grado impar y todas las aristas pertenecen a una sola componente conexa; marcar `used_edge[id] = true` para ambas direcciones de la arista `id`.
 
-  // Retorna {costo_minimo, asignacion (0-indexed)}
-  pair<T, vi> solve() {
-    vector<T> u(n + 1, 0), v(n + 1, 0);
-    vi p(n + 1, 0), way(n + 1, 0);
-    for (int i = 1; i <= n; ++i) {
-      p[0] = i;
-      int j0 = 0;
-      vector<T> minv(n + 1, INF);
-      vector<bool> used(n + 1, false);
-      do {
-        used[j0] = true;
-        int i0 = p[j0], j1 = 0;
-        T delta = INF;
-        for (int j = 1; j <= n; ++j) {
-          if (!used[j]) {
-            T cur = cost[i0][j] - u[i0] - v[j];
-            if (cur < minv[j]) { minv[j] = cur; way[j] = j0; }
-            if (minv[j] < delta) { delta = minv[j]; j1 = j; }
-          }
-        }
-        for (int j = 0; j <= n; ++j) {
-          if (used[j]) { u[p[j]] += delta; v[j] -= delta; }
-          else minv[j] -= delta;
-        }
-        j0 = j1;
-      } while (p[j0] != 0);
-      do {
-        int j1 = way[j0];
-        p[j0] = p[j1];
-        j0 = j1;
-      } while (j0);
-    }
-    vi match(n);
-    for (int j = 1; j <= n; ++j) match[p[j] - 1] = j - 1;
-    return {-v[0], match};
-  }
-};
+### 6.10 Flujo Máximo en Redes Densas: Push-Relabel (Highest-Label + Gap)
 
-// 2. Blossom Algorithm (Edmonds Maximum Matching en Grafos Generales O(V^3))
-struct Blossom {
-  int n;
-  vector<vi> adj;
-  vi match, p, base, q;
-  vector<bool> in_b, in_q;
+- **Cuándo usar:** Flujo máximo $s \to t$ en redes muy densas ($V \le 5000, E \le 10^6$) con capacidades grandes donde Dinic sufre demasiadas fases de aumento.
+- **Cuándo no usar / alternativa:** En redes unitarias o matching bipartito, `Dinic` (§6.6.1) es más corto y corre en $\mathcal{O}(E\sqrt{V})$.
+- **Contrato:** Nodos 1-indexed (`1..n`). Implementa preflujo con selección *Highest-Label* (`B[b_max]`) y heurística *Gap*. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(V^2 \sqrt{E})$ peor caso teórico (muy rápido en la práctica).
+- **Formato de entrada:** `N M S T`, seguido de `M` aristas dirigidas `u v cap`.
 
-  Blossom(int n) : n(n), adj(n + 1), match(n + 1, 0),
-    p(n + 1), base(n + 1), in_b(n + 1), in_q(n + 1) {}
+**Entrada:**
+```text
+4 5 1 4
+1 2 10
+1 3 10
+2 3 2
+2 4 8
+3 4 9
+```
 
-  void add_edge(int u, int v) {
-    adj[u].push_back(v); adj[v].push_back(u);
-  }
-  int lca(int root, int u, int v) {
-    vector<bool> used(n + 1, false);
-    while (true) {
-      u = base[u]; used[u] = true;
-      if (u == root) break;
-      u = p[match[u]];
-    }
-    while (true) {
-      v = base[v];
-      if (used[v]) return v;
-      v = p[match[v]];
-    }
-  }
-  void mark_blossom(int l, int u) {
-    while (base[u] != l) {
-      int v = match[u];
-      in_b[base[u]] = in_b[base[v]] = true;
-      u = p[v];
-      if (base[u] != l) p[u] = v;
-    }
-  }
-  void contract_blossom(int s, int u, int v) {
-    int l = lca(s, u, v);
-    fill(all(in_b), false);
-    mark_blossom(l, u); mark_blossom(l, v);
-    if (base[u] != l) p[u] = v;
-    if (base[v] != l) p[v] = u;
-    for (int i = 1; i <= n; ++i) {
-      if (in_b[base[i]]) {
-        base[i] = l;
-        if (!in_q[i]) { in_q[i] = true; q.push_back(i); }
-      }
-    }
-  }
-  int bfs(int s) {
-    fill(all(in_q), false); fill(all(p), 0);
-    iota(all(base), 0);
-    q.clear(); q.push_back(s); in_q[s] = true;
-    int head = 0;
-    while (head < sz(q)) {
-      int u = q[head++];
-      for (int v : adj[u]) {
-        if (base[u] == base[v] || match[u] == v) continue;
-        if (v == s || (match[v] && p[match[v]]))
-          contract_blossom(s, u, v);
-        else if (!p[v]) {
-          p[v] = u;
-          if (!match[v]) return v;
-          if (!in_q[match[v]]) {
-            in_q[match[v]] = true; q.push_back(match[v]);
-          }
-        }
-      }
-    }
-    return 0;
-  }
-  int max_matching() {
-    int ans = 0;
-    for (int i = 1; i <= n; ++i) {
-      if (!match[i]) {
-        int v = bfs(i);
-        while (v) {
-          int pv = p[v], ppv = match[pv];
-          match[v] = pv; match[pv] = v;
-          v = ppv;
-        }
-      }
-    }
-    for (int i = 1; i <= n; ++i) if (match[i]) ans++;
-    return ans / 2;
-  }
-};
+**Salida:**
+```text
+17
+```
 
-// 3. Push-Relabel (Highest-Label Preflow-Push O(V^2 sqrt(E)))
+**Cómo leer la entrada:**
+```cpp
+int n, m, s, t;
+cin >> n >> m >> s >> t;
+PushRelabel pr(n);
+for (int i = 0; i < m; ++i) {
+  int u, v; ll c; cin >> u >> v >> c;
+  pr.add_edge(u, v, c);
+}
+```
+
+**Implementación:**
+```cpp
+// Push-Relabel (Highest-Label Preflow-Push O(V^2 sqrt(E)))
 struct PushRelabel {
   struct Edge { int to, rev; ll cap, flow; };
   int n;
@@ -4249,7 +7191,8 @@ struct PushRelabel {
   int b_max = 0;
 
   PushRelabel(int n) : n(n), adj(n + 1), excess(n + 1, 0),
-    height(n + 1, 0), count(2 * n + 1, 0), active(n + 1, false), B(2 * n + 1) {}
+    height(n + 1, 0), count(2 * n + 2, 0), active(n + 1,
+      false), B(2 * n + 2) {}
 
   void add_edge(int from, int to, ll cap) {
     adj[from].push_back({to, sz(adj[to]), cap, 0});
@@ -4273,25 +7216,28 @@ struct PushRelabel {
   }
   void gap(int k) {
     for (int v = 1; v <= n; ++v) {
-      if (height[v] >= k) {
+      if (height[v] > k && height[v] < n) {
         count[height[v]]--;
-        height[v] = max(height[v], n + 1);
+        height[v] = n + 1;
         count[height[v]]++;
         enqueue(v);
       }
     }
   }
   void relabel(int v) {
-    count[height[v]]--;
+    int old_h = height[v];
+    count[old_h]--;
     int d = 2 * n;
     for (auto& e : adj[v])
       if (e.cap - e.flow > 0) d = min(d, height[e.to]);
-    if (count[height[v]] == 0) gap(height[v]);
     height[v] = d + 1;
     count[height[v]]++;
     enqueue(v);
+    if (old_h < n && count[old_h] == 0) gap(old_h);
   }
   ll max_flow(int s, int t) {
+    if (s == t) return 0;
+    fill(all(count), 0);
     count[0] = n - 1; count[n] = 1;
     height[s] = n; active[s] = active[t] = true;
     for (auto& e : adj[s]) {
@@ -4313,6 +7259,141 @@ struct PushRelabel {
 };
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << pr.max_flow(s, t) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para capacidades no dirigidas, agregar dos llamadas `add_edge(u, v, cap)` y `add_edge(v, u, cap)`.
+
+------------------------------------------------------------------------
+
+### 6.11 Grafos Funcionales (Successors): Ciclos, Colas y Binary Lifting
+
+- **Cuándo usar:** Grafos dirigidos donde **cada nodo tiene grado de salida exactamente 1** ($u \to \text{to}[u]$): hallar el nodo tras $K \le 10^{18}$ pasos (`jump`), el mínimo número de pasos de `u` a `v` (`min_steps`), o la longitud e índice del ciclo de cada componente.
+- **Cuándo no usar / alternativa:** Si los nodos tienen múltiples aristas de salida, usar `TarjanSCC` (§6.5.3) o `LCA` en árboles (§6.4.3).
+- **Contrato:** Nodos 1-indexed (`1..n`); `to[u] \in [1, n]`. `LOG = 62` soporta $K \le 2^{61} > 2 \cdot 10^{18}$. `min_steps(u, v)` retorna `-1` si `v` es inalcanzable desde `u`. Dependencias: template base (§1.1).
+- **Complejidad:** Construcción $\mathcal{O}(N \log K_{\max})$ tiempo y memoria; `jump` y `min_steps` en $\mathcal{O}(\log K_{\max})$.
+- **Formato de entrada:** `N Q`, luego `N` enteros `to[1..N]` y `Q` consultas: `1 u k` (`jump`) o `2 u v` (`min_steps`).
+
+**Entrada:**
+```text
+5 3
+2 3 4 2 4
+1 1 5
+2 5 3
+2 2 5
+```
+
+**Salida:**
+```text
+3
+3
+-1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, q;
+cin >> n >> q;
+vi to(n + 1);
+for (int i = 1; i <= n; ++i) cin >> to[i];
+```
+
+**Implementación:**
+```cpp
+struct FunctionalGraph {
+  static const int LOG = 62; // Soporta K <= 2e18
+  int n, cyc_cnt = 0;
+  vi to, in_deg, dist_cyc, root_cyc, cyc_id, cyc_pos,
+    cyc_len;
+  vector<vi> up;
+
+  FunctionalGraph(int n, const vi& nxt)
+    : n(n), to(nxt), in_deg(n + 1, 0), dist_cyc(n + 1, 0),
+      root_cyc(n + 1, 0), cyc_id(n + 1, 0), cyc_pos(n + 1,
+        0),
+      cyc_len(n + 1, 0), up(LOG, vi(n + 1, 0)) {
+    for (int i = 1; i <= n; ++i) {
+      up[0][i] = to[i];
+      in_deg[to[i]]++;
+    }
+    for (int j = 1; j < LOG; ++j)
+      for (int i = 1; i <= n; ++i)
+        up[j][i] = up[j - 1][up[j - 1][i]];
+
+    queue<int> q;
+    vector<bool> on_cyc(n + 1, true);
+    for (int i = 1; i <= n; ++i)
+      if (in_deg[i] == 0) { q.push(i); on_cyc[i] = false; }
+    while (!q.empty()) {
+      int u = q.front(); q.pop();
+      int v = to[u];
+      if (--in_deg[v] == 0) {
+        on_cyc[v] = false;
+        q.push(v);
+      }
+    }
+    for (int i = 1; i <= n; ++i) {
+      if (on_cyc[i] && !cyc_id[i]) {
+        ++cyc_cnt;
+        int cur = i, pos = 0;
+        while (!cyc_id[cur]) {
+          cyc_id[cur] = cyc_cnt;
+          cyc_pos[cur] = pos++;
+          root_cyc[cur] = cur;
+          cur = to[cur];
+        }
+        cyc_len[cyc_cnt] = pos;
+      }
+    }
+    for (int i = 1; i <= n; ++i)
+      if (!on_cyc[i]) resolve_tree(i);
+  }
+  void resolve_tree(int u) {
+    if (cyc_id[u]) return;
+    int v = to[u];
+    if (!cyc_id[v]) resolve_tree(v);
+    dist_cyc[u] = dist_cyc[v] + 1;
+    root_cyc[u] = root_cyc[v];
+    cyc_id[u] = cyc_id[v];
+  }
+  int jump(int u, ll k) const {
+    for (int j = 0; j < LOG; ++j)
+      if ((k >> j) & 1LL) u = up[j][u];
+    return u;
+  }
+  // Minima cantidad de pasos para ir de u a v (-1 si
+  // imposible)
+  ll min_steps(int u, int v) const {
+    if (cyc_id[u] != cyc_id[v]) return -1;
+    if (dist_cyc[u] < dist_cyc[v]) return -1;
+    ll d = dist_cyc[u] - dist_cyc[v];
+    int u_anc = jump(u, d);
+    if (dist_cyc[v] > 0) return (u_anc == v) ? d : -1;
+    int len = cyc_len[cyc_id[v]];
+    int diff = (cyc_pos[v] - cyc_pos[u_anc] + len) % len;
+    return d + diff;
+  }
+};
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+FunctionalGraph fg(n, to);
+while (q--) {
+  int type; cin >> type;
+  if (type == 1) {
+    int u; ll k; cin >> u >> k;
+    cout << fg.jump(u, k) << '\n';
+  } else {
+    int u, v; cin >> u >> v;
+    cout << fg.min_steps(u, v) << '\n';
+  }
+}
+```
+
+- **Trampas y adaptaciones:** (1) Un nodo en la cola (`dist_cyc > 0`) nunca puede ser alcanzado desde un nodo que ya entró al ciclo (`dist_cyc == 0`).
 
 ------------------------------------------------------------------------
 
@@ -4320,30 +7401,32 @@ struct PushRelabel {
 
 ### 7.1 Cribas (Eratóstenes, Divisores, Lineal SPF, Segmentada) y Primalidad $\mathcal{O}(\sqrt{N})$
 
-- **¿Cuándo usar?**:
+#### 7.1.1 Criba de Eratóstenes (`sieve`)
 
-  - **Criba de Eratóstenes (`sieve`)**: Precalcular qué números hasta
-    $10^{7}$ son primos en $\mathcal{O}(N\log\log N)$.
+- **Cuándo usar:** Precalcular primalidad `is_prime[0..MAX_P-1]` en $\mathcal{O}(N \log \log N)$ para consultas en $\mathcal{O}(1)$ hasta $N \approx 10^7$.
+- **Cuándo no usar / alternativa:** Si además necesitas factorizar muchos números rápido en $\mathcal{O}(\log X)$, usar `linear_sieve_spf` (§7.1.3).
+- **Contrato:** Marca `is_prime[0] = is_prime[1] = false` y desde `i = 2` tacha múltiplos empezando en `i * i`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N \log \log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** Dos enteros `a b` ($0 \le a, b < \text{MAX\_P}$).
 
-  - **Criba de Divisores (`harmonic_sieve`)**: Precalcular en
-    $\mathcal{O}(N\log N)$ la cantidad $\tau(x)$ y suma
-    $\sigma(x)$ de divisores para todos los números hasta $10^{6}$.
+**Entrada:**
+```text
+29 35
+```
 
-  - **Criba Lineal SPF (`linear_sieve_spf`)**: Precalcular en
-    $\mathcal{O}(N)$ el Menor Factor Primo (`spf[x]`) hasta $10^{7}$
-    para **factorizar cualquier número $x$ de una consulta en tiempo
-    $\mathcal{O}(\log x)$**.
+**Salida:**
+```text
+1 0
+```
 
-  - **Criba Segmentada (`segmented_sieve`)**: Hallar todos los primos en
-    un rango $\lbrack L,R\rbrack$ donde $R \leq 10^{12}$ pero la
-    longitud del intervalo es pequeña ($R - L + 1 \leq 10^{7}$).
+**Cómo leer la entrada:**
+```cpp
+int a, b;
+cin >> a >> b;
+```
 
-  - **Primalidad Individual (`is_prime_single`)**: Verificar si un único
-    $N \leq 10^{12}$ es primo en $\mathcal{O}(\sqrt{N})$.
-
-- **Complejidad**: Ver encabezados de cada función.
-
-``` cpp
+**Implementación:**
+```cpp
 // 1. Criba de Eratostenes en O(MAX_P log log MAX_P)
 const int MAX_P = 1000005;
 bool is_prime[MAX_P];
@@ -4352,9 +7435,45 @@ void sieve() {
   fill(is_prime + 2, is_prime + MAX_P, true);
   for (ll i = 2; i * i < MAX_P; ++i)
     if (is_prime[i])
-      for (ll j = i * i; j < MAX_P; j += i) is_prime[j] = false;
+      for (ll j = i * i; j < MAX_P; j += i) is_prime[j]
+        = false;
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+sieve();
+cout << is_prime[a] << " " << is_prime[b] << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) El bucle interno `for (ll j = i * i; ...)` debe usar `ll` si `MAX_P` supera $46340$, pues `i * i` desbordaría `int`.
+
+#### 7.1.2 Criba Armónica de Divisores (`harmonic_sieve`)
+
+- **Cuándo usar:** Precalcular la cantidad de divisores `num_div[x]` ($\tau(x)$) y la suma de divisores `sum_div[x]` ($\sigma(x)$) para todos los enteros $x \in [1, N]$.
+- **Cuándo no usar / alternativa:** Si solo necesitas los divisores de un único $N \le 10^{12}$, iterar hasta $\sqrt{N}$ en $\mathcal{O}(\sqrt{N})$.
+- **Contrato:** Recorre cada divisor `i` y suma a todos sus múltiplos `j = i, 2i, 3i, ... <= n`. Dependencias: `MAX_P` (§7.1.1).
+- **Complejidad:** $\mathcal{O}(N \log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** Un entero `n` ($1 \le n < \text{MAX\_P}$).
+
+**Entrada:**
+```text
+12
+```
+
+**Salida:**
+```text
+6 28
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+```
+
+**Implementación:**
+```cpp
 // 2. Criba Armonica de Divisores en O(N log N)
 int num_div[MAX_P];
 ll sum_div[MAX_P];
@@ -4365,8 +7484,44 @@ void harmonic_sieve(int n) {
       sum_div[j] += i;
     }
 }
+```
 
-// 3. Criba Lineal O(N) con Menor Factor Primo (SPF) y Factorizacion O(log X)
+**Cómo llamarlo y producir la salida:**
+```cpp
+harmonic_sieve(n);
+cout << num_div[n] << " " << sum_div[n] << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) La serie armónica $\sum_{i=1}^N \lfloor N/i \rfloor = \mathcal{O}(N \log N)$ es mucho más rápida que factorizar cada número por separado.
+
+#### 7.1.3 Criba Lineal SPF y Factorización en $\mathcal{O}(\log X)$ (`linear_sieve_spf`, `get_prime_factors`)
+
+- **Cuándo usar:** Factorizar hasta $Q \le 10^6$ números con $X \le 10^7$ en $\mathcal{O}(\log X)$ por consulta dividiendo repetidamente por el menor factor primo `spf[x]`.
+- **Cuándo no usar / alternativa:** Si $X \le 10^{18}$ no cabe en memoria para precalcular `spf`, usar `factorize_64` con Pollard's Rho (§7.2.2).
+- **Contrato:** Cada compuesto $m$ es tachado **exactamente una vez** por su menor factor primo `spf[m]`. `get_prime_factors(x)` retorna los factores primos en orden no decreciente con multiplicidad. Dependencias: template base (§1.1).
+- **Complejidad:** Precomputación $\mathcal{O}(N)$; factorización de $X$ en $\mathcal{O}(\log X)$.
+- **Formato de entrada:** Un entero `x` ($2 \le x < \text{MAX\_SPF}$).
+
+**Entrada:**
+```text
+360
+```
+
+**Salida:**
+```text
+2 2 2 3 3 5
+```
+
+**Cómo leer la entrada:**
+```cpp
+int x;
+cin >> x;
+```
+
+**Implementación:**
+```cpp
+// 3. Criba Lineal O(N) con Menor Factor Primo (SPF) y
+// Factorizacion O(log X)
 const int MAX_SPF = 10000005;
 int spf[MAX_SPF];
 vi primes_list;
@@ -4379,14 +7534,55 @@ void linear_sieve_spf(int n = MAX_SPF - 1) {
     }
   }
 }
-vi get_prime_factors(int x) { // Retorna factores primos con multiplicidad
+// Retorna factores primos con multiplicidad
+vi get_prime_factors(int x) {
   vi f;
   while (x > 1) { f.pb(spf[x]); x /= spf[x]; }
   return f;
 }
+```
 
-// 4. Criba Segmentada en [L, R] para R <= 10^12 y (R - L + 1) <= 10^7
-// Retorna vector<bool> donde res[x - L] == true si y solo si x es primo.
+**Cómo llamarlo y producir la salida:**
+```cpp
+linear_sieve_spf(x);
+vi pf = get_prime_factors(x);
+for (int i = 0; i < sz(pf); ++i)
+  cout << pf[i] << (i + 1 == sz(pf) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) No olvidar llamar `linear_sieve_spf(max_val)` una vez al inicio de `main()` antes de invocar `get_prime_factors(x)`.
+
+#### 7.1.4 Criba Segmentada en Rango $[L, R]$ (`segmented_sieve`)
+
+- **Cuándo usar:** Encontrar todos los primos en un intervalo desplazado $[L, R]$ cuando $R \le 10^{12}$ es demasiado grande para un arreglo global pero el ancho $R - L + 1 \le 10^7$ es pequeño.
+- **Cuándo no usar / alternativa:** Si solo necesitas verificar unos pocos números aislados en $[L, R]$, usar `miller_rabin` (§7.2.1).
+- **Contrato:** Retorna `vector<bool> is_p(R - L + 1)` donde `is_p[x - L]` indica si `x` es primo. Maneja explícitamente los bordes `L = 0` y `L = 1`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\sqrt{R} \log \log \sqrt{R} + (R - L + 1) \log \log R)$ tiempo y $\mathcal{O}(\sqrt{R} + R - L + 1)$ memoria.
+- **Formato de entrada:** Dos enteros `L R` ($0 \le L \le R$).
+
+**Entrada:**
+```text
+10 20
+```
+
+**Salida:**
+```text
+4
+11 13 17 19
+```
+
+**Cómo leer la entrada:**
+```cpp
+ll L, R;
+cin >> L >> R;
+```
+
+**Implementación:**
+```cpp
+// 4. Criba Segmentada en [L, R] para R <= 10^12 y (R - L +
+// 1) <= 10^7
+// Retorna vector<bool> donde res[x - L] == true si y solo
+// si x es primo.
 vector<bool> segmented_sieve(ll L, ll R) {
   ll lim = sqrt(R);
   vector<bool> mark(lim + 1, false);
@@ -4402,10 +7598,50 @@ vector<bool> segmented_sieve(ll L, ll R) {
     ll start = max(p * p, (L + p - 1) / p * p);
     for (ll j = start; j <= R; j += p) res[j - L] = false;
   }
-  if (L == 1) res[0] = false;
+  for (ll x = max(L, 0LL); x <= min(R,
+    1LL); ++x) res[x - L] = false;
   return res;
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto is_p = segmented_sieve(L, R);
+vll p;
+for (ll x = L; x <= R; ++x) if (is_p[x - L]) p.pb(x);
+cout << sz(p) << '\n';
+for (int i = 0; i < sz(p); ++i)
+  cout << p[i] << (i + 1 == sz(p) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) El primer múltiplo de `p` a tachar en $[L, R]$ debe ser `max(p * p, ((L + p - 1) / p) * p)` para no tachar a `p` mismo cuando $L \le p$.
+
+#### 7.1.5 Test de Primalidad Individual en $\mathcal{O}(\sqrt{N})$ (`is_prime_single`)
+
+- **Cuándo usar:** Verificar primalidad de un único entero $N \le 10^{12}$ sin necesidad de tablas ni de `__uint128_t`.
+- **Cuándo no usar / alternativa:** Si $N$ llega hasta $10^{18}$ o hay miles de consultas grandes, $\mathcal{O}(\sqrt{N})$ da TLE; usar `miller_rabin` (§7.2.1).
+- **Contrato:** Salta múltiplos de $2$ y $3$ e inspecciona divisores de la forma $6k \pm 1$ hasta $\sqrt{N}$. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\sqrt{N})$ tiempo y $\mathcal{O}(1)$ memoria.
+- **Formato de entrada:** Dos enteros `a b`.
+
+**Entrada:**
+```text
+999999999989 999999999991
+```
+
+**Salida:**
+```text
+1 0
+```
+
+**Cómo leer la entrada:**
+```cpp
+ll a, b;
+cin >> a >> b;
+```
+
+**Implementación:**
+```cpp
 // 5. Primalidad Individual en O(sqrt(N)) para N <= 10^12
 bool is_prime_single(ll n) {
   if (n <= 1) return false;
@@ -4417,28 +7653,46 @@ bool is_prime_single(ll n) {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << is_prime_single(a) << " " << is_prime_single(
+  b) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) La condición `i * i <= n` con `ll i` es segura hasta $N \le 3 \cdot 10^{18}$.
+
 ------------------------------------------------------------------------
 
 ### 7.2 Primalidad y Factorización Grande: Miller-Rabin (64-bit) y Pollard’s Rho
 
-- **¿Cuándo usar?**: Cuando $N$ es enorme
-  ($10^{12} \leq N \leq 10^{18}$) y la prueba
-  $\mathcal{O}(\sqrt{N})$ da Time Limit Exceeded:
+#### 7.2.1 Test de Primalidad Determinista Miller-Rabin 64-bit (`miller_rabin`)
 
-  - **Miller-Rabin**: Verifica de forma **100% determinista** si
-    cualquier `ull` de 64 bits ($N < 2^{64}$) es primo en
-    $\mathcal{O}(\log N)$ usando las 7 bases canónicas.
+- **Cuándo usar:** Determinar con 100% de exactitud si un entero de 64 bits ($N < 2^{64} \approx 1.84 \cdot 10^{19}$) es primo.
+- **Cuándo no usar / alternativa:** Para $N \le 10^6$ con millones de consultas, precalcular `sieve()` (§7.1.1) es $\mathcal{O}(1)$ por consulta.
+- **Contrato:** Usa `u128` (`__uint128_t`) en `mul_mod64` para evitar overflow con signo cuando $N \ge 2^{63}$, y evalúa las 7 bases deterministas de Jim Sinclair. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(7 \log N)$ tiempo y $\mathcal{O}(1)$ memoria.
+- **Formato de entrada:** Dos enteros `a b` de 64 bits.
 
-  - **Pollard’s Rho**: Factoriza por completo cualquier entero de 64
-    bits ($N \leq 10^{18}$) en tiempo esperado
-    $\mathcal{O}(N^{1/4}\log N)$.
+**Entrada:**
+```text
+1000000000000000003 1000000000000000005
+```
 
-- **Complejidad**: Miller-Rabin $\mathcal{O}(7 \cdot \log N)$;
-  Pollard’s Rho $\mathcal{O}(N^{1/4})$.
+**Salida:**
+```text
+1 0
+```
 
-``` cpp
+**Cómo leer la entrada:**
+```cpp
+ull a, b;
+cin >> a >> b;
+```
+
+**Implementación:**
+```cpp
 ull mul_mod64(ull a, ull b, ull m) {
-  return (ull)((i128)a * b % m);
+  return (ull)((u128)a * b % m);
 }
 ull pow_mod64(ull b, ull e, ull m) {
   ull r = 1;
@@ -4449,10 +7703,12 @@ ull pow_mod64(ull b, ull e, ull m) {
   return r;
 }
 
-// 1. Miller-Rabin Determinista para todo entero de 64 bits (< 2^64)
+// 1. Miller-Rabin Determinista para todo entero de 64 bits
+// (< 2^64)
 bool miller_rabin(ull n) {
   if (n < 2) return false;
-  for (ull p : {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37}) {
+  for (ull p : {
+    2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37}) {
     if (n % p == 0) return n == p;
   }
   ull d = n - 1, s = 0;
@@ -4471,7 +7727,41 @@ bool miller_rabin(ull n) {
   }
   return true;
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << miller_rabin(a) << " " << miller_rabin(b) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Nunca usar `__int128` con signo para módulos $\ge 2^{63}$; usar siempre `u128` (`__uint128_t`).
+
+#### 7.2.2 Factorización de 64-bit con Pollard's Rho (`pollard_rho`, `factorize_64`)
+
+- **Cuándo usar:** Obtener todos los factores primos de un entero $N \le 10^{18}$ en aproximadamente $\mathcal{O}(N^{1/4})$ operaciones.
+- **Cuándo no usar / alternativa:** Si todos los números a factorizar son $\le 10^7$, `linear_sieve_spf` (§7.1.3) es mucho más rápido.
+- **Contrato:** `factorize_64(n, fac)` llena `fac` con todos los factores primos de `n` (con multiplicidad). Si `n <= 1`, no agrega factores. Dependencias: `miller_rabin`, `mul_mod64` (§7.2.1), `rd` (§1.2.1).
+- **Complejidad:** $\mathcal{O}(N^{1/4} \log N)$ esperado en tiempo; $\mathcal{O}(\log N)$ memoria.
+- **Formato de entrada:** Un entero `n` de 64 bits ($n \ge 2$).
+
+**Entrada:**
+```text
+1000000000000000005
+```
+
+**Salida:**
+```text
+3 5 44087 691381 2187161
+```
+
+**Cómo leer la entrada:**
+```cpp
+ull n;
+cin >> n;
+```
+
+**Implementación:**
+```cpp
 // 2. Pollard's Rho (Factorizacion completa en O(N^(1/4)))
 ull pollard_f(ull x, ull c, ull m) {
   return (mul_mod64(x, x, m) + c) % m;
@@ -4495,68 +7785,150 @@ void factorize_64(ull n, map<ull, int>& factors) {
 }
 ```
 
-**Ejemplo de Input y Uso (Pollard’s Rho):**
-
-``` cpp
-int main() {
-  ull n = 1000000007ULL * 1000000009ULL; // ~ 10^18 (semiprimo)
-  map<ull, int> pf;
-  factorize_64(n, pf);
-  // pf contiene {1000000007: 1, 1000000009: 1}
-}
+**Cómo llamarlo y producir la salida:**
+```cpp
+map<ull, int> fac;
+factorize_64(n, fac);
+vector<ull> pf;
+for (auto [p, c] : fac)
+  for (int i = 0; i < c; ++i) pf.pb(p);
+for (int i = 0; i < sz(pf); ++i)
+  cout << pf[i] << (i + 1 == sz(pf) ? '\n' : ' ');
 ```
+
+- **Trampas y adaptaciones:** (1) `factorize_64` no ordena automáticamente el vector `fac`; llamar `sort(all(fac))` después si necesitas los factores en orden creciente.
 
 ------------------------------------------------------------------------
 
 ### 7.3 GCD, Diferencia de Cuadrados, Euclides Extendido, Ecuaciones Diofánticas, Ecuación Modular y CRT
 
-- **¿Cuándo usar?**:
+#### 7.3.1 GCD de Arreglo tras Sumar $X$ (`array_diff_gcd`)
 
-  - **GCD tras sumar $X$ (`array_diff_gcd`)**: Cuando sumas un mismo
-    $X$ a todo un arreglo $A$, dado que
-    $\gcd(a_{1} + x,a_{2} + x,\ldots) = \gcd(a_{1} + x,|a_{2} - a_{1}|,|a_{3} - a_{2}|,\ldots)$,
-    precalculas el GCD de diferencias una vez y respondes cada $X$ en
-    $\mathcal{O}(\log(\mathrm{\text{val}}))$.
+- **Cuándo usar:** Calcular $\gcd(a_0 + X, a_1 + X, \dots, a_{n-1} + X)$ para múltiples consultas de $X$ en $\mathcal{O}(\log V)$ por consulta tras un preprocesamiento $\mathcal{O}(N \log V)$.
+- **Cuándo no usar / alternativa:** Si el arreglo cambia con actualizaciones en rango además de consultar GCD en subarreglos, combinar diferencias adyacentes con un `SegTree` (§4.4) + `Fenwick` (§4.3.1).
+- **Contrato:** Por propiedad de Euclides, $\gcd(a_0 + X, \dots, a_{n-1} + X) = \gcd(a_0 + X, |a_1 - a_0|, \dots, |a_{n-1} - a_0|)$. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N + \log V)$ tiempo y $\mathcal{O}(1)$ memoria.
+- **Formato de entrada:** `N X`, seguido de `N` enteros `a[0..N-1]`.
 
-  - **Diferencia de Cuadrados**: Expresar
-    $N = a^{2} - b^{2} = (a - b)(a + b)$ probando divisores
-    $d_{1} \cdot d_{2} = N$ de igual paridad.
+**Entrada:**
+```text
+4 2
+4 10 16 22
+```
 
-  - **Euclides Extendido y Diofánticas**: Resolver
-    $a \cdot x + b \cdot y = c$ en enteros. Tiene solución si y solo
-    si $\gcd(a,b) \mid c$. Todas las soluciones tienen la forma
-    $(x_{0} + k\frac{b}{g},y_{0} - k\frac{a}{g})$.
+**Salida:**
+```text
+6
+```
 
-  - **Teorema Chino del Resto (CRT General)**: Resolver un sistema de
-    congruencias $x \equiv r_{i}\:(\operatorname{mod}\: m_{i})$
-    incluso cuando los módulos $m_{i}$ **no son coprimos entre sí**.
+**Cómo leer la entrada:**
+```cpp
+int n; ll x;
+cin >> n >> x;
+vll a(n);
+for (ll& v : a) cin >> v;
+```
 
-- **Complejidad**: $\mathcal{O}(\log(\min(a,b)))$ por operación de
-  GCD/ExtGCD.
-
-``` cpp
-// 1. GCD de todo el arreglo A despues de sumar X a cada elemento
+**Implementación:**
+```cpp
+// 1. GCD de todo el arreglo A despues de sumar X a cada
+// elemento
 ll array_diff_gcd(const vll& a, ll x) {
   int n = sz(a);
   if (n == 1) return abs(a[0] + x);
   ll diff_g = 0;
-  for (int i = 1; i < n; ++i) diff_g = std::gcd(diff_g, abs(a[i] - a[i - 1]));
+  for (int i = 1; i < n; ++i) diff_g = std::gcd(diff_g, abs(
+    a[i] - a[i - 1]));
   return std::gcd(abs(a[0] + x), diff_g);
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << array_diff_gcd(a, x) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Usar `abs(a[i] - a[0])` y `abs(a[0] + x)` para garantizar que el GCD retornado sea siempre no negativo.
+
+#### 7.3.2 Representación como Diferencia de Cuadrados $N = a^2 - b^2$ (`solve_diff_of_squares`)
+
+- **Cuándo usar:** Encontrar todos los pares de enteros no negativos $(a, b)$ tales que $a^2 - b^2 = (a - b)(a + b) = N$.
+- **Cuándo no usar / alternativa:** Si $N \equiv 2 \pmod 4$, no existe ninguna solución entera porque $(a-b)$ y $(a+b)$ tienen la misma paridad.
+- **Contrato:** Factoriza $N = d_1 \cdot d_2$ con $d_1 \le d_2$ y $d_1 \equiv d_2 \pmod 2$, dando $a = (d_1 + d_2)/2$ y $b = (d_2 - d_1)/2$. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\sqrt{N})$ tiempo y $\mathcal{O}(\tau(N))$ memoria.
+- **Formato de entrada:** Un entero positivo `n`.
+
+**Entrada:**
+```text
+15
+```
+
+**Salida:**
+```text
+2
+8 7
+4 1
+```
+
+**Cómo leer la entrada:**
+```cpp
+ll n;
+cin >> n;
+```
+
+**Implementación:**
+```cpp
 // 2. Expresar N = a^2 - b^2 (retorna pares {a, b} >= 0)
 vector<pll> solve_diff_of_squares(ll n) {
   vector<pll> sols;
   for (ll d1 = 1; d1 * d1 <= n; ++d1) {
     if (n % d1 == 0) {
       ll d2 = n / d1;
-      if ((d1 + d2) % 2 == 0) sols.pb({(d1 + d2) / 2, (d2 - d1) / 2});
+      if ((d1 + d2) % 2 == 0) sols.pb({
+        (d1 + d2) / 2, (d2 - d1) / 2});
     }
   }
   return sols;
 }
+```
 
-// 3. Euclides Extendido: halla g = gcd(a, b) y (x, y) tal que a*x + b*y = g
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto res = solve_diff_of_squares(n);
+cout << sz(res) << '\n';
+for (auto [a, b] : res) cout << a << " " << b << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si el problema exige enteros **estrictamente positivos** ($b > 0$), descartar los pares donde $d_1 = d_2$ ($N$ cuadrado perfecto).
+
+#### 7.3.3 Algoritmo de Euclides Extendido (`extgcd`)
+
+- **Cuándo usar:** Hallar $g = \gcd(a, b)$ junto con coeficientes de Bézout $(x, y)$ tales que $a x + b y = g$, o calcular inversos modulares para módulos compuestos.
+- **Cuándo no usar / alternativa:** Si solo necesitas $\gcd(a, b)$, usar `std::gcd(a, b)` de `<numeric>`.
+- **Contrato:** Para $a, b \ge 0$ no ambos nulos, produce $|x| \le b/g$ y $|y| \le a/g$. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\log(\min(a, b)))$ tiempo y $\mathcal{O}(1)$ memoria.
+- **Formato de entrada:** Dos enteros `a b`.
+
+**Entrada:**
+```text
+30 12
+```
+
+**Salida:**
+```text
+6 1 -2
+```
+
+**Cómo leer la entrada:**
+```cpp
+ll a, b;
+cin >> a >> b;
+```
+
+**Implementación:**
+```cpp
+// 3. Euclides Extendido: halla g = gcd(a, b) y (x, y) tal
+// que a*x + b*y = g
 ll extgcd(ll a, ll b, ll& x, ll& y) {
   if (b == 0) { x = 1; y = 0; return a; }
   ll x1, y1;
@@ -4565,11 +7937,50 @@ ll extgcd(ll a, ll b, ll& x, ll& y) {
   y = x1 - y1 * (a / b);
   return g;
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+ll x, y;
+ll g = extgcd(a, b, x, y);
+cout << g << " " << x << " " << y << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si `a` o `b` pueden ser negativos, normalizar signos afuera (como hace `find_diophantine` en §7.3.4).
+
+#### 7.3.4 Ecuación Diofántica Lineal $a x + b y = c$ (`find_diophantine`)
+
+- **Cuándo usar:** Encontrar una solución entera particular $(x_0, y_0)$ y el paso de la familia general de soluciones de $a x + b y = c$.
+- **Cuándo no usar / alternativa:** Si $a = 0$ y $b = 0$, la función retorna `false` (tratar el caso $0x + 0y = 0$ por separado si puede ocurrir).
+- **Contrato:** Existe solución entera si y solo si $g = \gcd(|a|, |b|)$ divide a $c$. La familia general es $x = x_0 + k \cdot (b/g)$, $y = y_0 - k \cdot (a/g)$ para $k \in \mathbb{Z}$. Usa `i128` al escalar por $c/g$ para evitar overflow. Dependencias: `extgcd` (§7.3.3).
+- **Complejidad:** $\mathcal{O}(\log(\min(|a|, |b|)))$ tiempo y $\mathcal{O}(1)$ memoria.
+- **Formato de entrada:** Tres enteros `a b c`.
+
+**Entrada:**
+```text
+6 15 9
+```
+
+**Salida:**
+```text
+1 -6 3 3
+```
+
+**Cómo leer la entrada:**
+```cpp
+ll a, b, c;
+cin >> a >> b >> c;
+```
+
+**Implementación:**
+```cpp
 // 4. Ecuacion Diofantica Lineal: a*x + b*y = c
-// Retorna true si existe solucion; deja una solucion particular en (x0, y0).
-// Familia general de soluciones: x = x0 + k*(b/g), y = y0 - k*(a/g).
-bool find_diophantine(ll a, ll b, ll c, ll& x0, ll& y0, ll& g) {
+// Retorna true si existe solucion; deja una solucion
+// particular en (x0, y0).
+// Familia general de soluciones: x = x0 + k*(b/g), y = y0 -
+// k*(a/g).
+bool find_diophantine(ll a, ll b, ll c, ll& x0, ll& y0,
+  ll& g) {
   g = extgcd(abs(a), abs(b), x0, y0);
   if (c % g != 0) return false;
   x0 *= c / g;
@@ -4578,10 +7989,53 @@ bool find_diophantine(ll a, ll b, ll c, ll& x0, ll& y0, ll& g) {
   if (b < 0) y0 = -y0;
   return true;
 }
+```
 
-// 5. Teorema Chino del Resto General (CRT para modulos NO necesariamente coprimos)
+**Cómo llamarlo y producir la salida:**
+```cpp
+ll x, y, g;
+bool ok = find_diophantine(a, b, c, x, y, g);
+cout << ok << " " << x << " " << y << " " << g << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para hallar la solución con el menor $x \ge 0$ (cuando $b > 0$),Sea `step = b / g`; hacer `x = (x % step + step) % step` y recalcular `y = (c - a * x) / b` en `i128`.
+
+#### 7.3.5 Teorema Chino del Resto General (`crt_general`)
+
+- **Cuándo usar:** Resolver un sistema de congruencias simultáneas $x \equiv r_i \pmod{m_i}$ cuando los módulos $m_i$ **no son necesariamente coprimos** entre sí.
+- **Cuándo no usar / alternativa:** Si el MCM acumulado `m1 * (m2 / g)` supera $9 \cdot 10^{18}$, el resultado no cabe en `ll`.
+- **Contrato:** Retorna `{x, lcm}` con $0 \le x < \text{lcm}$, o `{-1, -1}` si dos congruencias son incompatibles ($r_1 \not\equiv r_2 \pmod{\gcd(m_1, m_2)}$). Usa `i128` en el producto intermedio para evitar overflow de `ll`. Dependencias: `extgcd` (§7.3.3).
+- **Complejidad:** $\mathcal{O}(K \log(\text{LCM}))$ tiempo y $\mathcal{O}(1)$ memoria.
+- **Formato de entrada:** `K`, seguido de `K` pares `r_i m_i`.
+
+**Entrada:**
+```text
+3
+2 3
+3 5
+2 7
+```
+
+**Salida:**
+```text
+23 105
+```
+
+**Cómo leer la entrada:**
+```cpp
+int k;
+cin >> k;
+vll r(k), m(k);
+for (int i = 0; i < k; ++i) cin >> r[i] >> m[i];
+```
+
+**Implementación:**
+```cpp
+// 5. Teorema Chino del Resto General (CRT para modulos NO
+// necesariamente coprimos)
 // Recibe vectores 'r' y 'm' (x == r[i] mod m[i]).
-// Retorna {x_minimo_no_negativo, lcm_total}, o {-1, -1} si es incompatible.
+// Retorna {x_minimo_no_negativo, lcm_total}, o {-1, -1} si
+// es incompatible.
 pll crt_general(const vll& r, const vll& m) {
   ll r0 = 0, m0 = 1;
   for (int i = 0; i < sz(r); ++i) {
@@ -4589,9 +8043,14 @@ pll crt_general(const vll& r, const vll& m) {
     ll x, y;
     ll g = extgcd(m0, m1, x, y);
     if ((r1 - r0) % g != 0) return {-1, -1}; // Sin solucion
-    ll lcm = (m0 / g) * m1;
-    ll step = (r1 - r0) / g % (m1 / g) * (x % (m1 / g)) % (m1 / g);
-    r0 = (r0 + (i128)step * m0) % lcm;
+    ll mod_step = m1 / g;
+    ll diff = ((r1 - r0) / g) % mod_step;
+    if (diff < 0) diff += mod_step;
+    ll inv_part = (x % mod_step + mod_step) % mod_step;
+    ll step = (ll)((i128)diff * inv_part % mod_step);
+    i128 lcm128 = (i128)m0 * mod_step;
+    ll lcm = (ll)lcm128;
+    r0 = (ll)(((i128)r0 + (i128)step * m0) % lcm128);
     if (r0 < 0) r0 += lcm;
     m0 = lcm;
   }
@@ -4599,42 +8058,44 @@ pll crt_general(const vll& r, const vll& m) {
 }
 ```
 
-**Ejemplo de Uso (CRT General):**
-
-``` cpp
-int main() {
-  // Resolver: x = 2 (mod 3), x = 3 (mod 5), x = 2 (mod 7)
-  auto [x, mod_lcm] = crt_general({2, 3, 2}, {3, 5, 7});
-  // x = 23, mod_lcm = 105 (porque 23 % 3 = 2, 23 % 5 = 3, 23 % 7 = 2)
-}
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto [x, mod] = crt_general(r, m);
+cout << x << " " << mod << '\n';
 ```
+
+- **Trampas y adaptaciones:** (1) Toda ecuación lineal modular $a x \equiv b \pmod m$ puede reducirse a $x \equiv r' \pmod{m/g}$ con `extgcd` antes de meterla en `crt_general`.
 
 ------------------------------------------------------------------------
 
 ### 7.4 Aritmética Modular (`mint`), Combinatoria ($nCr$), Teorema de Lucas y Fórmula de Legendre ($n!$)
 
-- **¿Cuándo usar?**:
+#### 7.4.1 Aritmética Modular Segura e Inverso Modular (`norm_mod`, `binpow`, `inv_fermat`, `inv_extgcd`)
 
-  - **`normalize` / `add` / `sub` / `mul` / `binpow` / `inv_fermat` /
-    `inv_extgcd`**: Operaciones modulares seguras y rápidas.
+- **Cuándo usar:** Operaciones básicas $(+, -, \times, a^e, a^{-1}) \pmod m$ inmunes a operandos negativos y a overflow cuando $m \le 3 \cdot 10^{18}$.
+- **Cuándo no usar / alternativa:** No usar `inv_fermat(a, m)` si el módulo `m` **no es primo**; para `m` compuesto usar siempre `inv_extgcd(a, m)`.
+- **Contrato:** `norm_mod` lleva cualquier `ll` (incluso negativo) a $[0, m-1]$. `inv_extgcd(a, m)` retorna `-1` si $m \le 1$ o $\gcd(a, m) \neq 1$. Dependencias: `extgcd` (§7.3.3).
+- **Complejidad:** $\mathcal{O}(1)$ para suma/resta/producto; $\mathcal{O}(\log E)$ para `binpow` e inversos.
+- **Formato de entrada:** Tres enteros `a b m` ($m$ primo para Fermat).
 
-  - **`init_fact` + `nCr` / `nPr`**: Precalcular factoriales e inversos
-    hasta $N = 10^{6}$ en $\mathcal{O}(N)$ para responder cualquier
-    $\binom{n}{r}\:\operatorname{mod}\: p$ en $\mathcal{O}(1)$.
+**Entrada:**
+```text
+-4 3 10
+```
 
-  - **Teorema de Lucas**: Cuando $n,r$ son gigantescos
-    ($n \leq 10^{18}$) pero el módulo primo $p$ es pequeño
-    ($p \leq 10^{6}$): calcula
-    $\binom{n}{r}\:\operatorname{mod}\: p$ en
-    $\mathcal{O}(\log_{p}n)$.
+**Salida:**
+```text
+3 7
+```
 
-  - **Fórmula de Legendre**: Hallar la mayor potencia $k^{x}$ que
-    divide a $n!$ en $\mathcal{O}(\log_{p}n)$.
+**Cómo leer la entrada:**
+```cpp
+ll a, b, m;
+cin >> a >> b >> m;
+```
 
-- **Complejidad**: Preprocesamiento $\mathcal{O}(N)$, `nCr` en
-  $\mathcal{O}(1)$, Lucas y Legendre en $\mathcal{O}(\log_{p}N)$.
-
-``` cpp
+**Implementación:**
+```cpp
 constexpr ll MOD = 1000000007LL;
 
 inline ll norm_mod(ll x, ll m = MOD) {
@@ -4642,11 +8103,11 @@ inline ll norm_mod(ll x, ll m = MOD) {
   return (x < 0) ? (x + m) : x;
 }
 inline ll add_mod(ll a, ll b, ll m = MOD) {
-  ll res = a % m + b % m;
-  return (res >= m) ? (res - m) : (res < 0 ? res + m : res);
+  ll res = norm_mod(a, m) + norm_mod(b, m);
+  return (res >= m) ? (res - m) : res;
 }
 inline ll sub_mod(ll a, ll b, ll m = MOD) {
-  ll res = a % m - b % m;
+  ll res = norm_mod(a, m) - norm_mod(b, m);
   return (res < 0) ? (res + m) : res;
 }
 inline ll mul_mod(ll a, ll b, ll m = MOD) {
@@ -4664,22 +8125,60 @@ ll binpow(ll base, ll exp, ll m = MOD) {
   return res;
 }
 // Inverso cuando m es PRIMO (Fermat):
-inline ll inv_fermat(ll a, ll m = MOD) { return binpow(a, m - 2, m); }
+inline ll inv_fermat(ll a, ll m = MOD) {
+  return binpow(a, m - 2, m); }
 
-// Inverso cuando m es COMPUESTO (requiere gcd(a, m) == 1):
+// Inverso cuando m es COMPUESTO (requiere m > 1 y gcd(a, m)
+// == 1):
 ll inv_extgcd(ll a, ll m) {
+  if (m <= 1) return -1;
   ll x, y;
-  ll g = extgcd(a, m, x, y);
-  return (g == 1 || g == -1) ? norm_mod(x, m) : -1;
+  ll g = extgcd(norm_mod(a, m), m, x, y);
+  return (g == 1) ? norm_mod(x, m) : -1;
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << sub_mod(a, b, m) << " " << inv_extgcd(b, m) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) En C++, `-4 % 5 == -4`; `add_mod` y `sub_mod` normalizan ambos operandos antes de operar para que nunca retornen residuos negativos.
+
+#### 7.4.2 Combinatoria en $\mathcal{O}(1)$, Teorema de Lucas y Fórmula de Legendre (`init_fact`, `nCr`, `lucas_nCr`, `legendre_prime_in_fact`)
+
+- **Cuándo usar:** Calcular coeficientes binomiales $\binom{n}{r} \pmod p$ en $\mathcal{O}(1)$ tras preprocesar factoriales (`nCr`), cuando $n, r \le 10^{18}$ y $p$ es primo pequeño (`lucas_nCr`), o hallar la mayor potencia $p^k \mid n!$ (`legendre_prime_in_fact`).
+- **Cuándo no usar / alternativa:** Si el módulo $M$ es compuesto libre de cuadrados ($M = p_1 \cdots p_k$), calcular $\binom{n}{r} \pmod{p_i}$ con Lucas y combinar con `crt_general` (§7.3.5).
+- **Contrato:** Llamar `init_fact(max_n, mod)` una vez antes de consultar `nCr` o `nPr`. Para `lucas_nCr(n, r, p)` con $p$ primo, llamar antes `init_fact(p - 1, p)`. Dependencias: `inv_fermat` (§7.4.1).
+- **Complejidad:** Precomputación $\mathcal{O}(N)$; `nCr` en $\mathcal{O}(1)$; `lucas_nCr` y `legendre_prime_in_fact` en $\mathcal{O}(\log_p N)$.
+- **Formato de entrada:** Cuatro enteros `n r p_lucas n_fact`.
+
+**Entrada:**
+```text
+10 3 7 100
+```
+
+**Salida:**
+```text
+120 1 16
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, r, p; ll nf;
+cin >> n >> r >> p >> nf;
+```
+
+**Implementación:**
+```cpp
 // Combinatoria O(N) precalculo, O(1) consulta:
 const int MAX_F = 1000005;
 ll fact[MAX_F], inv_fact[MAX_F], inv_num[MAX_F];
-void init_fact(int n, ll m = MOD) {
+void init_fact(int n = MAX_F - 1, ll m = MOD) {
   fact[0] = inv_fact[0] = 1;
   inv_num[0] = 0; inv_num[1] = 1;
-  for (int i = 1; i <= n; ++i) fact[i] = (fact[i - 1] * i) % m;
+  for (int i = 1; i <= n; ++i) fact[i] = (
+    fact[i - 1] * i) % m;
   inv_fact[n] = inv_fermat(fact[n], m);
   for (int i = n - 1; i >= 1; --i)
     inv_fact[i] = (inv_fact[i + 1] * (i + 1)) % m;
@@ -4695,15 +8194,18 @@ inline ll nPr(int n, int r, ll m = MOD) {
   return fact[n] * inv_fact[n - r] % m;
 }
 
-// Teorema de Lucas: nCr(n, r) mod p para n, r <= 10^18 y p primo <= MAX_F
+// Teorema de Lucas: nCr(n, r) mod p para n, r <= 10^18 y p
+// primo <= MAX_F
 // (Requiere haber llamado init_fact(p - 1, p))
 ll lucas_nCr(ll n, ll r, ll p) {
   if (r < 0 || r > n) return 0;
   if (r == 0) return 1;
-  return lucas_nCr(n / p, r / p, p) * nCr(n % p, r % p, p) % p;
+  return lucas_nCr(n / p, r / p, p) * nCr(n % p, r % p,
+    p) % p;
 }
 
-// Formula de Legendre: exponente del primo 'p' en la factorizacion de (n!)
+// Formula de Legendre: exponente del primo 'p' en la
+// factorizacion de (n!)
 ll legendre_prime_in_fact(ll n, ll p) {
   ll cnt = 0;
   while (n > 0) { cnt += n / p; n /= p; }
@@ -4711,29 +8213,48 @@ ll legendre_prime_in_fact(ll n, ll p) {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+init_fact(n, MOD);
+ll c1 = nCr(n, r, MOD);
+init_fact(p - 1, p);
+ll c2 = lucas_nCr(n, r, p);
+ll e_p = legendre_prime_in_fact(nf, p);
+cout << c1 << " " << c2 << " " << e_p << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Por el Teorema de Lucas en base 2, $\binom{n}{r}$ es **impar** si y solo si $(n \text{ AND } r) == r$ ($r$ es submáscara de bits de $n$).
+
 ------------------------------------------------------------------------
 
 ### 7.5 Funciones Multiplicativas: Totient de Euler ($\phi$) y Función de Möbius ($\mu$)
 
-- **¿Cuándo usar?**:
+#### 7.5.1 Totient de Euler Individual $\phi(N)$ en $\mathcal{O}(\sqrt{N})$ (`euler_phi`)
 
-  - **Totient de Euler $\phi(n)$**: Cuenta cuántos enteros en
-    $\lbrack 1,n\rbrack$ son coprimos con $n$. Sirve también para
-    reducir exponentes gigantes por el Teorema de Euler:
-    $a^{b} \equiv a^{b\:\operatorname{mod}\:\phi(m) + \phi(m)}\:(\operatorname{mod}\: m)$
-    (para $b \geq \phi(m)$).
+- **Cuándo usar:** Contar cuántos enteros en $[1, N]$ son coprimos con $N$ para un único $N \le 10^{12}$, o aplicar el Teorema de Euler $a^{\phi(m)} \equiv 1 \pmod m$ cuando $\gcd(a, m) = 1$.
+- **Cuándo no usar / alternativa:** Si necesitas $\phi(x)$ para todos los $x \in [1, N]$, usar la criba `init_phi_and_mobius` (§7.5.2).
+- **Contrato:** Aplica $\phi(n) = n \prod_{p \mid n} (1 - 1/p)$ usando `ans -= ans / d` para no desbordar. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\sqrt{N})$ tiempo y $\mathcal{O}(1)$ memoria.
+- **Formato de entrada:** Un entero positivo `n`.
 
-  - **Función de Möbius $\mu(n)$**: Clave para **Inclusión-Exclusión
-    sobre divisores / GCD** (ej. contar cuántos pares o subconjuntos de
-    un arreglo tienen $\gcd = 1$ o $\gcd = k$ en
-    $\mathcal{O}(M\log M)$ usando la identidad
-    $\sum_{d \mid g}\mu(d) = \lbrack g = = 1\rbrack$).
+**Entrada:**
+```text
+36
+```
 
-- **Complejidad**: $\phi(n)$ individual en $\mathcal{O}(\sqrt{n})$;
-  Criba de $\phi$ y $\mu$ hasta $N$ en
-  $\mathcal{O}(N\log\log N)$.
+**Salida:**
+```text
+12
+```
 
-``` cpp
+**Cómo leer la entrada:**
+```cpp
+ll n;
+cin >> n;
+```
+
+**Implementación:**
+```cpp
 // 1. Totient de Euler individual en O(sqrt(N))
 ll euler_phi(ll n) {
   ll ans = n;
@@ -4746,14 +8267,51 @@ ll euler_phi(ll n) {
   if (n > 1) ans -= ans / n;
   return ans;
 }
+```
 
-// 2. Precalculo de phi[1..n] y mu[1..n] en O(N log log N)
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << euler_phi(n) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para reducir exponentes gigantes cuando $\gcd(a, m) > 1$ (Exponenciación Generalizada de Euler) y $e \ge \phi(m)$: $a^e \equiv a^{(e \bmod \phi(m)) + \phi(m)} \pmod m$.
+
+#### 7.5.2 Criba de Euler $\phi[1..N]$ y Función de Möbius $\mu[1..N]$ (`init_phi_and_mobius`)
+
+- **Cuándo usar:** Problemas de inversión de Möbius y conteo de pares/tuplas con $\gcd(x, y) = k$ usando $\sum_{d \mid g} \mu(d) = [g = 1]$ y $\sum_{d \mid g} \phi(d) = g$.
+- **Cuándo no usar / alternativa:** Si solo necesitas $\phi(N)$ para un único número grande, usar `euler_phi(N)` (§7.5.1).
+- **Contrato:** Llena `phi_arr[1..n]` y `mu_arr[1..n]` ($n < \text{MAX\_P}$). Dependencias: `MAX_P` (§7.1.1).
+- **Complejidad:** $\mathcal{O}(N \log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** Un entero `n` ($1 \le n < \text{MAX\_P}$).
+
+**Entrada:**
+```text
+10
+```
+
+**Salida:**
+```text
+4 1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+```
+
+**Implementación:**
+```cpp
+// 2. Precalculo de phi[1..n] en O(N log log N) y mu[1..n]
+// en O(N log N)
 int phi_arr[MAX_P], mu_arr[MAX_P];
 void init_phi_and_mobius(int n) {
-  for (int i = 1; i <= n; ++i) { phi_arr[i] = i; mu_arr[i] = 0; }
+  for (int i = 1; i <= n; ++i) { phi_arr[i] = i;
+    mu_arr[i] = 0; }
   for (int i = 2; i <= n; ++i) {
     if (phi_arr[i] == i) { // i es primo
-      for (int j = i; j <= n; j += i) phi_arr[j] -= phi_arr[j] / i;
+      for (int j = i; j
+        <= n; j += i) phi_arr[j] -= phi_arr[j] / i;
     }
   }
   mu_arr[1] = 1;
@@ -4763,46 +8321,44 @@ void init_phi_and_mobius(int n) {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+init_phi_and_mobius(n);
+cout << phi_arr[n] << " " << mu_arr[n] << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) La cantidad de pares ordenados $(x, y) \in [1, N] \times [1, M]$ con $\gcd(x, y) = 1$ es $\sum_{d=1}^{\min(N, M)} \mu(d) \lfloor N/d \rfloor \lfloor M/d \rfloor$.
+
 ------------------------------------------------------------------------
 
-### 7.6 Álgebra Lineal y Polinomios: Exponenciación de Matrices, Eliminación Gaussiana (`double`, Modular, XOR Basis), FFT, FWT, Lagrange, Logaritmo Discreto y Fracciones
+### 7.6 Álgebra Lineal y Polinomios: Exponenciación de Matrices, Eliminación Gaussiana (`double`, Modular, XOR Basis), FFT, FWT, Logaritmo Discreto y Fracciones
 
-- **¿Cuándo usar?**:
+#### 7.6.1 Exponenciación de Matrices y Fibonacci Rápido (`Matrix`, `mat_pow`, `fib_fast`)
 
-  - **Exponenciación de Matrices**: Calcular el término $N$-ésimo
-    ($N \leq 10^{18}$) de una recurrencia lineal
-    ($f(n) = c_{1}f(n - 1) + \ldots + c_{k}f(n - k)$) o contar caminos
-    de longitud exacta $K$ en un grafo en
-    $\mathcal{O}(D^{3}\log K)$.
+- **Cuándo usar:** Acelerar recurrencias lineales de dimensión fija $D \le 100$ o contar caminos de longitud $K \le 10^{18}$ en un grafo pequeño en $\mathcal{O}(D^3 \log K)$.
+- **Cuándo no usar / alternativa:** Si la recurrencia tiene orden $D \approx 2000$ o no la conoces de antemano, usar `BerlekampMassey` (§7.10) en $\mathcal{O}(D^2 \log K)$.
+- **Contrato:** Matriz 0-indexed de dimensión `d x d` módulo `MOD`. `fib_fast(n)` retorna `{F_n, F_{n+1}}` mod `MOD` por duplicación rápida sin crear matriz. Dependencias: `MOD` (§7.4.1).
+- **Complejidad:** $\mathcal{O}(D^3 \log E)$ para `mat_pow`; $\mathcal{O}(\log N)$ para `fib_fast`.
+- **Formato de entrada:** Un entero `n` ($n \ge 0$).
 
-  - **Eliminación Gaussiana (`double` / Modular)**: Resolver sistemas de
-    ecuaciones lineales $Ax = b$ en $\mathcal{O}(N^{3})$ (por
-    ejemplo, valores esperados en grafos con ciclos / cadenas de
-    Markov).
+**Entrada:**
+```text
+10
+```
 
-  - **Base de XOR (Gauss Binario)**: Insertar números de $60$ bits en
-    $\mathcal{O}(B)$ para saber el **máximo XOR posible de un
-    subconjunto**, si un valor $X$ se puede formar como XOR de algún
-    subconjunto, o el $K$-ésimo menor XOR posible.
+**Salida:**
+```text
+55 89
+```
 
-  - **FFT (Fast Fourier Transform)**: Multiplicar dos polinomios de
-    grado $N$ en $\mathcal{O}(N\log N)$ (equivalentemente: calcular
-    para toda suma $k = i + j$ la convolución
-    $\sum a\lbrack i\rbrack \cdot b\lbrack j\rbrack$).
+**Cómo leer la entrada:**
+```cpp
+ll n;
+cin >> n;
+```
 
-  - **FWT / FHT (Fast Walsh-Hadamard Transform)**: Como FFT, pero en vez
-    de sumar índices ($i + j$), combina los índices con **XOR
-    ($i \oplus j$), AND ($\begin{aligned}
-    i\: & \: j
-    \end{aligned}$) u OR ($i \mid j$)** en $\mathcal{O}(N\log N)$.
-
-  - **Logaritmo Discreto (Baby-Step Giant-Step)**: Hallar el menor
-    $x \geq 0$ tal que $a^{x} \equiv b\:(\operatorname{mod}\: m)$ en
-    $\mathcal{O}(\sqrt{m})$.
-
-- **Complejidad**: Ver encabezados de cada bloque.
-
-``` cpp
+**Implementación:**
+```cpp
 // 1. Exponenciacion de Matrices en O(D^3 log E)
 struct Matrix {
   int n;
@@ -4816,7 +8372,8 @@ struct Matrix {
       for (int k = 0; k < n; ++k) {
         if (!m[i][k]) continue;
         for (int j = 0; j < n; ++j)
-          res.m[i][j] = (res.m[i][j] + m[i][k] * o.m[k][j]) % MOD;
+          res.m[i][j] = (
+            res.m[i][j] + m[i][k] * o.m[k][j]) % MOD;
       }
     return res;
   }
@@ -4830,7 +8387,8 @@ Matrix mat_pow(Matrix b, ll e) {
   return res;
 }
 
-// Fibonacci en O(log N) usando duplicacion rapida: retorna {F_n, F_{n+1}}
+// Fibonacci en O(log N) usando duplicacion rapida: retorna
+// {F_n, F_{n+1}}
 pll fib_fast(ll n, ll m = MOD) {
   if (n == 0) return {0, 1};
   auto [a, b] = fib_fast(n >> 1, m);
@@ -4838,7 +8396,48 @@ pll fib_fast(ll n, ll m = MOD) {
   ll d = (a * a % m + b * b % m) % m;
   return (n & 1) ? pll{d, (c + d) % m} : pll{c, d};
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto [fn, fn1] = fib_fast(n);
+cout << fn << " " << fn1 << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) En el triple bucle de `operator*`, poner `k` como segundo bucle (`for i ... for k ... if (a[i][k]) for j`) mejora drásticamente la localidad de caché.
+
+#### 7.6.2 Base Lineal de XOR / Eliminación Gaussiana en $\mathbb{F}_2$ (`XorBasis`)
+
+- **Cuándo usar:** Mantener un conjunto de enteros de hasta 62 bits bajo la operación XOR: consultar el máximo XOR obtenible (`max_xor`), si un valor `x` puede formarse, o cuántos subconjuntos tienen XOR igual a `x` ($2^{N - \text{sz}}$).
+- **Cuándo no usar / alternativa:** Si buscas el máximo XOR entre `x` y **un único** elemento del conjunto (no un subconjunto arbitrario), usar `BitTrie` (§5.5.2).
+- **Contrato:** Soporta enteros de hasta 62 bits (`B = 62`). El número de valores distintos generables es $2^{\text{sz}}$. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(B)$ por inserción y consulta ($B = 62$).
+- **Formato de entrada:** `N`, seguido de `N` enteros no negativos.
+
+**Entrada:**
+```text
+4
+3 5 6 7
+```
+
+**Salida:**
+```text
+7 3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+XorBasis xb;
+for (int i = 0; i < n; ++i) {
+  ll x; cin >> x;
+  xb.insert(x);
+}
+```
+
+**Implementación:**
+```cpp
 // 2. Base de XOR (Gauss Binario en O(B) por insercion)
 struct XorBasis {
   static const int B = 60;
@@ -4865,11 +8464,53 @@ struct XorBasis {
     return x == 0;
   }
 };
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << xb.max_xor() << " " << xb.sz_b << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) El menor XOR no nulo obtenible es simplemente el menor `b[i] > 0` de la base reducida.
+
+#### 7.6.3 Eliminación Gaussiana en Punto Flotante (`gauss_double`)
+
+- **Cuándo usar:** Resolver sistemas de $N$ ecuaciones lineales con $M$ incógnitas en reales ($\text{ld}$), como sistemas de esperanzas o cadenas de Markov con ciclos.
+- **Cuándo no usar / alternativa:** Si el sistema es módulo un primo $P$, usar `gauss_mod` (§7.6.4).
+- **Contrato:** Recibe la matriz aumentada `a` de tamaño $N \times (M + 1)$ (donde la columna `M` es el término independiente $b_i$). Usa pivoteo parcial por mayor valor absoluto. Retorna `0` (sin solución), `1` (única en `ans`), o `2` (infinitas soluciones, dejando una particular en `ans`). Dependencias: `EPS` (§1.1).
+- **Complejidad:** $\mathcal{O}(N \cdot M \cdot \min(N, M))$ tiempo y $\mathcal{O}(N M)$ memoria.
+- **Formato de entrada:** `N M`, seguido de `N` filas con `M + 1` reales.
+
+**Entrada:**
+```text
+2 2
+2 1 5
+1 -1 1
+```
+
+**Salida:**
+```text
+1
+2.00 1.00
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vector<vector<double>> a(n, vector<double>(m + 1));
+for (int i = 0; i < n; ++i)
+  for (int j = 0; j <= m; ++j) cin >> a[i][j];
+```
+
+**Implementación:**
+```cpp
 // 3. Eliminacion Gaussiana en punto flotante O(N^3)
 // Matriz aumentada 'a' de tamano N x (M + 1).
-// Retorna: 0 (sin solucion), 1 (solucion unica en 'ans'), 2 (infinitas).
-int gauss_double(vector<vector<double>> a, vector<double>& ans) {
+// Retorna: 0 (sin solucion), 1 (solucion unica en 'ans'), 2
+// (infinitas).
+int gauss_double(vector<vector<double>> a,
+  vector<double>& ans) {
   int n = sz(a), m = sz(a[0]) - 1;
   vi where(m, -1);
   for (int col = 0, row = 0; col < m && row < n; ++col) {
@@ -4882,13 +8523,15 @@ int gauss_double(vector<vector<double>> a, vector<double>& ans) {
     for (int i = 0; i < n; ++i)
       if (i != row) {
         double c = a[i][col] / a[row][col];
-        for (int j = col; j <= m; ++j) a[i][j] -= a[row][j] * c;
+        for (int j = col; j
+          <= m; ++j) a[i][j] -= a[row][j] * c;
       }
     row++;
   }
   ans.assign(m, 0);
   for (int i = 0; i < m; ++i)
-    if (where[i] != -1) ans[i] = a[where[i]][m] / a[where[i]][i];
+    if (where[i] != -1) ans[i]
+      = a[where[i]][m] / a[where[i]][i];
   for (int i = 0; i < n; ++i) {
     double sum = 0;
     for (int j = 0; j < m; ++j) sum += ans[j] * a[i][j];
@@ -4897,8 +8540,134 @@ int gauss_double(vector<vector<double>> a, vector<double>& ans) {
   for (int i = 0; i < m; ++i) if (where[i] == -1) return 2;
   return 1;
 }
+```
 
-// 4. Fast Fourier Transform (FFT — Multiplicacion de Polinomios en O(N log N))
+**Cómo llamarlo y producir la salida:**
+```cpp
+vector<double> ans;
+int st = gauss_double(a, ans);
+cout << st << '\n';
+cout << fixed << setprecision(
+  2) << ans[0] << " " << ans[1] << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) El pivoteo parcial (`abs(a[i][col]) > abs(a[sel][col])`) es obligatorio; elegir el primer no nulo causa catástrofe numérica.
+
+#### 7.6.4 Eliminación Gaussiana Modular (`gauss_mod`)
+
+- **Cuándo usar:** Resolver sistemas lineales $A x \equiv b \pmod p$ sobre un cuerpo primo $p$ (ej. sistemas de ecuaciones modulares o conteo de soluciones libres $p^{\text{libres}}$).
+- **Cuándo no usar / alternativa:** Si el sistema es sobre $\mathbb{F}_2$ ($p = 2$) con $M \le 2000$, usar `std::bitset` reduce la complejidad a $\mathcal{O}(N M^2 / 64)$.
+- **Contrato:** Recibe matriz aumentada `a` de tamaño $N \times (M + 1)$ y primo `mod`. Retorna `0` (incompatible), `1` (única), o `2` (infinitas, con una solución particular en `ans`). Dependencias: `norm_mod`, `sub_mod`, `mul_mod`, `inv_fermat` (§7.4.1).
+- **Complejidad:** $\mathcal{O}(N \cdot M \cdot \min(N, M))$ tiempo y $\mathcal{O}(N M)$ memoria.
+- **Formato de entrada:** `N M`, seguido de `N` filas con `M + 1` enteros (módulo $10^9 + 7$).
+
+**Entrada:**
+```text
+2 2
+2 1 5
+1 -1 1
+```
+
+**Salida:**
+```text
+1
+2 1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vector<vll> a(n, vll(m + 1));
+for (int i = 0; i < n; ++i)
+  for (int j = 0; j <= m; ++j) cin >> a[i][j];
+```
+
+**Implementación:**
+```cpp
+// 3b. Eliminacion Gaussiana Modular sobre primo MOD en O(N
+// * M * min(N, M))
+// Matriz aumentada 'a' de tamano N x (M + 1). Retorna 0
+// (sin sol), 1 (unica), 2 (infinitas).
+int gauss_mod(vector<vll> a, vll& ans, ll mod = MOD) {
+  int n = sz(a), m = sz(a[0]) - 1;
+  vi where(m, -1);
+  for (int col = 0, row = 0; col < m && row < n; ++col) {
+    int sel = -1;
+    for (int i = row; i < n; ++i)
+      if (norm_mod(a[i][col], mod) != 0) { sel = i; break; }
+    if (sel == -1) continue;
+    swap(a[sel], a[row]);
+    where[col] = row;
+    ll inv_piv = inv_fermat(a[row][col], mod);
+    for (int j = col; j <= m; ++j)
+      a[row][j] = norm_mod(a[row][j], mod) * inv_piv % mod;
+    for (int i = 0; i < n; ++i)
+      if (i != row && norm_mod(a[i][col], mod) != 0) {
+        ll factor = norm_mod(a[i][col], mod);
+        for (int j = col; j <= m; ++j)
+          a[i][j] = sub_mod(a[i][j], factor * a[row][j],
+            mod);
+      }
+    row++;
+  }
+  ans.assign(m, 0);
+  for (int i = 0; i < m; ++i)
+    if (where[i] != -1) ans[i] = norm_mod(a[where[i]][m],
+      mod);
+  for (int i = 0; i < n; ++i) {
+    ll sum = 0;
+    for (int j = 0; j < m; ++j)
+      sum = (sum + ans[j] * norm_mod(a[i][j], mod)) % mod;
+    if (sum != norm_mod(a[i][m], mod)) return 0;
+  }
+  for (int i = 0; i < m; ++i) if (where[i] == -1) return 2;
+  return 1;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+vll ans;
+int st = gauss_mod(a, ans, MOD);
+cout << st << '\n' << ans[0] << " " << ans[1] << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) El número de variables libres es $M - \text{rango}$, por lo que cuando retorna `2` existen exactamente $\text{mod}^{M - \text{rango}}$ soluciones distintas.
+
+#### 7.6.5 Transformada Rápida de Fourier para Polinomios (`fft`, `multiply_poly`)
+
+- **Cuándo usar:** Multiplicar dos polinomios con coeficientes enteros (convolución $c_k = \sum_{i+j=k} a_i b_j$) en $\mathcal{O}(N \log N)$ cuando los coeficientes resultantes no exceden $\approx 10^{14}$.
+- **Cuándo no usar / alternativa:** Si la convolución se pide módulo `998244353` o los coeficientes son más grandes y no toleran error de punto flotante, usar `multiply_ntt` (§7.6.6).
+- **Contrato:** Redondea cada coeficiente final con `llround(fa[i].real())`. Dependencias: `PI` (§1.1).
+- **Complejidad:** $\mathcal{O}(N \log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N M`, luego `N` coeficientes de $A(x)$ y `M` coeficientes de $B(x)$.
+
+**Entrada:**
+```text
+3 3
+1 2 3
+4 5 6
+```
+
+**Salida:**
+```text
+4 13 28 27 18
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vll a(n), b(m);
+for (ll& x : a) cin >> x;
+for (ll& x : b) cin >> x;
+```
+
+**Implementación:**
+```cpp
+// 4. Fast Fourier Transform (FFT — Multiplicacion de
+// Polinomios en O(N log N))
 using cd = complex<double>;
 void fft(vector<cd>& a, bool inv) {
   int n = sz(a);
@@ -4932,11 +8701,155 @@ vll multiply_poly(const vll& a, const vll& b) {
   for (int i = 0; i < n; ++i) fa[i] *= fb[i];
   fft(fa, true);
   vll res(sz(a) + sz(b) - 1);
-  for (int i = 0; i < sz(res); ++i) res[i] = llround(fa[i].real());
+  for (int i = 0; i < sz(res); ++i) res[i] = llround(
+    fa[i].real());
   return res;
 }
+```
 
-// 5. Fast Walsh-Hadamard Transform (FWT para Convolucion XOR en O(N log N))
+**Cómo llamarlo y producir la salida:**
+```cpp
+vll c = multiply_poly(a, b);
+for (int i = 0; i < sz(c); ++i)
+  cout << c[i] << (i + 1 == sz(c) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Para hacer *string matching con comodines* o contar sumas $a_i + b_j = S$, invertir el segundo arreglo (`reverse(all(b))`) para convertir diferencias $i - j$ en sumas $i + (M - 1 - j)$.
+
+#### 7.6.6 Transformada Numérica Modular Exacta (`ntt`, `multiply_ntt`)
+
+- **Cuándo usar:** Multiplicar polinomios exactamente módulo $998244353 = 119 \cdot 2^{23} + 1$ (raíz primitiva $g = 3$) sin punto flotante ni error de redondeo.
+- **Cuándo no usar / alternativa:** Si el módulo del problema no es de la forma $c \cdot 2^k + 1$ (ej. $10^9 + 7$) y los coeficientes finales caben en $10^{14}$, usar `multiply_poly` (§7.6.5) y tomar módulo al final.
+- **Contrato:** Requiere longitud `n` potencia de 2 con $n \le 2^{23}$ (`multiply_ntt` ajusta la potencia de 2 automáticamente). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N \log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N M`, luego `N` coeficientes de $A(x)$ y `M` coeficientes de $B(x)$.
+
+**Entrada:**
+```text
+3 3
+1 2 3
+4 5 6
+```
+
+**Salida:**
+```text
+4 13 28 27 18
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vll a(n), b(m);
+for (ll& x : a) cin >> x;
+for (ll& x : b) cin >> x;
+```
+
+**Implementación:**
+```cpp
+// 4b. Number Theoretic Transform (NTT exacto mod 998244353,
+// raiz g = 3)
+// Requisitos: modulo primo de la forma p = c * 2^k + 1
+// (998244353 = 119 * 2^23 + 1),
+// longitud n potencia de 2 con n <= 2^23. A diferencia de
+// FFT (double), NTT no sufre
+// error de redondeo pero calcula los coeficientes modulo
+// NTT_MOD.
+const ll NTT_MOD = 998244353;
+const ll NTT_G = 3;
+
+ll ntt_pow(ll b, ll e) {
+  ll r = 1;
+  for (b %= NTT_MOD; e > 0; e >>= 1, b = b * b % NTT_MOD)
+    if (e & 1) r = r * b % NTT_MOD;
+  return r;
+}
+void ntt(vll& a, bool inv) {
+  int n = sz(a);
+  for (int i = 1, j = 0; i < n; ++i) {
+    int bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) swap(a[i], a[j]);
+  }
+  for (int len = 2; len <= n; len <<= 1) {
+    ll wlen = ntt_pow(NTT_G, (NTT_MOD - 1) / len);
+    if (inv) wlen = ntt_pow(wlen, NTT_MOD - 2);
+    for (int i = 0; i < n; i += len) {
+      ll w = 1;
+      for (int j = 0; j < len / 2; ++j) {
+        ll u = a[i + j];
+        ll v = a[i + j + len / 2] * w % NTT_MOD;
+        a[i + j] = (u + v < NTT_MOD) ? (u + v) : (
+          u + v - NTT_MOD);
+        a[i + j + len / 2] = (u - v >= 0) ? (u - v) : (
+          u - v + NTT_MOD);
+        w = w * wlen % NTT_MOD;
+      }
+    }
+  }
+  if (inv) {
+    ll inv_n = ntt_pow(n, NTT_MOD - 2);
+    for (ll& x : a) x = x * inv_n % NTT_MOD;
+  }
+}
+vll multiply_ntt(vll a, vll b) {
+  if (a.empty() || b.empty()) return {};
+  int need = sz(a) + sz(b) - 1, n = 1;
+  while (n < need) n <<= 1;
+  for (ll& x : a) x = (x % NTT_MOD + NTT_MOD) % NTT_MOD;
+  for (ll& x : b) x = (x % NTT_MOD + NTT_MOD) % NTT_MOD;
+  a.resize(n, 0); b.resize(n, 0);
+  ntt(a, false); ntt(b, false);
+  for (int i = 0; i < n; ++i) a[i] = a[i] * b[i] % NTT_MOD;
+  ntt(a, true);
+  a.resize(need);
+  return a;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+vll c = multiply_ntt(a, b);
+for (int i = 0; i < sz(c); ++i)
+  cout << c[i] << (i + 1 == sz(c) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Otros primos NTT frecuentes: $p = 7340033 = 7 \cdot 2^{20} + 1$ ($g = 3$) y $p = 469762049 = 7 \cdot 2^{26} + 1$ ($g = 3$).
+
+#### 7.6.7 Transformada Rápida de Walsh-Hadamard para Convolución XOR (`fwt_xor`)
+
+- **Cuándo usar:** Calcular el arreglo $C[k] = \sum_{i \oplus j = k} A[i] B[j]$ en $\mathcal{O}(N \log N)$ (donde $N = 2^B$ es potencia de 2).
+- **Cuándo no usar / alternativa:** Para convolución de suma de índices ($i + j = k$), usar `multiply_poly` o `multiply_ntt` (§7.6.5–§7.6.6).
+- **Contrato:** El tamaño de `a` **debe ser potencia de 2**. Para convolucionar: `fwt_xor(a, false)`, `fwt_xor(b, false)`, multiplicar punto a punto `a[i] *= b[i]`, y llamar `fwt_xor(a, true)`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N \log N)$ tiempo y $\mathcal{O}(1)$ memoria extra.
+- **Formato de entrada:** `N` (potencia de 2), seguido de `N` enteros de `A` y `N` enteros de `B`.
+
+**Entrada:**
+```text
+4
+1 2 0 1
+0 1 2 1
+```
+
+**Salida:**
+```text
+3 3 5 5
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vll a(n), b(n);
+for (ll& x : a) cin >> x;
+for (ll& x : b) cin >> x;
+```
+
+**Implementación:**
+```cpp
+// 5. Fast Walsh-Hadamard Transform (FWT para Convolucion
+// XOR en O(N log N))
 // n debe ser potencia de 2.
 void fwt_xor(vll& a, bool inv) {
   int n = sz(a);
@@ -4951,8 +8864,48 @@ void fwt_xor(vll& a, bool inv) {
     }
   }
 }
+```
 
-// 6. Logaritmo Discreto (Baby-Step Giant-Step): menor x >= 0 con a^x = b (mod m)
+**Cómo llamarlo y producir la salida:**
+```cpp
+fwt_xor(a, false);
+fwt_xor(b, false);
+for (int i = 0; i < n; ++i) a[i] *= b[i];
+fwt_xor(a, true);
+for (int i = 0; i < n; ++i)
+  cout << a[i] << (i + 1 == n ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Si se trabaja módulo `MOD`, en la inversa (`inv == true`) multiplicar por el inverso modular de $2$ en vez de dividir por `2`.
+
+#### 7.6.8 Logaritmo Discreto Baby-Step Giant-Step (`discrete_log`)
+
+- **Cuándo usar:** Hallar el menor exponente entero $x \ge 0$ tal que $a^x \equiv b \pmod m$ (incluso cuando $\gcd(a, m) > 1$).
+- **Cuándo no usar / alternativa:** Si la incógnita está en la base ($x^k \equiv b \pmod p$), reducir primero a logaritmo discreto tomando una raíz primitiva $g$ del primo $p$.
+- **Contrato:** Extrae factores comunes $\gcd(a, m)$ antes de aplicar Baby-Step Giant-Step. Retorna el menor $x \ge 0$, o `-1` si no existe solución. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\sqrt{m} \log \sqrt{m})$ (o $\mathcal{O}(\sqrt{m})$ con `safe_umap`) tiempo y $\mathcal{O}(\sqrt{m})$ memoria.
+- **Formato de entrada:** Tres enteros `a b m`.
+
+**Entrada:**
+```text
+2 8 13
+```
+
+**Salida:**
+```text
+3
+```
+
+**Cómo leer la entrada:**
+```cpp
+ll a, b, m;
+cin >> a >> b >> m;
+```
+
+**Implementación:**
+```cpp
+// 6. Logaritmo Discreto (Baby-Step Giant-Step): menor x >=
+// 0 con a^x = b (mod m)
 ll discrete_log(ll a, ll b, ll m) {
   a %= m; b %= m;
   ll k = 1, add = 0, g;
@@ -4976,8 +8929,43 @@ ll discrete_log(ll a, ll b, ll m) {
   }
   return -1;
 }
+```
 
-// 7. Estructura de Fracciones Exactas (evita errores de precision de double)
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << discrete_log(a, b, m) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Definimos $0^0 \equiv 1 \pmod m$, por lo que si `b % m == 1 % m` la respuesta siempre es `0`.
+
+#### 7.6.9 Estructura de Fracciones Racionales Exactas (`Frac`)
+
+- **Cuándo usar:** Operar y comparar números racionales $p/q$ de forma exacta sin errores de redondeo de punto flotante (pendientes de rectas, probabilidades racionales pequeñas, etc.).
+- **Cuándo no usar / alternativa:** Si haces decenas de sumas encadenadas con denominadores distintos, `p` y `q` crecerán exponencialmente y desbordarán `ll`; en ese caso usar Python `Fraction` (§12.4) o aritmética modular.
+- **Contrato:** Mantiene siempre `q > 0` y $\gcd(|p|, q) = 1$. El comparador `<` multiplica en `i128` para soportar numeradores y denominadores de hasta $10^{18}$ sin overflow. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\log(\min(|p|, q)))$ por operación aritmética; $\mathcal{O}(1)$ por comparación.
+- **Formato de entrada:** Cuatro enteros `p1 q1 p2 q2`.
+
+**Entrada:**
+```text
+1 6 1 3
+```
+
+**Salida:**
+```text
+1/2 1
+```
+
+**Cómo leer la entrada:**
+```cpp
+ll p1, q1, p2, q2;
+cin >> p1 >> q1 >> p2 >> q2;
+```
+
+**Implementación:**
+```cpp
+// 7. Estructura de Fracciones Exactas (evita errores de
+// precision de double)
 struct Frac {
   ll num, den;
   Frac(ll n = 0, ll d = 1) : num(n), den(d) {
@@ -4985,58 +8973,60 @@ struct Frac {
     ll g = std::gcd(abs(num), den);
     if (g) { num /= g; den /= g; }
   }
-  Frac operator+(const Frac& o) const { return {num*o.den + o.num*den, den*o.den}; }
-  Frac operator-(const Frac& o) const { return {num*o.den - o.num*den, den*o.den}; }
-  Frac operator*(const Frac& o) const { return {num*o.num, den*o.den}; }
-  Frac operator/(const Frac& o) const { return {num*o.den, den*o.num}; }
-  bool operator<(const Frac& o) const { return (i128)num * o.den < (i128)o.num * den; }
-  bool operator==(const Frac& o) const { return num == o.num && den == o.den; }
+  Frac operator+(const Frac& o) const { return {
+    num*o.den + o.num*den, den*o.den}; }
+  Frac operator-(const Frac& o) const { return {
+    num*o.den - o.num*den, den*o.den}; }
+  Frac operator*(const Frac& o) const { return {
+    num*o.num, den*o.den}; }
+  Frac operator/(const Frac& o) const { return {
+    num*o.den, den*o.num}; }
+  bool operator<(const Frac& o) const {
+    return (i128)num * o.den < (i128)o.num * den; }
+  bool operator==(const Frac& o) const {
+    return num == o.num && den == o.den; }
 };
 ```
 
-**Ejemplo de Input y Uso (Base de XOR y FFT):**
-
-``` cpp
-int main() {
-  XorBasis xb;
-  for (ll x : {3, 10, 5}) xb.insert(x);
-  cout << xb.max_xor() << "\n"; // 15 (10 ^ 5 = 15)
-
-  // Multiplicar (1 + 2x) * (3 + 4x) = 3 + 10x + 8x^2
-  vll prod = multiply_poly({1, 2}, {3, 4}); // {3, 10, 8}
-}
+**Cómo llamarlo y producir la salida:**
+```cpp
+Frac f1(p1, q1), f2(p2, q2);
+Frac s = f1 + f2;
+cout << s.num << "/" << s.den << " " << (f1 < f2) << '\n';
 ```
+
+- **Trampas y adaptaciones:** (1) Para representar pendientes dirigidas o no dirigidas que pueden ser verticales ($q = 0$), normalizar con `g = gcd(abs(dx), abs(dy))` sin llamar a `Frac(p, 0)` (que divide por `g` pero asume $q \neq 0$ en sumas).
 
 ------------------------------------------------------------------------
 
 ### 7.7 XOR en Rango $\mathcal{O}(1)$, Función `mex`, Grundy y Juego de Nim / Misère Nim
 
-- **¿Cuándo usar?**:
+#### 7.7.1 XOR Acumulado en Rango $[L, R]$ en $\mathcal{O}(1)$ (`xor_n`, `xor_range`)
 
-  - **`xor_n` / `xor_range`**: Calcular
-    $1 \oplus 2 \oplus \ldots \oplus n$ o el XOR de todos los enteros
-    consecutivos en $\lbrack L,R\rbrack$ en $\mathcal{O}(1)$
-    aprovechando que el XOR tiene periodo 4.
+- **Cuándo usar:** Calcular $L \oplus (L + 1) \oplus \dots \oplus R$ en tiempo constante para $L, R \le 10^{18}$.
+- **Cuándo no usar / alternativa:** Si los números no son consecutivos sino un arreglo arbitrario, usar un arreglo de prefijos XOR.
+- **Contrato:** Basado en el ciclo de longitud 4 de $0 \oplus 1 \oplus \dots \oplus n$. Para $l > r$ o $n < 0$ retorna `0`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(1)$ tiempo y memoria.
+- **Formato de entrada:** Dos enteros `L R` ($0 \le L \le R$).
 
-  - **`mex` y Teorema de Sprague-Grundy**: En cualquier juego imparcial
-    para 2 jugadores donde gana quien hace el último movimiento, cada
-    estado tiene un valor de Grundy
-    $g(u) = \mathrm{\text{mex}}(\left\{ g(v):u \rightarrow v \right\})$.
-    Si el juego se compone de varios subjuegos independientes, el Grundy
-    total es el **XOR de los Grundy individuales**
-    ($g_{1} \oplus g_{2} \oplus \ldots \oplus g_{k}$). El primer
-    jugador gana $\Leftrightarrow \mathrm{\text{XOR total}} \neq 0$.
+**Entrada:**
+```text
+3 9
+```
 
-  - **Misère Nim**: Igual que Nim normal, pero **pierde** quien toma la
-    última piedra. Si todas las pilas son de tamaño $1$, gana el
-    primero $\Leftrightarrow$ hay cantidad **par** de pilas; si al
-    menos una pila es $> 1$, la condición ganadora es idéntica al Nim
-    normal ($\bigoplus a_{i} \neq 0$).
+**Salida:**
+```text
+2
+```
 
-- **Complejidad**: `xor_n` y `xor_range` en $\mathcal{O}(1)$; `mex` y
-  `nim` en $\mathcal{O}(N)$.
+**Cómo leer la entrada:**
+```cpp
+ll l, r;
+cin >> l >> r;
+```
 
-``` cpp
+**Implementación:**
+```cpp
 // 1. XOR de 0 a n en O(1)
 ll xor_n(ll n) {
   if (n < 0) return 0;
@@ -5045,11 +9035,49 @@ ll xor_n(ll n) {
   if (n % 4 == 2) return n + 1;
   return 0;
 }
-// XOR de todos los enteros en el intervalo cerrado [l, r] en O(1)
+// XOR de todos los enteros en el intervalo cerrado [l, r]
+// en O(1)
 ll xor_range(ll l, ll r) {
   return (l > r) ? 0 : (xor_n(r) ^ xor_n(l - 1));
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << xor_range(l, r) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Nunca escribir `n % 4 == 2 ? n + 1` pensando en OR bit a bit sin paréntesis por precedencia de operadores.
+
+#### 7.7.2 Mínimo Excluido No Negativo (`mex`) para Grundy / Sprague-Grundy
+
+- **Cuándo usar:** Calcular en $\mathcal{O}(N)$ el menor entero $\ge 0$ que no aparece en el vector `v` (base de los valores Grundy $G(u) = \text{mex}(\{G(v) : u \to v\})$ en juegos imparciales).
+- **Cuándo no usar / alternativa:** Si necesitas mantener el MEX de un conjunto que sufre inserciones y borrados online, mantener los ausentes en un `std::set<int>` o usar un Segment Tree de mínimos sobre la última posición vista.
+- **Contrato:** Por principio del palomar, el MEX de $N$ números está siempre en $[0, N]$, por lo que ignora valores $< 0$ o $> N$. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N)$ tiempo y memoria.
+- **Formato de entrada:** `N`, seguido de `N` enteros.
+
+**Entrada:**
+```text
+5
+0 1 4 2 0
+```
+
+**Salida:**
+```text
+3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vi v(n);
+for (int& x : v) cin >> x;
+```
+
+**Implementación:**
+```cpp
 // 2. MEX (Minimum Excluded >= 0) en O(N)
 int mex(const vi& v) {
   int n = sz(v);
@@ -5058,125 +9086,250 @@ int mex(const vi& v) {
   for (int i = 0; i <= n; ++i) if (!pres[i]) return i;
   return n + 1;
 }
+```
 
-// 3. Nim Normal (gana quien toma el ultimo) y Misere Nim (pierde quien toma el ultimo)
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << mex(v) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) En la suma disjunta de $K$ juegos imparciales independientes, el valor Grundy total es $G(s_1) \oplus G(s_2) \oplus \dots \oplus G(s_K)$.
+
+#### 7.7.3 Juego de Nim Normal y Misère Nim (`nim_normal_win`, `nim_misere_win`)
+
+- **Cuándo usar:** Determinar si el primer jugador tiene estrategia ganadora en Nim normal (gana quien retira la última piedra) o en **Misère Nim** (pierde quien se ve forzado a retirar la última piedra).
+- **Cuándo no usar / alternativa:** En juegos imparciales generales bajo regla Misère donde un movimiento desde un montón de Grundy $> 1$ no puede elegir arbitrariamente cualquier Grundy menor, la reducción de Misère Nim no aplica directamente.
+- **Contrato:** Ignora correctamente montones vacíos (`p == 0`). En Misère Nim, si todos los montones tienen tamaño $\le 1$, el primer jugador gana si y solo si la cantidad de montones de tamaño `1` es **par** (`ones % 2 == 0`); si existe algún montón $> 1$, gana si y solo si el XOR total es $\neq 0$. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N)$ tiempo y $\mathcal{O}(1)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N` tamaños de montones.
+
+**Entrada:**
+```text
+3
+1 0 1
+```
+
+**Salida:**
+```text
+0 1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vll piles(n);
+for (ll& p : piles) cin >> p;
+```
+
+**Implementación:**
+```cpp
+// 3. Nim Normal (gana quien toma el ultimo) y Misere Nim
+// (pierde quien toma el ultimo)
 bool nim_normal_win(const vll& piles) {
   ll x = 0;
   for (ll p : piles) x ^= p;
   return x != 0;
 }
 bool nim_misere_win(const vll& piles) {
-  bool all_ones = true;
+  bool all_le_one = true;
+  int ones = 0;
   ll x = 0;
   for (ll p : piles) {
-    if (p > 1) all_ones = false;
+    if (p > 1) all_le_one = false;
+    if (p == 1) ones++;
     x ^= p;
   }
-  return all_ones ? (sz(piles) % 2 == 0) : (x != 0);
+  return all_le_one ? (ones % 2 == 0) : (x != 0);
 }
 ```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << nim_normal_win(piles) << " " << nim_misere_win(
+  piles) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) No usar `*max_element <= 1 && sz(piles) % 2 == 0` porque los montones de tamaño `0` alterarían `sz(piles)` sin ser jugadas reales; contar explícitamente `if (p == 1) ones++`.
 
 ------------------------------------------------------------------------
 
+### 7.8 Referencia Cruzada: Criba Segmentada en Rango $[L, R]$
 
-### 7.8 Criba Segmentada (Primos en Rango $[L, R]$)
-
-- **¿Cuándo usar?**: Hallar todos los números primos en un intervalo $[L, R]$ donde $R \le 10^{12}$ y la longitud del intervalo $R - L + 1 \le 10^7$ (donde una criba directa de $1$ a $R$ desbordaría la memoria).
-- **Complejidad**: $\mathcal{O}((R - L + 1) \log \log R + \sqrt{R} \log \log \sqrt{R})$.
-
-```cpp
-// Retorna vector de bool donde is_prime[i] indica si (L + i) es primo
-vector<bool> segmented_sieve(ll L, ll R) {
-  ll lim = sqrt(R);
-  vector<bool> mark(lim + 1, false);
-  vll primes;
-  for (ll i = 2; i <= lim; ++i) {
-    if (!mark[i]) {
-      primes.push_back(i);
-      for (ll j = i * i; j <= lim; j += i) mark[j] = true;
-    }
-  }
-  vector<bool> is_prime(R - L + 1, true);
-  for (ll p : primes) {
-    for (ll j = max(p * p, (L + p - 1) / p * p); j <= R; j += p)
-      is_prime[j - L] = false;
-  }
-  if (L == 1) is_prime[0] = false;
-  return is_prime;
-}
-```
+- La implementación canónica de `segmented_sieve(L, R)` (con tratamiento exacto para $L = 0$ y $L = 1$, $R \le 10^{12}$ y $R - L + 1 \le 10^7$) se encuentra consolidada en **§7.1 (bloque 4)**.
 
 ### 7.9 Programación Lineal: Algoritmo Simplex de Dos Fases
 
-- **¿Cuándo usar?**: Optimización continua: **Maximizar** $Z = \mathbf{c}^T \mathbf{x}$ sujeto al sistema de restricciones lineales $A \mathbf{x} \le \mathbf{b}$ con variables no negativas $\mathbf{x} \ge 0$. Resuelve problemas de flujo con costos, mezclas, producción o asignaciones lineales continuas.
-- **Complejidad**: Polinomial en la práctica (rápido para $N, M \le 100$).
+- **Cuándo usar:** Maximizar una función objetivo lineal $c^T x$ sujeta a $A x \le b, x \ge 0$ con variables continuas (o con matriz totalmente unimodular) cuando $N, M \le 100$.
+- **Cuándo no usar / alternativa:** Si el problema es de flujo o corte en un grafo grande, usar `Dinic` (§6.6.1) o `MCMF` (§6.6.2) en lugar de programación lineal general.
+- **Contrato:** Fase 1 halla una solución básica factible inicial incluso cuando algún $b_i < 0$ (retornando `-INF_LP` si el poliedro es vacío/infactible); Fase 2 optimiza $c^T x$ con regla de desempate lexicográfica anti-ciclos de Bland (retornando `+INF_LP` si es no acotado). Soporta valores óptimos negativos cuando el origen no es factible. Dependencias: template base (§1.1).
+- **Complejidad:** Polinomial en promedio práctico; exponencial solo en casos patológicos artificiales.
+- **Formato de entrada:** `N M`, luego matriz `A` ($N \times M$), vector `b` ($N$) y vector `c` ($M$).
 
+**Entrada:**
+```text
+2 2
+1 1
+2 1
+4 5
+3 2
+```
+
+**Salida:**
+```text
+9.00
+1.00 3.00
+```
+
+**Cómo leer la entrada:**
 ```cpp
-// Simplex de Dos Fases con Regla de Bland (Anti-ciclos)
+int n, m;
+cin >> n >> m;
+Simplex lp(n, m);
+for (int i = 0; i < n; ++i)
+  for (int j = 0; j < m; ++j) cin >> lp.a[i][j];
+for (int i = 0; i < n; ++i) cin >> lp.b[i];
+for (int j = 0; j < m; ++j) cin >> lp.c[j];
+```
+
+**Implementación:**
+```cpp
+// Simplex de Dos Fases con desempate de Bland (Anti-ciclos)
+// Maximiza c^T x sujeto a A x <= b, x >= 0.
 struct Simplex {
-  const ld EPS = 1e-9, INF = 1e18;
+  const ld EPS_LP = 1e-9, INF_LP = 1e18;
   int n, m; // n restricciones, m variables
-  vi X, Y;
+  vi B, N;
   vector<ld> b, c;
-  vector<vector<ld>> a;
-  ld Z = 0;
+  vector<vector<ld>> a, D;
 
-  Simplex(int n, int m) : n(n), m(m), b(n), c(m), a(n, vector<ld>(m)) {}
+  Simplex(int n, int m) : n(n), m(m), b(n), c(m), a(n,
+    vector<ld>(m, 0)) {}
 
-  void pivot(int x, int y) {
-    swap(X[y], Y[x]);
-    b[x] /= a[x][y];
-    for (int j = 0; j < m; ++j) if (j != y) a[x][j] /= a[x][y];
-    a[x][y] = 1.0 / a[x][y];
-    for (int i = 0; i < n; ++i) {
-      if (i != x && abs(a[i][y]) > EPS) {
-        b[i] -= a[i][y] * b[x];
-        for (int j = 0; j < m; ++j) if (j != y) a[i][j] -= a[i][y] * a[x][j];
-        a[i][y] = -a[i][y] * a[x][y];
-      }
+  void pivot(int r, int s) {
+    ld inv = 1.0L / D[r][s];
+    for (int i = 0; i < n + 2; ++i) if (i != r && abs(
+      D[i][s]) > EPS_LP) {
+      ld inv2 = D[i][s] * inv;
+      for (int j = 0; j < m
+        + 2; ++j) D[i][j] -= D[r][j] * inv2;
+      D[i][s] = D[r][s] * inv2;
     }
-    Z += c[y] * b[x];
-    for (int j = 0; j < m; ++j) if (j != y) c[j] -= c[y] * a[x][j];
-    c[y] = -c[y] * a[x][y];
+    for (int j = 0; j < m + 2; ++j) if (
+      j != s) D[r][j] *= inv;
+    for (int i = 0; i < n + 2; ++i) if (
+      i != r) D[i][s] *= -inv;
+    D[r][s] = inv;
+    swap(B[r], N[s]);
   }
 
-  // Retorna {max_Z, vector_x}. Si sin solucion: {-1, {}}. Si no acotada: {INF, {}}
-  pair<ld, vector<ld>> solve() {
-    X.resize(m); iota(all(X), 0);
-    Y.resize(n); iota(all(Y), m);
+  bool run_simplex(int phase) {
+    int x = n + (phase == 1);
     while (true) {
-      int x = min_element(all(b)) - b.begin(), y = -1;
-      if (b[x] > -EPS) break;
-      for (int j = 0; j < m; ++j) if (a[x][j] < -EPS) { y = j; break; }
-      if (y == -1) return {-1, {}}; // Sin solucion factible
-      pivot(x, y);
-    }
-    while (true) {
-      int x = -1, y = max_element(all(c)) - c.begin();
-      if (c[y] < EPS) break;
-      ld mn = INF;
-      for (int i = 0; i < n; ++i) {
-        if (a[i][y] > EPS && b[i] / a[i][y] < mn) {
-          mn = b[i] / a[i][y]; x = i;
+      int s = -1;
+      for (int j = 0; j <= m; ++j) {
+        if (phase == 2 && N[j] == -1) continue;
+        if (D[x][j] < -EPS_LP) {
+          if (s == -1 || make_pair(D[x][j],
+            N[j]) < make_pair(D[x][s], N[s]))
+            s = j;
         }
       }
-      if (x == -1) return {INF, {}}; // Solucion no acotada
-      pivot(x, y);
+      if (s == -1) return true;
+      int r = -1;
+      for (int i = 0; i < n; ++i) {
+        if (D[i][s] <= EPS_LP) continue;
+        ld ratio = D[i][m + 1] / D[i][s];
+        if (r == -1 ||
+            make_pair(ratio, B[i]) < make_pair(
+              D[r][m + 1] / D[r][s], B[r]))
+          r = i;
+      }
+      if (r == -1) return false; // No acotado
+      pivot(r, s);
     }
-    vector<ld> ans(m, 0);
-    for (int i = 0; i < n; ++i) if (Y[i] < m) ans[Y[i]] = b[i];
-    return {Z, ans};
+  }
+
+  // Retorna {max_Z, x}. Infactible: {-INF_LP, {}}. No
+  // acotado: {INF_LP, {}}.
+  pair<ld, vector<ld>> solve() {
+    B.resize(n); N.resize(m + 1);
+    D.assign(n + 2, vector<ld>(m + 2, 0));
+    for (int i = 0; i < n; ++i) {
+      for (int j = 0; j < m; ++j) D[i][j] = a[i][j];
+      B[i] = m + i;
+      D[i][m] = -1;
+      D[i][m + 1] = b[i];
+    }
+    for (int j = 0; j < m; ++j) { N[j] = j; D[n][j] = -c[j];
+      }
+    N[m] = -1; D[n + 1][m] = 1;
+    int r = 0;
+    for (int i = 1; i < n; ++i) if (
+      D[i][m + 1] < D[r][m + 1]) r = i;
+    if (D[r][m + 1] < -EPS_LP) {
+      pivot(r, m);
+      if (!run_simplex(
+        1) || D[n + 1][m + 1] < -EPS_LP) return {-INF_LP, {
+          }};
+      for (int i = 0; i < n; ++i) if (B[i] == -1) {
+        int s = 0;
+        for (int j = 1; j <= m; ++j)
+          if (s == -1 || make_pair(D[i][j],
+            N[j]) < make_pair(D[i][s], N[s]))
+            s = j;
+        pivot(i, s);
+      }
+    }
+    if (!run_simplex(2)) return {INF_LP, {}};
+    vector<ld> x(m, 0);
+    for (int i = 0; i < n; ++i) if (
+      B[i] < m) x[B[i]] = D[i][m + 1];
+    return {D[n][m + 1], x};
   }
 };
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto [opt, x] = lp.solve();
+cout << fixed << setprecision(2) << opt << '\n'
+     << x[0] << " " << x[1] << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Una restricción $\ge$ ($a^T x \ge b$) se convierte multiplicando por $-1$: $(-a)^T x \le -b$; una igualdad $a^T x = b$ se representa con ambas desigualdades $\le$ y $\ge$.
+
 ### 7.10 Berlekamp-Massey y Recurrencias Lineales Modulares
 
-- **¿Cuándo usar?**: Dada una sucesión $a_0, a_1, a_2, \dots$ de la cual puedes simular o calcular los primeros $\sim 2K$ términos (mediante fuerza bruta o DP para $N$ pequeño), pero necesitas calcular $a_N$ para $N \le 10^{18}$. Berlekamp-Massey encuentra la relación de recurrencia lineal más corta en $\mathcal{O}(K^2)$, y luego calcula el $N$-ésimo término en $\mathcal{O}(K^2 \log N)$ sin necesidad de deducir matemáticamente la matriz de transición.
-- **Complejidad**: $\mathcal{O}(K^2)$ para hallar la relación, $\mathcal{O}(K^2 \log N)$ para consultar.
+- **Cuándo usar:** Descubrir automáticamente la recurrencia lineal más corta que genera una sucesión modular dada (a partir de sus primeros $2D$ términos) y evaluar su término $K$-ésimo ($K \le 10^{18}$) en $\mathcal{O}(D^2 \log K)$.
+- **Cuándo no usar / alternativa:** Si la sucesión no proviene de una recurrencia lineal de orden pequeño sino de un polinomio en $k$ de grado $D$, también funciona (orden $D + 1$), pero la interpolación de Lagrange (§7.11.1) la evalúa en $\mathcal{O}(D)$.
+- **Contrato:** Índices **0-based** (`get_kth(s, 0)` retorna `s[0]`). Normaliza discrepancias negativas con `norm()` y soporta módulos primos. Dependencias: `MOD` (§7.4.1).
+- **Complejidad:** Inferencia de recurrencia $\mathcal{O}(N^2)$; evaluación de `get_kth` en $\mathcal{O}(D^2 \log K)$.
+- **Formato de entrada:** `N K`, seguido de los primeros `N` términos de la sucesión.
 
+**Entrada:**
+```text
+6 10
+0 1 1 2 3 5
+```
+
+**Salida:**
+```text
+55
+```
+
+**Cómo leer la entrada:**
 ```cpp
-// Berlekamp-Massey + Cayley-Hamilton para sucesiones modulares
+int n; ll k;
+cin >> n >> k;
+vll s(n);
+for (ll& x : s) cin >> x;
+```
+
+**Implementación:**
+```cpp
+// Berlekamp-Massey + Cayley-Hamilton para sucesiones
+// modulares
 struct BerlekampMassey {
   ll mod;
   BerlekampMassey(ll m = MOD) : mod(m) {}
@@ -5187,41 +9340,49 @@ struct BerlekampMassey {
     y -= (a / b) * x;
     return d;
   }
+  ll norm(ll a) const {
+    a %= mod;
+    return (a < 0) ? (a + mod) : a;
+  }
   ll inv(ll a) {
-    ll x, y; extgcd(a, mod, x, y);
-    return (x % mod + mod) % mod;
+    ll x, y; extgcd(norm(a), mod, x, y);
+    return norm(x);
   }
 
+  // Requiere mod primo para que toda discrepancia no nula
+  // sea invertible
   vll BM(const vll& x) {
     vll ls, cur;
     int lf = 0; ll ld = 0;
     for (int i = 0; i < sz(x); ++i) {
       ll t = 0;
       for (int j = 0; j < sz(cur); ++j)
-        t = (t + x[i - j - 1] * cur[j]) % mod;
-      if ((t - x[i]) % mod == 0) continue;
+        t = (t + norm(x[i - j - 1]) * cur[j]) % mod;
+      ll d = norm(x[i] - t);
+      if (d == 0) continue;
       if (cur.empty()) {
         cur.resize(i + 1, 0);
-        lf = i; ld = (t - x[i]) % mod;
+        lf = i; ld = d;
         continue;
       }
-      ll k = -(x[i] - t) * inv(ld) % mod;
+      ll k = d * inv(ld) % mod;
       vll c(i - lf - 1, 0); c.push_back(k);
       for (int j = 0; j < sz(ls); ++j)
-        c.push_back(-ls[j] * k % mod);
+        c.push_back(norm(-ls[j]) * k % mod);
       if (sz(c) < sz(cur)) c.resize(sz(cur), 0);
       for (int j = 0; j < sz(cur); ++j)
         c[j] = (c[j] + cur[j]) % mod;
       if (i - lf + sz(ls) >= sz(cur)) {
-        ls = cur; lf = i; ld = (t - x[i]) % mod;
+        ls = cur; lf = i; ld = d;
       }
       cur = c;
     }
-    for (ll& val : cur) val = (val % mod + mod) % mod;
+    for (ll& val : cur) val = norm(val);
     return cur;
   }
 
-  vll poly_mul(const vll& p, const vll& q, const vll& h, int m) {
+  vll poly_mul(const vll& p, const vll& q, const vll& h,
+    int m) {
     vll t(2 * m, 0);
     for (int i = 0; i < m; ++i) if (p[i])
       for (int j = 0; j < m; ++j)
@@ -5234,7 +9395,8 @@ struct BerlekampMassey {
   }
 
   ll get_kth(const vll& first_terms, ll k) {
-    if (k < sz(first_terms)) return (first_terms[k] % mod + mod) % mod;
+    if (k < sz(first_terms)) return (
+      first_terms[k] % mod + mod) % mod;
     vll h = BM(first_terms);
     int m = sz(h);
     if (!m) return 0;
@@ -5253,32 +9415,71 @@ struct BerlekampMassey {
 };
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+BerlekampMassey bm(MOD);
+cout << bm.get_kth(s, k) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Proveer siempre al menos $2D + 2$ términos iniciales calculados por fuerza bruta o DP pequeña para que Berlekamp-Massey no infiera una recurrencia espuria más corta.
+
 ### 7.11 Interpolación de Lagrange en $\mathcal{O}(D)$ y $\mathcal{O}(D^2)$
 
-- **¿Cuándo usar?**: Evaluar un polinomio de grado $D$ en un punto gigante $X$ ($X \le 10^9$) conociendo sus valores en puntos consecutivos $y_0 = P(0), y_1 = P(1), \dots, y_D = P(D)$ en $\mathcal{O}(D)$. (Muy común en sumatorias de potencias $\sum_{i=1}^N i^k$ donde el resultado es un polinomio de grado $k+1$).
-- **Complejidad**: $\mathcal{O}(D)$ para puntos consecutivos; $\mathcal{O}(D^2)$ para puntos arbitrarios.
+#### 7.11.1 Interpolación de Lagrange en $\mathcal{O}(D)$ para Abscisas Consecutivas $0..D$ (`lagrange_eval_consecutive`)
 
+- **Cuándo usar:** Evaluar en $\mathcal{O}(D)$ un polinomio $P(x) \pmod{\text{MOD}}$ de grado $D$ (por ejemplo $\sum_{i=1}^n i^k$, que tiene grado $D = k + 1$) conociendo únicamente sus valores en $x = 0, 1, \dots, D$.
+- **Cuándo no usar / alternativa:** Si las abscisas $x_i$ donde conoces $P(x_i)$ **no** son $0, 1, \dots, D$, usar `lagrange_eval_arbitrary` (§7.11.2).
+- **Contrato:** `y` tiene tamaño $D + 1$ con `y[i] = P(i) mod MOD`. Requiere haber llamado `init_fact(D, MOD)` previamente. Dependencias: `init_fact`, `norm_mod`, `add_mod`, `sub_mod`, `mul_mod` (§7.4).
+- **Complejidad:** $\mathcal{O}(D)$ tiempo y memoria por evaluación.
+- **Formato de entrada:** `D X`, seguido de `D + 1` valores `P(0)..P(D)`.
+
+**Entrada:**
+```text
+3 10
+0 1 5 14
+```
+
+**Salida:**
+```text
+385
+```
+
+**Cómo leer la entrada:**
+```cpp
+int d; ll x;
+cin >> d >> x;
+vll y(d + 1);
+for (ll& v : y) cin >> v;
+```
+
+**Implementación:**
 ```cpp
 // Interpolacion de Lagrange en O(D) para x = 0, 1, ..., D
 // 'y' contiene P(0), P(1), ..., P(D). Evalua P(x) mod MOD.
-ll lagrange_eval_consecutive(const vll& y, ll x, ll mod = MOD) {
+ll lagrange_eval_consecutive(const vll& y, ll x,
+  ll mod = MOD) {
   int n = sz(y); // Grado = n - 1
   if (x < n) return (y[x] % mod + mod) % mod;
   vll pref(n), suff(n), fact(n), inv_fact(n);
   pref[0] = x % mod;
-  for (int i = 1; i < n; ++i) pref[i] = pref[i - 1] * ((x - i) % mod) % mod;
+  for (int i = 1; i < n; ++i) pref[i] = pref[i - 1] * ((
+    x - i) % mod) % mod;
   suff[n - 1] = (x - (n - 1)) % mod;
-  for (int i = n - 2; i >= 0; --i) suff[i] = suff[i + 1] * ((x - i) % mod) % mod;
+  for (int i = n - 2; i >= 0; --i) suff[i] = suff[i + 1] * (
+    (x - i) % mod) % mod;
 
   auto bpow = [&](ll b, ll e) {
     ll r = 1;
-    for (; e > 0; e >>= 1, b = b * b % mod) if (e & 1) r = r * b % mod;
+    for (; e > 0; e >>= 1, b = b * b % mod) if (
+      e & 1) r = r * b % mod;
     return r;
   };
   fact[0] = 1;
-  for (int i = 1; i < n; ++i) fact[i] = fact[i - 1] * i % mod;
+  for (int i = 1; i < n; ++i) fact[i] = fact[i
+    - 1] * i % mod;
   inv_fact[n - 1] = bpow(fact[n - 1], mod - 2);
-  for (int i = n - 2; i >= 0; --i) inv_fact[i] = inv_fact[i + 1] * (i + 1) % mod;
+  for (int i = n - 2; i >= 0; --i) inv_fact[i] = inv_fact[i
+    + 1] * (i + 1) % mod;
 
   ll ans = 0;
   for (int i = 0; i < n; ++i) {
@@ -5293,49 +9494,439 @@ ll lagrange_eval_consecutive(const vll& y, ll x, ll mod = MOD) {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+init_fact(d, MOD);
+cout << lagrange_eval_consecutive(y, x) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) La suma de potencias $\sum_{i=1}^n i^k$ es un polinomio de grado $D = k + 1$ (no $k$), por lo que hay que pasar $k + 2$ puntos $P(0), \dots, P(k + 1)$.
+
+#### 7.11.2 Interpolación de Lagrange en $\mathcal{O}(N^2)$ para Puntos Arbitrarios (`lagrange_eval_arbitrary`)
+
+- **Cuándo usar:** Evaluar $P(x) \pmod{\text{MOD}}$ cuando los $N$ puntos conocidos $(x_i, y_i)$ tienen abscisas arbitrarias distintas módulo `MOD`.
+- **Cuándo no usar / alternativa:** Si las abscisas son consecutivas $0..D$, `lagrange_eval_consecutive` (§7.11.1) es $\mathcal{O}(D)$ en lugar de $\mathcal{O}(N^2)$.
+- **Contrato:** Requiere que todos los `xs[i]` sean distintos módulo `MOD`. Dependencias: `norm_mod`, `add_mod`, `sub_mod`, `mul_mod`, `inv_fermat` (§7.4.1).
+- **Complejidad:** $\mathcal{O}(N^2)$ tiempo y $\mathcal{O}(1)$ memoria extra.
+- **Formato de entrada:** `N X`, seguido de `N` pares `xs[i] ys[i]`.
+
+**Entrada:**
+```text
+3 5
+1 2
+2 5
+4 17
+```
+
+**Salida:**
+```text
+26
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n; ll x;
+cin >> n >> x;
+vll xs(n), ys(n);
+for (int i = 0; i < n; ++i) cin >> xs[i] >> ys[i];
+```
+
+**Implementación:**
+```cpp
+// 2. Interpolacion de Lagrange en O(N^2) para puntos
+// arbitrarios distintos (xs[i], ys[i])
+ll lagrange_eval_arbitrary(const vll& xs, const vll& ys,
+  ll x, ll mod = MOD) {
+  int n = sz(xs);
+  auto norm = [&](ll v) { v %= mod;
+    return v < 0 ? v + mod : v; };
+  auto bpow = [&](ll b, ll e) {
+    ll r = 1;
+    for (b = norm(b); e > 0; e >>= 1, b = b * b % mod)
+      if (e & 1) r = r * b % mod;
+    return r;
+  };
+  ll ans = 0;
+  for (int i = 0; i < n; ++i) {
+    ll num = 1, den = 1;
+    for (int j = 0; j < n; ++j) {
+      if (i == j) continue;
+      num = num * norm(x - xs[j]) % mod;
+      den = den * norm(xs[i] - xs[j]) % mod;
+    }
+    ll term = norm(ys[i]) * num % mod * bpow(den,
+      mod - 2) % mod;
+    ans = (ans + term) % mod;
+  }
+  return ans;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << lagrange_eval_arbitrary(xs, ys, x) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si necesitas recuperar explícitamente el vector de coeficientes $c_0 + c_1 x + \dots + c_{N-1} x^{N-1}$, precalcular el polinomio producto $\prod (x - x_i)$ en $\mathcal{O}(N^2)$ y dividir sintéticamente por $(x - x_i)$ para cada término.
 
 ------------------------------------------------------------------------
 
-## Bloque 8: Programación Dinámica (DP) y Geometría Computacional
+### 7.12 Conteo Avanzado y Esperanza: Stars and Bars, Inclusión-Exclusión, Contribuciones y Linealidad
 
-### 8.1 DP Clásica y Máscaras: Knapsack 0/1 y Unbounded, LCS, Edit Distance, LIS $\mathcal{O}(N\log N)$, Digit DP y SOS DP
+#### 7.12.1 Stars and Bars: Composiciones No Negativas y Positivas (`stars_and_bars_nonneg`, `stars_and_bars_pos`)
 
-- **¿Cuándo usar?**:
+- **Cuándo usar:** Contar cuántas tuplas de $k$ enteros suman exactamente $n$: con $x_i \ge 0$ es $\binom{n + k - 1}{k - 1}$, y con $x_i \ge 1$ es $\binom{n - 1}{k - 1}$.
+- **Cuándo no usar / alternativa:** Si además cada variable tiene una cota superior $x_i \le c$, combinar Stars and Bars con **Inclusión-Exclusión** sobre el subconjunto de variables que violan $x_i \ge c + 1$.
+- **Contrato:** Requiere haber llamado `init_fact(n + k, MOD)` previamente. Dependencias: `init_fact`, `nCr` (§7.4.2).
+- **Complejidad:** $\mathcal{O}(1)$ por consulta tras `init_fact`.
+- **Formato de entrada:** Dos enteros `n k`.
 
-  - **Knapsack 0/1 vs Unbounded**: Seleccionar objetos con peso
-    $w_{i}$ y valor $v_{i}$ sin exceder capacidad $W$. Si cada
-    objeto se usa a lo sumo $1$ vez (0/1), el bucle de capacidad va
-    **hacia atrás** (`W` a `w[i]`). Si se puede repetir infinitas veces
-    (Unbounded), va **hacia adelante** (`w[i]` a `W`).
+**Entrada:**
+```text
+5 3
+```
 
-  - **LCS y Edit Distance**: Subsecuencia común más larga o mínimo
-    número de inserciones/borrados/reemplazos para transformar
-    $S_{1} \rightarrow S_{2}$ en $\mathcal{O}(N \cdot M)$.
+**Salida:**
+```text
+21 6
+```
 
-  - **LIS en $\mathcal{O}(N\log N)$**: Subsecuencia estrictamente
-    creciente más larga (`lower_bound`; usar `upper_bound` para no
-    decreciente $\leq$).
+**Cómo leer la entrada:**
+```cpp
+int n, k;
+cin >> n >> k;
+```
 
-  - **Digit DP**: Contar cuántos números en $\lbrack L,R\rbrack$
-    ($R \leq 10^{18}$ o $10^{1000}$) cumplen una propiedad sobre sus
-    dígitos, calculando `solve(R) - solve(L - 1)`.
+**Implementación:**
+```cpp
+// 1. Stars and Bars: x_1 + ... + x_k = n (requiere
+// init_fact() de §7.4)
+ll stars_and_bars_nonneg(int n, int k) { // x_i >= 0
+  if (n < 0 || k <= 0) return (n == 0 && k == 0) ? 1 : 0;
+  return nCr(n + k - 1, k - 1);
+}
+ll stars_and_bars_pos(int n, int k) { // x_i >= 1
+  if (n < k || k <= 0) return 0;
+  return nCr(n - 1, k - 1);
+}
+```
 
-  - **SOS DP (Sum Over Subsets)**: Calcular para todas las máscaras
-    $m \in \lbrack 0,2^{N} - 1\rbrack$ la suma de
-    $A\lbrack\mathrm{\text{sub}}\rbrack$ sobre todas las submáscaras
-    $\mathrm{\text{sub}} \subseteq m$ en
-    $\mathcal{O}(N \cdot 2^{N})$ en lugar de $\mathcal{O}(3^{N})$.
+**Cómo llamarlo y producir la salida:**
+```cpp
+init_fact(n + k, MOD);
+cout << stars_and_bars_nonneg(n, k) << " "
+     << stars_and_bars_pos(n, k) << '\n';
+```
 
-``` cpp
+- **Trampas y adaptaciones:** (1) Si cada variable exige $x_i \ge a_i$, sustituir $x'_i = x_i - a_i \ge 0$ y llamar `stars_and_bars_nonneg(n - sum(a_i), k)`.
+
+#### 7.12.2 Principio de Inclusión-Exclusión para Múltiplos (`inclusion_exclusion_multiples`)
+
+- **Cuándo usar:** Contar cuántos enteros en $[1, N]$ ($N \le 10^{18}$) son divisibles por **al menos uno** de los números de una lista pequeña $D$ ($|D| \le 20$).
+- **Cuándo no usar / alternativa:** Si $|D| > 25$, iterar las $2^{|D|}$ máscaras da TLE.
+- **Contrato:** Usa `i128` al actualizar el MCM (`lcm = lcm / g * divs[i]`) y corta la rama si `lcm > n` para evitar overflow. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(2^K \cdot K \log N)$ tiempo y $\mathcal{O}(1)$ memoria.
+- **Formato de entrada:** `N K`, seguido de `K` divisores.
+
+**Entrada:**
+```text
+20 3
+2 3 5
+```
+
+**Salida:**
+```text
+14
+```
+
+**Cómo leer la entrada:**
+```cpp
+ll n; int k;
+cin >> n >> k;
+vll divs(k);
+for (ll& d : divs) cin >> d;
+```
+
+**Implementación:**
+```cpp
+// 2. Principio de Inclusion-Exclusion en [1, N]:
+// Cuenta enteros en [1, N] divisibles por al menos un d in
+// divs.
+ll inclusion_exclusion_multiples(ll N, const vll& divs) {
+  int k = sz(divs);
+  ll ans = 0;
+  for (int mask = 1; mask < (1 << k); ++mask) {
+    ll lcm_val = 1;
+    int bits = __builtin_popcount(mask);
+    for (int i = 0; i < k; ++i) {
+      if ((mask >> i) & 1) {
+        ll g = std::gcd(lcm_val, divs[i]);
+        i128 nxt = (i128)(lcm_val / g) * divs[i];
+        if (nxt > N) { lcm_val = N + 1; break; }
+        lcm_val = (ll)nxt;
+      }
+    }
+    if (lcm_val <= N) {
+      ll cnt = N / lcm_val;
+      ans += (bits & 1) ? cnt : -cnt;
+    }
+  }
+  return ans;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << inclusion_exclusion_multiples(n, divs) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para contar cuántos enteros en $[1, N]$ **no** son divisibles por ninguno de los divisores, calcular `n - inclusion_exclusion_multiples(n, divs)`.
+
+#### 7.12.3 Técnica de Contribuciones con Pila Monótona (`sum_all_subarray_mins`)
+
+- **Cuándo usar:** Calcular la suma de $\min(a[l..r])$ (o $\max(a[l..r])$) sobre todos los $\binom{N+1}{2}$ subarreglos en $\mathcal{O}(N)$ contando en cuántos subarreglos cada $a[i]$ actúa como mínimo.
+- **Cuándo no usar / alternativa:** Si la consulta pide la suma de mínimos solo dentro de un subrango $[L_q, R_q]$ por query, precalcular saltos en la pila monótona o usar Mo / Segment Tree.
+- **Contrato:** Para no contar dos veces subarreglos con mínimos empatados, busca el anterior **estrictamente menor** (`<`) a la izquierda y el siguiente **menor o igual** (`<=`) a la derecha. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N)$ tiempo y memoria.
+- **Formato de entrada:** `N`, seguido de `N` enteros.
+
+**Entrada:**
+```text
+4
+3 1 2 4
+```
+
+**Salida:**
+```text
+17
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vll a(n);
+for (ll& x : a) cin >> x;
+```
+
+**Implementación:**
+```cpp
+// 3. Tecnica de Contribuciones: Suma de min(a[l..r]) sobre
+// todos los
+// subarreglos en O(N). Usa '>' a la izq y '>=' a la der
+// para empates.
+ll sum_all_subarray_mins(const vll& a) {
+  int n = sz(a);
+  vi L(n, -1), R(n, n);
+  stack<int> st;
+  for (int i = 0; i < n; ++i) {
+    while (!st.empty() && a[st.top()] > a[i]) st.pop();
+    L[i] = st.empty() ? -1 : st.top();
+    st.push(i);
+  }
+  while (!st.empty()) st.pop();
+  for (int i = n - 1; i >= 0; --i) {
+    while (!st.empty() && a[st.top()] >= a[i]) st.pop();
+    R[i] = st.empty() ? n : st.top();
+    st.push(i);
+  }
+  ll total = 0;
+  for (int i = 0; i < n; ++i) {
+    ll ways = 1LL * (i - L[i]) * (R[i] - i);
+    total += a[i] * ways;
+  }
+  return total;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << sum_all_subarray_mins(a) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Usar `<` de ambos lados cuenta de más cuando hay elementos iguales; usar `<=` de ambos lados cuenta de menos. Siempre emparejar `<` a un lado con `<=` al otro.
+
+#### 7.12.4 Linealidad de la Esperanza: Coupon Collector (`expected_coupon_collector`)
+
+- **Cuándo usar:** Calcular el número esperado de extracciones uniformes con reemplazo necesarias para obtener los $N$ tipos distintos de cupones ($E[T] = \sum_{k=0}^{N-1} \frac{N}{N - k} = N H_N$).
+- **Cuándo no usar / alternativa:** Si los cupones tienen probabilidades **no uniformes** $p_i$, usar Inclusión-Exclusión Min-Max: $E[\max T_i] = \sum_{\emptyset \neq S \subseteq [N]} (-1)^{|S|-1} \frac{1}{\sum_{i \in S} p_i}$.
+- **Contrato:** Por linealidad de la esperanza, el tiempo para pasar de $k$ cupones distintos a $k + 1$ sigue una distribución geométrica de éxito $p = (N - k)/N$, cuyo valor esperado es $1/p = N/(N - k)$. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N)$ tiempo y $\mathcal{O}(1)$ memoria.
+- **Formato de entrada:** Un entero positivo `n`.
+
+**Entrada:**
+```text
+4
+```
+
+**Salida:**
+```text
+8.333333
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+```
+
+**Implementación:**
+```cpp
+// 4. Linealidad de la Esperanza: Coupon Collector E[pasos]
+// = N * H_N
+ld expected_coupon_collector(int n) {
+  ld h = 0;
+  for (int i = 1; i <= n; ++i) h += 1.0L / i;
+  return n * h;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << fixed << setprecision(
+  6) << expected_coupon_collector(n) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si el problema pide $N H_N \pmod{998244353}$, reemplazar `1.0L / rem` por `inv_num[rem]` (§7.4.2).
+
+------------------------------------------------------------------------
+
+## Bloque 8: Programación Dinámica (DP Clásica, Subconjuntos, Árboles y Optimizaciones)
+
+### 8.1 DP Clásica: Knapsack 0/1 y Unbounded, LCS, Edit Distance, LIS $\mathcal{O}(N\log N)$, Digit DP y SOS DP
+
+#### 8.1.1 Mochila 0/1 en Memoria Lineal (`knapsack_01`)
+
+- **Cuándo usar:** Seleccionar un subconjunto de ítems con peso $w_i$ y valor $v_i$ cuya suma de pesos no supere $W$ ($N \cdot W \le 10^8$) maximizando el valor total.
+- **Cuándo no usar / alternativa:** Si la capacidad $W$ es enorme ($W \le 10^9$) pero la suma total de valores $V = \sum v_i \le 10^5$ es pequeña, **invertir el estado**: `dp[v] = menor peso para lograr valor v`.
+- **Contrato:** Recorre `w` **hacia atrás** (`W` hacia `weight[i]`) para usar cada ítem a lo sumo una vez. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N \cdot W)$ tiempo y $\mathcal{O}(W)$ memoria.
+- **Formato de entrada:** `N W`, seguido de `N` pares `peso valor`.
+
+**Entrada:**
+```text
+3 5
+2 3
+3 4
+4 5
+```
+
+**Salida:**
+```text
+7
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, W;
+cin >> n >> W;
+vi weight(n); vll val(n);
+for (int i = 0; i < n; ++i) cin >> weight[i] >> val[i];
+```
+
+**Implementación:**
+```cpp
 // 1. Knapsack 0/1 en O(N * W) tiempo y O(W) memoria
 ll knapsack_01(int W, const vi& weight, const vll& val) {
   vll dp(W + 1, 0);
   for (int i = 0; i < sz(weight); ++i)
-    for (int w = W; w >= weight[i]; --w) // Hacia adelante si es Unbounded
+    // Hacia adelante si Unbounded
+    for (int w = W; w >= weight[i]; --w)
       dp[w] = max(dp[w], dp[w - weight[i]] + val[i]);
   return dp[W];
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << knapsack_01(W, weight, val) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para **Unbounded Knapsack** (cada ítem se puede repetir infinitas veces), cambiar únicamente el bucle interno para que avance hacia adelante (`for (int w = weight[i]; w <= W; ++w)`).
+
+#### 8.1.2 Subsecuencia Común Más Larga con Reconstrucción (`lcs_string`)
+
+- **Cuándo usar:** Hallar y reconstruir la cadena más larga que aparece como subsecuencia (no necesariamente contigua) tanto en `a` como en `b` ($|a|, |b| \le 5000$).
+- **Cuándo no usar / alternativa:** Si buscas la **subcadena contigua** común más larga, usar `SuffixAutomaton::longest_common_substring` (§5.6.2) en $\mathcal{O}(|a| + |b|)$.
+- **Contrato:** Construye la tabla `dp` $(n+1) \times (m+1)$ y reconstruye la cadena retrocediendo desde `(n, m)`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N \cdot M)$ tiempo y memoria.
+- **Formato de entrada:** Dos cadenas `a` y `b`.
+
+**Entrada:**
+```text
+abcde
+ace
+```
+
+**Salida:**
+```text
+3 ace
+```
+
+**Cómo leer la entrada:**
+```cpp
+string a, b;
+cin >> a >> b;
+```
+
+**Implementación:**
+```cpp
+// 1b. LCS (Longest Common Subsequence con reconstruccion)
+// en O(N * M)
+string lcs_string(const string& a, const string& b) {
+  int n = sz(a), m = sz(b);
+  vector<vi> dp(n + 1, vi(m + 1, 0));
+  for (int i = 1; i <= n; ++i)
+    for (int j = 1; j <= m; ++j)
+      dp[i][j] = (a[i - 1] == b[j - 1])
+                   ? (dp[i - 1][j - 1] + 1)
+                   : max(dp[i - 1][j], dp[i][j - 1]);
+  string res;
+  for (int i = n, j = m; i > 0 && j > 0; ) {
+    if (a[i - 1] == b[j - 1]) { res += a[i - 1]; --i; --j; }
+    else if (dp[i - 1][j] >= dp[i][j - 1]) --i;
+    else --j;
+  }
+  reverse(all(res));
+  return res;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+string res = lcs_string(a, b);
+cout << sz(res) << " " << res << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si uno de los arreglos es una permutación sin elementos repetidos, renombrar sus valores por sus índices convierte el LCS en un **LIS** en $\mathcal{O}(N \log N)$ (§8.1.4).
+
+#### 8.1.3 Distancia de Edición de Levenshtein (`edit_distance`)
+
+- **Cuándo usar:** Mínimo número de inserciones, borrados y sustituciones de un carácter para transformar la cadena `a` en la cadena `b`.
+- **Cuándo no usar / alternativa:** Si no se permiten sustituciones (solo insertar y borrar), la respuesta es directamente $|a| + |b| - 2 \cdot |\text{LCS}(a, b)|$.
+- **Contrato:** Casos base: `dp[i][0] = i` (borrar `i` caracteres) y `dp[0][j] = j` (insertar `j` caracteres). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N \cdot M)$ tiempo y memoria.
+- **Formato de entrada:** Dos cadenas `a` y `b`.
+
+**Entrada:**
+```text
+kitten
+sitting
+```
+
+**Salida:**
+```text
+3
+```
+
+**Cómo leer la entrada:**
+```cpp
+string a, b;
+cin >> a >> b;
+```
+
+**Implementación:**
+```cpp
 // 2. Edit Distance (Levenshtein) en O(N * M)
 int edit_distance(const string& a, const string& b) {
   int n = sz(a), m = sz(b);
@@ -5345,23 +9936,97 @@ int edit_distance(const string& a, const string& b) {
   for (int i = 1; i <= n; ++i)
     for (int j = 1; j <= m; ++j) {
       if (a[i - 1] == b[j - 1]) dp[i][j] = dp[i - 1][j - 1];
-      else dp[i][j] = 1 + min({dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]});
+      else dp[i][j] = 1 + min({dp[i - 1][j], dp[i][j - 1],
+                               dp[i - 1][j - 1]});
     }
   return dp[n][m];
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << edit_distance(a, b) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si solo se pide el número de operaciones y la memoria es ajustada, mantener solo dos filas (`dp_prev` y `dp_cur`) reduce la memoria a $\mathcal{O}(\min(N, M))$.
+
+#### 8.1.4 Subsecuencia Creciente Más Larga en $\mathcal{O}(N \log N)$ (`lis_length`)
+
+- **Cuándo usar:** Calcular la longitud de la mayor subsecuencia estrictamente creciente ($a_{i_1} < a_{i_2} < \dots < a_{i_k}$) en $\mathcal{O}(N \log N)$.
+- **Cuándo no usar / alternativa:** Si la condición de transición entre elementos consecutivos no es un orden total sino un predicado general, usar Segment Tree o CDQ Divide & Conquer.
+- **Contrato:** `tails[k]` almacena el menor valor final posible de una subsecuencia creciente de longitud $k + 1$. Usa `lower_bound` para estrictamente creciente (`<`). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N \log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N` enteros.
+
+**Entrada:**
+```text
+6
+10 9 2 5 3 7
+```
+
+**Salida:**
+```text
+3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vll a(n);
+for (ll& x : a) cin >> x;
+```
+
+**Implementación:**
+```cpp
 // 3. LIS (Longest Increasing Subsequence) en O(N log N)
 int lis_length(const vll& a) {
   vll tails;
   for (ll x : a) {
-    auto it = lower_bound(all(tails), x); // upper_bound para <=
+    // upper_bound para <=
+    auto it = lower_bound(all(tails), x);
     if (it == tails.end()) tails.pb(x);
     else *it = x;
   }
   return sz(tails);
 }
+```
 
-// 4. Plantilla de Digit DP (Cuenta numeros en [0, R] con suma de digitos % K == 0)
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << lis_length(a) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para subsecuencia **no decreciente** ($\le$), cambiar `lower_bound` por `upper_bound`; (2) el vector `tails` **no** es necesariamente la subsecuencia en sí, pero su tamaño `sz(tails)` siempre es la longitud exacta del LIS.
+
+#### 8.1.5 Digit DP por Prefijos Decimales (`dp_dig`, `solve_digit_dp`)
+
+- **Cuándo usar:** Contar cuántos enteros en un rango enorme $[L, R]$ ($R \le 10^{18}$ o dado como string de $10^5$ dígitos) cumplen una propiedad sobre sus dígitos (suma divisible por $K$, sin dígitos adyacentes iguales, etc.).
+- **Cuándo no usar / alternativa:** Para contar en $[L, R]$, nunca intentar meter simultáneamente cota inferior y superior si no es necesario; calcular simplemente `solve(R) - solve(L - 1)`.
+- **Contrato:** Estado `(pos, rem, tight)` donde `tight` indica si el prefijo actual sigue empatado con los dígitos de `R`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(10 \cdot \text{dígitos}(R) \cdot K)$ tiempo y $\mathcal{O}(\text{dígitos}(R) \cdot K)$ memoria.
+- **Formato de entrada:** Tres enteros `L R K` ($0 \le L \le R$).
+
+**Entrada:**
+```text
+1 20 3
+```
+
+**Salida:**
+```text
+6
+```
+
+**Cómo leer la entrada:**
+```cpp
+ll L, R; int K;
+cin >> L >> R >> K;
+```
+
+**Implementación:**
+```cpp
+// 4. Digit DP: Cuenta numeros en [0, R] con suma de digitos
+// % K == 0
 string dig_s;
 int K_mod;
 ll memo_dig[20][200][2];
@@ -5373,7 +10038,8 @@ ll dp_dig(int pos, int rem, bool tight) {
   res = 0;
   int lim = tight ? (dig_s[pos] - '0') : 9;
   for (int d = 0; d <= lim; ++d)
-    res += dp_dig(pos + 1, (rem + d) % K_mod, tight && (d == lim));
+    res += dp_dig(pos + 1, (rem + d) % K_mod, tight && (
+      d == lim));
   return res;
 }
 ll solve_digit_dp(ll R, int K) {
@@ -5382,9 +10048,46 @@ ll solve_digit_dp(ll R, int K) {
   memset(memo_dig, -1, sizeof(memo_dig));
   return dp_dig(0, 0, true);
 }
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << solve_digit_dp(R, K) - solve_digit_dp(L - 1,
+  K) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si la propiedad depende de los ceros a la izquierda (ej. contar ceros o exigir dígitos distintos), agregar una bandera booleana `started` al estado.
+
+#### 8.1.6 SOS DP / Suma Sobre Submáscaras (`sos_dp`)
+
+- **Cuándo usar:** Calcular para toda máscara `mask` de $N$ bits la suma $F[\text{mask}] = \sum_{\text{sub} \subseteq \text{mask}} A[\text{sub}]$ en $\mathcal{O}(N \cdot 2^N)$ en lugar de iterar submáscaras en $\mathcal{O}(3^N)$.
+- **Cuándo no usar / alternativa:** Si la transición a `mask` depende de valores ya calculados de `dp[sub]` que no son una suma fija independiente, usar iteración de submáscaras `for (int sub = mask; sub; sub = (sub - 1) & mask)` en $\mathcal{O}(3^N)$.
+- **Contrato:** `A` debe tener tamaño $2^N$. El bucle externo **debe** ser el bit `i` (`0..N-1`) para no sumar la misma submáscara dos veces. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N \cdot 2^N)$ tiempo y $\mathcal{O}(2^N)$ memoria.
+- **Formato de entrada:** `N`, seguido de $2^N$ enteros `A[0..2^N-1]`.
+
+**Entrada:**
+```text
+2
+1 2 4 8
+```
+
+**Salida:**
+```text
+1 3 5 15
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vll A(1 << n);
+for (ll& x : A) cin >> x;
+```
+
+**Implementación:**
+```cpp
 // 5. SOS DP (Sum Over Subsets) en O(N * 2^N)
-// Al terminar, F[mask] = suma de A[sub] para todo subconjunto 'sub' de 'mask'.
 vll sos_dp(int N, const vll& A) {
   vll F = A;
   for (int i = 0; i < N; ++i)
@@ -5395,68 +10098,304 @@ vll sos_dp(int N, const vll& A) {
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+vll F = sos_dp(n, A);
+for (int i = 0; i < (1 << n); ++i)
+  cout << F[i] << (i + 1 == (1 << n) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Para sumar sobre **supermáscaras** ($\text{sup} \supseteq \text{mask}$), cambiar la condición `if (mask & (1 << i))` por `if (!(mask & (1 << i))) F[mask] += F[mask | (1 << i)];`.
+
 ------------------------------------------------------------------------
 
-### 8.2 Optimizaciones de DP: Convex Hull Trick (Estático y Dinámico), Divide & Conquer DP y Knuth’s Optimization
+### 8.2 DP de Subconjuntos con Máscaras: Asignación `dp[mask]` y Caminos / TSP `dp[mask][last]`
 
-- **¿Cuándo usar cada optimización de DP?**:
+#### 8.2.1 DP de Asignación por Máscaras de Bits (`subset_assignment_dp`)
 
-<figure>
-<div data-align="center">
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><p>Optimización</p></th>
-<th style="text-align: left;"><p>Recurrencia Típica</p></th>
-<th style="text-align: left;"><p>Condición Suficiente</p></th>
-<th style="text-align: left;"><p>Reducción de Complejidad</p></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><p><strong>Convex Hull Trick
-(CHT)</strong></p></td>
-<td style="text-align: left;"><p><span class="math inline">$dp\lbrack
-i\rbrack = \min\limits_{j < i}\left\{ dp\lbrack j\rbrack + m_{j}
-\cdot x_{i} \right\}$</span></p></td>
-<td style="text-align: left;"><p>Transición es una recta <span
-class="math inline"><em>y</em> = <em>m</em><sub><em>j</em></sub><em>x</em> + <em>b</em><sub><em>j</em></sub></span></p></td>
-<td style="text-align: left;"><p><span
-class="math inline">𝒪(<em>N</em><sup>2</sup>) → 𝒪(<em>N</em>log <em>N</em>)</span>
-o <span class="math inline">𝒪(<em>N</em>)</span></p></td>
-</tr>
-<tr>
-<td style="text-align: left;"><p><strong>Divide &amp; Conquer
-DP</strong></p></td>
-<td style="text-align: left;"><p><span class="math inline">$dp\lbrack
-k\rbrack\lbrack i\rbrack = \min\limits_{j < i}\left\{ dp\lbrack k -
-1\rbrack\lbrack j\rbrack + C(j,i) \right\}$</span></p></td>
-<td style="text-align: left;"><p>Punto óptimo monótono: <span
-class="math inline"><em>o</em><em>p</em><em>t</em>[<em>k</em>][<em>i</em>] ≤ <em>o</em><em>p</em><em>t</em>[<em>k</em>][<em>i</em> + 1]</span></p></td>
-<td style="text-align: left;"><p><span
-class="math inline">𝒪(<em>K</em> ⋅ <em>N</em><sup>2</sup>) → 𝒪(<em>K</em> ⋅ <em>N</em>log <em>N</em>)</span></p></td>
-</tr>
-<tr>
-<td style="text-align: left;"><p><strong>Knuth’s
-Optimization</strong></p></td>
-<td style="text-align: left;"><p><span class="math inline">$dp\lbrack
-l\rbrack\lbrack r\rbrack = \min\limits_{l < k < r}\left\{
-dp\lbrack l\rbrack\lbrack k\rbrack + dp\lbrack k\rbrack\lbrack r\rbrack
-\right\} + C(l,r)$</span></p></td>
-<td style="text-align: left;"><p><span
-class="math inline"><em>o</em><em>p</em><em>t</em>[<em>l</em>][<em>r</em> − 1] ≤ <em>o</em><em>p</em><em>t</em>[<em>l</em>][<em>r</em>] ≤ <em>o</em><em>p</em><em>t</em>[<em>l</em> + 1][<em>r</em>]</span></p></td>
-<td style="text-align: left;"><p><span
-class="math inline">𝒪(<em>N</em><sup>3</sup>) → 𝒪(<em>N</em><sup>2</sup>)</span></p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</figure>
+- **Cuándo usar:** Asignar $N$ elementos a $N$ posiciones/turnos ($N \le 20$) cuando el paso actual está determinado por la cantidad de bits encendidos `step = __builtin_popcount(mask)`, ahorrando un factor $N$ en estado.
+- **Cuándo no usar / alternativa:** Si $N > 22$ y se trata de una asignación 1-a-1 de costo aditivo puro sin dependencia de subconjunto, usar el **Algoritmo Húngaro** (§6.6.4) en $\mathcal{O}(N^3)$.
+- **Contrato:** Matriz `cost` 0-indexed de tamaño $N \times N$. Retorna el costo mínimo de asignar el paso `step` al elemento `j` para todo `step = 0..N-1`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N \cdot 2^N)$ tiempo y $\mathcal{O}(2^N)$ memoria.
+- **Formato de entrada:** `N`, seguido de la matriz `N x N` de costos.
 
-``` cpp
-// 1. Convex Hull Trick Dinamico (LineContainer - inserta rectas y = k*x + m
-//    en cualquier orden y consulta el MAXIMO en x en O(log N)).
-//    NOTA: Para consultar el MINIMO, insertar (-k, -m) y devolver -query(x).
+**Entrada:**
+```text
+3
+9 2 7
+6 4 3
+5 8 1
+```
+
+**Salida:**
+```text
+9
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<vll> cost(n, vll(n));
+for (int i = 0; i < n; ++i)
+  for (int j = 0; j < n; ++j) cin >> cost[i][j];
+```
+
+**Implementación:**
+```cpp
+// 1. DP de Asignacion con dp[mask] en O(N * 2^N) tiempo y
+// O(2^N) RAM
+// Asigna la persona i = popcount(mask) a la tarea j no
+// usada.
+ll subset_assignment_dp(const vector<vll>& cost) {
+  int n = sz(cost);
+  int full = (1 << n);
+  vll dp(full, INF);
+  dp[0] = 0;
+  for (int mask = 0; mask < full - 1; ++mask) {
+    if (dp[mask] >= INF) continue;
+    int i = __builtin_popcount(mask);
+    for (int j = 0; j < n; ++j) {
+      if (!(mask & (1 << j))) {
+        int nxt = mask | (1 << j);
+        dp[nxt] = min(dp[nxt], dp[mask] + cost[i][j]);
+      }
+    }
+  }
+  return dp[full - 1];
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << subset_assignment_dp(cost) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Iterar solo los bits apagados o encendidos con `__builtin_ctz` reduce la constante práctica a la mitad.
+
+#### 8.2.2 DP de Caminos / Travelling Salesperson Problem con Reconstrucción (`tsp_subset_dp`)
+
+- **Cuándo usar:** Encontrar el ciclo o camino Hamiltoniano de menor peso que visita todos los $N$ nodos exactamente una vez ($N \le 20$) cuando la transición depende del último nodo visitado `last`.
+- **Cuándo no usar / alternativa:** Si quieres recorrer todas las **aristas** en vez de los vértices, es un Ciclo Euleriano en $\mathcal{O}(V + E)$ (§6.9).
+- **Contrato:** Nodos 0-indexed (`0..n-1`), empezando en `0`. Si `close_cycle = true`, exige regresar al nodo `0` al final. Retorna `{costo_minimo, ruta_reconstruida}`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N^2 \cdot 2^N)$ tiempo y $\mathcal{O}(N \cdot 2^N)$ memoria.
+- **Formato de entrada:** `N`, seguido de la matriz `N x N` de distancias.
+
+**Entrada:**
+```text
+4
+0 10 15 20
+10 0 35 25
+15 35 0 30
+20 25 30 0
+```
+
+**Salida:**
+```text
+80
+0 2 3 1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<vll> dist(n, vll(n));
+for (int i = 0; i < n; ++i)
+  for (int j = 0; j < n; ++j) cin >> dist[i][j];
+```
+
+**Implementación:**
+```cpp
+// 2. DP de Caminos / TSP con dp[mask][last] en O(N^2 * 2^N)
+//    y reconstruccion del orden de nodos visitados.
+pair<ll, vi> tsp_subset_dp(const vector<vll>& dist,
+                           int start = 0,
+                           bool close_cycle = true) {
+  int n = sz(dist), full = (1 << n);
+  vector<vll> dp(full, vll(n, INF));
+  vector<vi> par(full, vi(n, -1));
+  dp[1 << start][start] = 0;
+
+  for (int mask = 1; mask < full; ++mask) {
+    for (int u = 0; u < n; ++u) {
+      if (!(mask & (
+        1 << u)) || dp[mask][u] >= INF) continue;
+      for (int v = 0; v < n; ++v) {
+        if ((mask & (
+          1 << v)) || dist[u][v] >= INF) continue;
+        int nxt = mask | (1 << v);
+        ll cand = dp[mask][u] + dist[u][v];
+        if (cand < dp[nxt][v]) {
+          dp[nxt][v] = cand;
+          par[nxt][v] = u;
+        }
+      }
+    }
+  }
+  ll best = INF;
+  int last = -1, all_m = full - 1;
+  for (int u = 0; u < n; ++u) {
+    if (dp[all_m][u] >= INF) continue;
+    ll extra = close_cycle ? dist[u][start] : 0;
+    if (extra < INF && dp[all_m][u] + extra < best) {
+      best = dp[all_m][u] + extra;
+      last = u;
+    }
+  }
+  if (last == -1) return {INF, {}};
+  vi path;
+  for (int m = all_m, cur = last; cur != -1; ) {
+    path.pb(cur);
+    int p = par[m][cur];
+    m ^= (1 << cur);
+    cur = p;
+  }
+  reverse(all(path));
+  return {best, path};
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto [cost, path] = tsp_subset_dp(dist, 0, true);
+cout << cost << '\n';
+for (int i = 0; i < sz(path); ++i)
+  cout << path[i] << (i + 1 == sz(path) ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Para camino Hamiltoniano que puede empezar en **cualquier** nodo, inicializar `dp[1 << i][i] = 0` para todo $i \in [0, N-1]$ y pasar `close_cycle = false`.
+
+------------------------------------------------------------------------
+
+### 8.3 DP en Árboles y Técnica de Rerooting (Cambio de Raíz en $\mathcal{O}(N)$)
+
+- **Cuándo usar:** Calcular una función de árbol (suma de distancias, máxima distancia, DP de subárbol) **para todas las raíces posibles $u \in [1..N]$** en dos pasadas DFS (`dfs_down` y `dfs_up`).
+- **Cuándo no usar / alternativa:** Si la respuesta solo se pide para una raíz fija, basta un solo DFS abajo-arriba.
+- **Contrato:** Árbol 1-indexed (`1..n`). `dfs_down` calcula `sub_sz[u]` y `down[u]`; `dfs_up` propaga hacia cada hijo `v` usando `ans[v] = ans[u] + (n - sub_sz[v]) - sub_sz[v]`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N)$ tiempo y memoria.
+- **Formato de entrada:** `N`, seguido de `N - 1` aristas no dirigidas `u v`.
+
+**Entrada:**
+```text
+4
+1 2
+1 3
+3 4
+```
+
+**Salida:**
+```text
+4 6 4 6
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<vi> adj(n + 1);
+for (int i = 0; i < n - 1; ++i) {
+  int u, v; cin >> u >> v;
+  adj[u].pb(v); adj[v].pb(u);
+}
+```
+
+**Implementación:**
+```cpp
+// Rerooting DP: Suma de distancias desde cada nodo u a
+// todos los demas
+// 1) dfs_down: calcula sz[u] y down[u] (contribucion del
+// subarbol de u)
+// 2) dfs_up: al mover la raiz de u a su hijo v, los sz[v]
+// nodos en el
+// subarbol de v se acercan 1 paso y los (n - sz[v]) fuera
+// se alejan 1.
+vll rerooting_sum_distances(int n, const vector<vi>& adj) {
+  vi sub_sz(n + 1, 0);
+  vll down(n + 1, 0), ans(n + 1, 0);
+
+  auto dfs_down = [&](auto& self, int u, int p) -> void {
+    sub_sz[u] = 1;
+    for (int v : adj[u]) {
+      if (v == p) continue;
+      self(self, v, u);
+      sub_sz[u] += sub_sz[v];
+      down[u] += down[v] + sub_sz[v];
+    }
+  };
+  auto dfs_up = [&](auto& self, int u, int p) -> void {
+    for (int v : adj[u]) {
+      if (v == p) continue;
+      ans[v] = ans[u] + (n - sub_sz[v]) - sub_sz[v];
+      self(self, v, u);
+    }
+  };
+  if (n >= 1) {
+    dfs_down(dfs_down, 1, 0);
+    ans[1] = down[1];
+    dfs_up(dfs_up, 1, 0);
+  }
+  return ans; // ans[1..n]
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+vll ans = rerooting_sum_distances(n, adj);
+for (int i = 1; i <= n; ++i)
+  cout << ans[i] << (i == n ? '\n' : ' ');
+```
+
+- **Trampas y adaptaciones:** (1) Cuando la operación que combina hijos no es invertible (como `max` o producto módulo $M$), precalcular prefijos y sufijos sobre la lista de hijos de `u` para excluir la rama de `v` en $\mathcal{O}(1)$.
+
+------------------------------------------------------------------------
+
+### 8.4 Optimizaciones de DP: Convex Hull Trick (Estático y Dinámico), Divide & Conquer DP y Knuth’s Optimization
+
+#### 8.4.1 Convex Hull Trick Dinámico (`LineContainer`)
+
+- **Cuándo usar:** Optimizar transiciones de DP de la forma $dp[i] = \max_j (k_j x_i + m_j)$ (o $\min_j$) cuando las pendientes $k_j$ y los puntos de consulta $x_i$ llegan en **orden arbitrario**.
+- **Cuándo no usar / alternativa:** Si tanto las pendientes como los puntos de consulta son monótonos, `MonotoneCHT` (§8.4.2) corre en $\mathcal{O}(N)$ sin `std::multiset`.
+- **Contrato:** `add(k, m)` inserta $y = k x + m$; `query(x)` devuelve el **máximo** en `x`. Para consultar el **mínimo**, insertar `add(-k, -m)` y tomar `-query(x)`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(\log N)$ amortizado por inserción y consulta; $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `Q`, luego `Q` rectas `k m` y una abscisa de consulta `x`.
+
+**Entrada:**
+```text
+3
+2 1
+-1 10
+1 3
+4
+```
+
+**Salida:**
+```text
+9 6
+```
+
+**Cómo leer la entrada:**
+```cpp
+int q;
+cin >> q;
+LineContainer lc_max, lc_min;
+for (int i = 0; i < q; ++i) {
+  ll k, m; cin >> k >> m;
+  lc_max.add(k, m);
+  lc_min.add(-k, -m);
+}
+ll x;
+cin >> x;
+```
+
+**Implementación:**
+```cpp
+// 1. Convex Hull Trick Dinamico (LineContainer - inserta
+// rectas y = k*x + m
+// en cualquier orden y consulta el MAXIMO en x en O(log
+// N)).
+// NOTA: Para consultar el MINIMO, insertar (-k, -m) y
+// devolver -query(x).
 struct Line {
   mutable ll k, m, p;
   bool operator<(const Line& o) const { return k < o.k; }
@@ -5465,7 +10404,8 @@ struct Line {
 
 struct LineContainer : multiset<Line, less<>> {
   static const ll inf = LLONG_MAX;
-  ll div(ll a, ll b) { // Division entera hacia abajo (floor)
+  // Division entera hacia abajo (floor)
+  ll div(ll a, ll b) {
     return a / b - ((a ^ b) < 0 && a % b);
   }
   bool isect(iterator x, iterator y) {
@@ -5477,7 +10417,8 @@ struct LineContainer : multiset<Line, less<>> {
   void add(ll k, ll m) { // Agrega la recta y = k*x + m
     auto z = insert({k, m, 0}), y = z++, x = y;
     while (isect(y, z)) z = erase(z);
-    if (x != begin() && isect(--x, y)) isect(x, y = erase(y));
+    if (x != begin() && isect(--x, y)) isect(x, y = erase(
+      y));
     while ((y = x) != begin() && (--x)->p >= y->p)
       isect(x, erase(y));
   }
@@ -5487,25 +10428,207 @@ struct LineContainer : multiset<Line, less<>> {
     return l.k * x + l.m;
   }
 };
+```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << lc_max.query(x) << " " << -lc_min.query(x) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) No llamar `query(x)` con el contenedor vacío (`assert(!empty())`); insertar primero el caso base `dp[0]`.
+
+#### 8.4.2 Convex Hull Trick Estático / Monótono con Deque (`MonotoneCHT`)
+
+- **Cuándo usar:** Consultar el **mínimo** de rectas $y = m x + b$ en $\mathcal{O}(1)$ amortizado cuando las pendientes $m$ se insertan en orden estrictamente **decreciente** y las consultas $x$ se hacen en orden **creciente**.
+- **Cuándo no usar / alternativa:** Si las pendientes o las consultas no son monótonas, usar `LineContainer` (§8.4.1).
+- **Contrato:** Compara intersecciones con multiplicación cruzada en `i128` sin división ni punto flotante. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(1)$ amortizado por `add` y `query_monotone`; $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, luego `N` rectas con pendientes decrecientes `m b` y una consulta `x`.
+
+**Entrada:**
+```text
+3
+4 0
+2 3
+1 6
+2
+```
+
+**Salida:**
+```text
+7
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+MonotoneCHT cht;
+for (int i = 0; i < n; ++i) {
+  ll m, b; cin >> m >> b;
+  cht.add(m, b);
+}
+ll x;
+cin >> x;
+```
+
+**Implementación:**
+```cpp
+// 1b. CHT Estático/Monótono con Deque en O(N) (para MINIMO:
+// insertar pendientes m decrecientes
+//     y consultar x crecientes).
+struct MonotoneCHT {
+  struct L { ll m, b; ll eval(ll x) const {
+    return m * x + b; } };
+  deque<L> dq;
+  bool bad(const L& l1, const L& l2, const L& l3) const {
+    return (i128)(l3.b - l1.b) * (l1.m - l2.m) <= (i128)(
+      l2.b - l1.b) * (l1.m - l3.m);
+  }
+  // Precondicion: m estrictamente decreciente
+  void add(ll m, ll b) {
+    L cur = {m, b};
+    while (sz(dq) >= 2 && bad(dq[sz(dq) - 2], dq.back(),
+      cur)) dq.pop_back();
+    dq.pb(cur);
+  }
+  // Precondicion: x creciente y !dq.empty()
+  ll query_monotone(ll x) {
+    while (sz(dq) >= 2 && dq[0].eval(x) >= dq[1].eval(
+      x)) dq.pop_front();
+    return dq[0].eval(x);
+  }
+};
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << cht.query_monotone(x) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si tienes pendientes iguales con distinta ordenada al origen, conservar solo la de menor `b` antes de llamar a `add`.
+
+#### 8.4.3 Optimización Divide & Conquer DP (`compute_dc`, `solve_dc_dp`)
+
+- **Cuándo usar:** Particionar un arreglo `1..N` en exactamente `K` subarreglos contiguos minimizando $\sum C(j, i)$ cuando la función de costo cumple la **desigualdad cuadrangular** $C(a, c) + C(b, d) \le C(a, d) + C(b, c)$ (lo que implica monotonía del punto óptimo $\text{opt}[k][i] \le \text{opt}[k][i + 1]$).
+- **Cuándo no usar / alternativa:** Si el costo no cumple monotonía del óptimo pero es bilineal $f(j) g(i)$, usar CHT (§8.4.1).
+- **Contrato:** Índices **1-based** (`1..n`). `cost_fn(j, i)` devuelve el costo del bloque cerrado `[j, i]`. Ignora estados inalcanzables (`dp_prev[j - 1] >= INF`) sin corromper `opt`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(K \cdot N \log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N K`, seguido de `N` enteros (costo de `[j, i]` = suma al cuadrado).
+
+**Entrada:**
+```text
+4 2
+1 2 3 4
+```
+
+**Salida:**
+```text
+52
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, k;
+cin >> n >> k;
+vll pref(n + 1, 0);
+for (int i = 1; i <= n; ++i) {
+  ll x; cin >> x;
+  pref[i] = pref[i - 1] + x;
+}
+```
+
+**Implementación:**
+```cpp
 // 2. Divide and Conquer DP Optimization en O(K * N log N)
 vll dp_prev, dp_cur;
-ll cost_dc(int j, int i); // Definir costo de cubrir [j..i]
 
-void compute_dc(int l, int r, int optl, int optr) {
+template <typename CostFn>
+void compute_dc(int l, int r, int optl, int optr,
+  const CostFn& cost_fn) {
   if (l > r) return;
   int mid = (l + r) / 2;
-  pair<ll, int> best = {INF, -1};
-  for (int j = optl; j <= min(mid, optr); ++j)
-    best = min(best, {dp_prev[j - 1] + cost_dc(j, mid), j});
+  pair<ll, int> best = {INF, optl};
+  int hi = min(mid, optr);
+  for (int j = optl; j <= hi; ++j) {
+    if (dp_prev[j - 1] >= INF) continue;
+    ll cand = dp_prev[j - 1] + cost_fn(j, mid);
+    if (cand < best.fi) best = {cand, j};
+  }
   dp_cur[mid] = best.fi;
   int opt = best.se;
-  compute_dc(l, mid - 1, optl, opt);
-  compute_dc(mid + 1, r, opt, optr);
+  compute_dc(l, mid - 1, optl, (best.fi < INF ? opt : hi),
+    cost_fn);
+  compute_dc(mid + 1, r, (best.fi < INF ? opt : optl), optr,
+    cost_fn);
 }
 
+// Driver completo de D&C DP: particionar 1..n en
+// exactamente k grupos (1-indexed)
+template <typename CostFn>
+ll solve_dc_dp(int n, int k, const CostFn& cost_fn) {
+  dp_prev.assign(n + 1, INF);
+  dp_cur.assign(n + 1, INF);
+  dp_prev[0] = 0;
+  for (int step = 1; step <= k; ++step) {
+    fill(all(dp_cur), INF);
+    compute_dc(step, n, step, n, cost_fn);
+    dp_prev = dp_cur;
+  }
+  return dp_prev[n];
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto cost = [&](int l, int r) {
+  ll s = pref[r] - pref[l - 1];
+  return s * s;
+};
+cout << solve_dc_dp(n, k, cost) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) En problemas donde evaluar $C(l, r)$ cuesta $\mathcal{O}(1)$ con dos punteros tipo Mo (ej. pares iguales en `[l, r]`), mantener una ventana `[cur_l, cur_r]` global dentro de `compute_dc` sigue costando $\mathcal{O}(K N \log N)$.
+
+#### 8.4.4 Optimización de Knuth para DP de Intervalos (`solve_knuth`)
+
+- **Cuándo usar:** Reducir de $\mathcal{O}(N^3)$ a $\mathcal{O}(N^2)$ la DP de intervalos $dp[l][r] = \min_{l \le k < r}(dp[l][k] + dp[k+1][r]) + C[l][r]$ (como *Optimal Binary Search Tree* o partir una barra/cuerda) cuando $C[l][r]$ cumple desigualdad cuadrangular y monotonía en inclusión.
+- **Cuándo no usar / alternativa:** En problemas como multiplicación de cadenas de matrices o *Burst Balloons*, el término sumado depende de `k` ($a_l a_k a_r$), por lo que Knuth no aplica.
+- **Contrato:** Matriz `C` 1-indexed de tamaño $(n+1) \times (n+1)$. Acota la búsqueda de `k` a `opt[l][r - 1] <= k <= min(r - 1, opt[l + 1][r])`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(N^2)$ tiempo y memoria.
+- **Formato de entrada:** `N`, seguido de `N` pesos de segmentos (costo de fusionar `[l, r]` = suma de pesos en `[l, r]`).
+
+**Entrada:**
+```text
+4
+10 20 30 40
+```
+
+**Salida:**
+```text
+190
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vll pref(n + 1, 0);
+for (int i = 1; i <= n; ++i) {
+  ll x; cin >> x;
+  pref[i] = pref[i - 1] + x;
+}
+vector<vll> C(n + 1, vll(n + 1, 0));
+for (int l = 1; l <= n; ++l)
+  for (int r = l; r <= n; ++r) C[l][r] = pref[r] - pref[l
+    - 1];
+```
+
+**Implementación:**
+```cpp
 // 3. Knuth's Optimization para DP de Intervalos en O(N^2)
-// Resuelve dp[l][r] = min_{l <= k < r} (dp[l][k] + dp[k+1][r]) + C(l, r)
+// Resuelve dp[l][r] = min_{l <= k < r} (dp[l][k] +
+// dp[k+1][r]) + C(l, r)
 ll solve_knuth(int n, const vector<vll>& C) {
   vector<vll> dp(n + 1, vll(n + 1, 0));
   vector<vi> opt(n + 1, vi(n + 1, 0));
@@ -5515,10 +10638,12 @@ ll solve_knuth(int n, const vector<vll>& C) {
     for (int l = 1; l + len - 1 <= n; ++l) {
       int r = l + len - 1;
       dp[l][r] = INF;
-      int kl = opt[l][r - 1], kr = min(r - 1, opt[l + 1][r]);
+      int kl = opt[l][r - 1], kr = min(r - 1,
+        opt[l + 1][r]);
       for (int k = kl; k <= kr; ++k) {
         ll val = dp[l][k] + dp[k + 1][r] + C[l][r];
-        if (val < dp[l][r]) { dp[l][r] = val; opt[l][r] = k; }
+        if (val < dp[l][r]) { dp[l][r] = val; opt[l][r] = k;
+          }
       }
     }
   }
@@ -5526,77 +10651,96 @@ ll solve_knuth(int n, const vector<vll>& C) {
 }
 ```
 
-**Ejemplo de Uso (Convex Hull Trick Dinámico):**
-
-``` cpp
-int main() {
-  LineContainer cht;
-  cht.add(2, 3);  // y = 2x + 3
-  cht.add(-1, 10);// y = -x + 10
-  cout << cht.query(4) << "\n"; // max(2*4+3 = 11, -4+10 = 6) -> 11
-}
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << solve_knuth(n, C) << '\n';
 ```
+
+- **Trampas y adaptaciones:** (1) Iterar siempre por longitud creciente `for (int len = 2; len <= n; ++len)` para que `opt[l][r - 1]` y `opt[l + 1][r]` ya estén calculados.
 
 ------------------------------------------------------------------------
 
-### 8.3 Geometría 2D: `Point`, `Line`, Segmentos, `Polygon` (Área, Centroide, Punto en Polígono, Corte), `Convex Hull`, Rotating Callipers, Minkowski, Semiplanos, `Circle`, Closest Pair y KD-Tree
+## Bloque 9: Geometría Computacional 2D
 
-- **¿Cuándo usar?**:
+### 9.1 Geometría 2D: `Pt`, `PtLL` (Entero), Segmentos, Polígonos (Área, Centroide, Punto en Polígono $\mathcal{O}(N)$ y Convexo $\mathcal{O}(\log N)$), `Convex Hull`, Rotating Callipers y Closest Pair
 
-  - **`Pt` (Punto/Vector 2D)**: Operaciones vectoriales base. Producto
-    punto (`dot(a, b)`) mide ángulos/proyecciones; producto cruz
-    (`cross(a, b)`) mide área con signo y orientación de giro (`> 0`
-    izquierda/CCW, `< 0` derecha/CW, `0` colineal).
+#### 9.1.1 Punto 2D, Producto Punto, Producto Cruz y Orden Radial (`Pt`, `dot`, `cross`, `polar_cmp`)
 
-  - **Intersección de Segmentos y Distancia Punto-Segmento**: Detectar
-    choques de segmentos o mínima distancia de un punto a una pared.
+- **Cuándo usar:** Base vectorial 2D para giros (`cross(a, b, c) > 0` es giro antihorario CCW), distancias y ordenamiento angular de vectores alrededor del origen (`polar_cmp`) en $[0, 2\pi)$ sin usar `atan2`.
+- **Cuándo no usar / alternativa:** No usar `operator<` lexicográfico si buscas agrupar puntos con tolerancia `EPS` sin antes redondear, ya que la igualdad con `EPS` no es transitiva.
+- **Contrato:** `operator<` y `operator==` son exactos para cumplir *strict weak ordering* en `std::sort`/`std::set`; para comparar con tolerancia usar `pt_eq_eps(a, b)`. `polar_cmp` separa el semiplano superior ($y > 0$ o $y = 0, x > 0$) del inferior y desempata por `cross(a, b) > 0`. Dependencias: `EPS` (§1.1).
+- **Complejidad:** $\mathcal{O}(1)$ para productos vectoriales; $\mathcal{O}(N \log N)$ para ordenar $N$ puntos con `polar_cmp`.
+- **Formato de entrada:** Cuatro puntos `x y` para ordenar radialmente alrededor del origen.
 
-  - **Polígonos**: Fórmula de Shoelace (`polygon_area2` retorna
-    $2 \times \mathrm{\text{Área}}$ exacta en enteros si las
-    coordenadas son enteras), centroide, verificar si un punto está
-    dentro de un polígono cualquiera en $\mathcal{O}(N)$ (*Ray
-    Casting*) o dentro de un **polígono convexo en
-    $\mathcal{O}(\log N)$**.
+**Entrada:**
+```text
+0 1
+-1 0
+0 -1
+1 0
+```
 
-  - **Convex Hull (Monotone Chain) + Rotating Callipers**: Envolvente
-    convexa en $\mathcal{O}(N\log N)$ y par de puntos más lejanos
-    (diámetro del conjunto de puntos) en $\mathcal{O}(N)$.
+**Salida:**
+```text
+1 0
+0 1
+-1 0
+0 -1
+```
 
-  - **Closest Pair of Points (Sweep-Line)**: Hallar la menor distancia
-    entre cualquier par de puntos de un conjunto de $N$ puntos en
-    $\mathcal{O}(N\log N)$.
+**Cómo leer la entrada:**
+```cpp
+vector<Pt> pts(4);
+for (auto& p : pts) cin >> p.x >> p.y;
+```
 
-``` cpp
-// 1. Estructura Base de Punto / Vector 2D (usar ld para general o ll para exacto)
+**Implementación:**
+```cpp
+// 1. Estructura Base de Punto / Vector 2D (usar ld para
+// general o ll para exacto)
 struct Pt {
   ld x, y;
   Pt(ld x = 0, ld y = 0) : x(x), y(y) {}
-  Pt operator+(const Pt& o) const { return {x + o.x, y + o.y}; }
-  Pt operator-(const Pt& o) const { return {x - o.x, y - o.y}; }
+  Pt operator+(const Pt& o) const { return {
+    x + o.x, y + o.y}; }
+  Pt operator-(const Pt& o) const { return {
+    x - o.x, y - o.y}; }
   Pt operator*(ld k) const { return {x * k, y * k}; }
   Pt operator/(ld k) const { return {x / k, y / k}; }
+  // Orden lexicografico exacto para cumplir strict weak
+  // ordering en sort/set:
   bool operator<(const Pt& o) const {
-    return abs(x - o.x) > EPS ? x < o.x : y < o.y - EPS;
+    return x != o.x ? x < o.x : y < o.y;
   }
   bool operator==(const Pt& o) const {
-    return abs(x - o.x) <= EPS && abs(y - o.y) <= EPS;
+    return x == o.x && y == o.y;
   }
   ld norm2() const { return x * x + y * y; }
   ld norm() const { return hypot(x, y); }
-  Pt perp() const { return {-y, x}; } // Rotacion 90 grados CCW
-  Pt rot(ld ang_rad) const {          // Rotacion CCW por 'ang_rad'
+  // Rotacion 90 grados CCW
+  Pt perp() const { return {-y, x}; }
+  // Rotacion CCW por 'ang_rad'
+  Pt rot(ld ang_rad) const {
     return {x * cos(ang_rad) - y * sin(ang_rad),
             x * sin(ang_rad) + y * cos(ang_rad)};
   }
 };
 
 int sgn(ld x) { return (x > EPS) - (x < -EPS); }
-ld dot(const Pt& a, const Pt& b) { return a.x * b.x + a.y * b.y; }
-ld cross(const Pt& a, const Pt& b) { return a.x * b.y - a.y * b.x; }
-// Giro de a -> b -> c: > 0 izquierda (CCW), < 0 derecha (CW), 0 colineal
-ld cross(const Pt& a, const Pt& b, const Pt& c) { return cross(b - a, c - a); }
+bool pt_eq_eps(const Pt& a, const Pt& b) {
+  return abs(a.x - b.x) <= EPS && abs(a.y - b.y) <= EPS;
+}
+ld dot(const Pt& a, const Pt& b) {
+  return a.x * b.x + a.y * b.y; }
+ld cross(const Pt& a, const Pt& b) {
+  return a.x * b.y - a.y * b.x; }
+// Giro de a -> b -> c: > 0 izquierda (CCW), < 0 derecha
+// (CW), 0 colineal
+ld cross(const Pt& a, const Pt& b, const Pt& c) {
+  return cross(b - a, c - a); }
 
-// 2. Orden Radial (Polar Sort alrededor del origen (0, 0) en O(N log N))
+// 2. Orden Radial (Polar Sort alrededor del origen (0, 0)
+// en O(N log N))
 int half_plane(const Pt& p) {
   return (p.y > 0 || (p.y == 0 && p.x > 0)) ? 0 : 1;
 }
@@ -5604,37 +10748,132 @@ bool polar_cmp(const Pt& a, const Pt& b) {
   int ha = half_plane(a), hb = half_plane(b);
   return (ha != hb) ? (ha < hb) : (cross(a, b) > 0);
 }
+```
 
-// 3. Segmentos y Rectas: Punto en segmento, Distancia e Interseccion
+**Cómo llamarlo y producir la salida:**
+```cpp
+sort(all(pts), polar_cmp);
+for (auto p : pts)
+  cout << (int)llround(p.x) << " " << (int)llround(
+    p.y) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) El vector nulo `(0, 0)` no tiene ángulo definido; filtrarlo antes de ordenar con `polar_cmp`.
+
+#### 9.1.2 Segmentos y Rectas: Pertenencia, Distancia e Intersección (`on_segment`, `dist_point_segment`, `segments_intersect`, `line_intersection`)
+
+- **Cuándo usar:** Verificar si un punto cae sobre un segmento cerrado, medir la distancia de un punto a un segmento, comprobar si dos segmentos cerrados se tocan o cruzan, y hallar el punto de intersección de dos rectas no paralelas.
+- **Cuándo no usar / alternativa:** Antes de llamar `line_intersection(a, b, c, d)`, verificar que las rectas no sean paralelas (`abs(cross(b - a, d - c)) > EPS`).
+- **Contrato:** `segments_intersect` cubre tanto cruces propios como casos colineales donde un extremo toca al otro segmento (`on_segment`). Dependencias: `Pt`, `dot`, `cross`, `sgn` (§9.1.1).
+- **Complejidad:** $\mathcal{O}(1)$ tiempo y memoria.
+- **Formato de entrada:** Cuatro puntos `A B C D` (dos segmentos $AB$ y $CD$).
+
+**Entrada:**
+```text
+0 0 4 4
+0 4 4 0
+```
+
+**Salida:**
+```text
+1 2.00 2.00
+```
+
+**Cómo leer la entrada:**
+```cpp
+Pt a, b, c, d;
+cin >> a.x >> a.y >> b.x >> b.y >> c.x >> c.y >> d.x >> d.y;
+```
+
+**Implementación:**
+```cpp
+// 3. Segmentos y Rectas: Punto en segmento, Distancia e
+// Interseccion
 bool on_segment(const Pt& p, const Pt& a, const Pt& b) {
-  return sgn(cross(a, b, p)) == 0 && sgn(dot(a - p, b - p)) <= 0;
+  return sgn(cross(a, b, p)) == 0 && sgn(dot(a - p,
+    b - p)) <= 0;
 }
-ld dist_point_segment(const Pt& p, const Pt& a, const Pt& b) {
-  if (a == b) return (p - a).norm();
+ld dist_point_segment(const Pt& p, const Pt& a,
+  const Pt& b) {
+  if (pt_eq_eps(a, b)) return (p - a).norm();
   ld d2 = (b - a).norm2();
   ld t = clamp(dot(p - a, b - a) / d2, (ld)0.0, (ld)1.0);
   Pt proj = a + (b - a) * t;
   return (p - proj).norm();
 }
-bool segments_intersect(const Pt& a, const Pt& b, const Pt& c, const Pt& d) {
+bool segments_intersect(const Pt& a, const Pt& b,
+  const Pt& c, const Pt& d) {
   int d1 = sgn(cross(a, b, c)), d2 = sgn(cross(a, b, d));
   int d3 = sgn(cross(c, d, a)), d4 = sgn(cross(c, d, b));
   if (d1 * d2 < 0 && d3 * d4 < 0) return true;
   return on_segment(c, a, b) || on_segment(d, a, b) ||
          on_segment(a, c, d) || on_segment(b, c, d);
 }
-// Interseccion de dos rectas infinitas (a->b) y (c->d) (asume no paralelas)
-Pt line_intersection(const Pt& a, const Pt& b, const Pt& c, const Pt& d) {
-  return a + (b - a) * (cross(c - a, d - c) / cross(b - a, d - c));
+// Interseccion de dos rectas infinitas (a->b) y (c->d)
+// (asume no paralelas)
+Pt line_intersection(const Pt& a, const Pt& b, const Pt& c,
+  const Pt& d) {
+  return a + (b - a) * (cross(c - a, d - c) / cross(b - a,
+    d - c));
 }
+```
 
-// 4. Poligonos: Area (Shoelace), Centroide y Punto en Poligono O(N)
+**Cómo llamarlo y producir la salida:**
+```cpp
+bool ok = segments_intersect(a, b, c, d);
+Pt p = line_intersection(a, b, c, d);
+cout << ok << " " << fixed << setprecision(
+  2) << p.x << " " << p.y << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para la distancia entre **dos segmentos** $AB$ y $CD$: si `segments_intersect(a, b, c, d)` es `true` la distancia es `0`; si no, es el mínimo de las 4 distancias `dist_point_segment` de cada extremo al otro segmento.
+
+#### 9.1.3 Polígonos: Área, Centroide, Inclusión $\mathcal{O}(N)$ / Convexo $\mathcal{O}(\log N)$ y Kernel Entero (`polygon_area`, `polygon_centroid`, `point_in_polygon`, `point_in_convex_polygon`, `PtLL`)
+
+- **Cuándo usar:** Calcular el área de un polígono simple (Shoelace), su centro de masa (`polygon_centroid`), probar si un punto está dentro/en el borde/fuera de un polígono general en $\mathcal{O}(N)$ o convexo en $\mathcal{O}(\log N)$, o calcular el doble del área en enteros exactos de 128 bits (`polygon_area2_int`).
+- **Cuándo no usar / alternativa:** No usar `point_in_convex_polygon` si el polígono no es convexo o está en sentido horario (CW) o tiene vértices colineales duplicados en los bordes.
+- **Contrato:** `point_in_polygon` y `point_in_convex_polygon` retornan `2` (en el **borde**), `1` (**estrictamente dentro**) o `0` (**fuera**). `polygon_area2_int` retorna $2 \cdot \text{Área} \in \mathbb{Z}$ sin usar punto flotante. Dependencias: `Pt`, `on_segment` (§9.1.1–§9.1.2).
+- **Complejidad:** Área, centroide y `point_in_polygon` en $\mathcal{O}(N)$; `point_in_convex_polygon` en $\mathcal{O}(\log N)$.
+- **Formato de entrada:** `N`, luego `N` vértices CCW del polígono y un punto de consulta `qx qy`.
+
+**Entrada:**
+```text
+4
+0 0
+4 0
+4 4
+0 4
+2 2
+```
+
+**Salida:**
+```text
+16.00 1 1
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<Pt> poly(n);
+for (auto& p : poly) cin >> p.x >> p.y;
+Pt q;
+cin >> q.x >> q.y;
+```
+
+**Implementación:**
+```cpp
+// 4. Poligonos: Area (Shoelace), Centroide y Punto en
+// Poligono O(N)
 ld polygon_area(const vector<Pt>& p) {
   ld a = 0;
-  for (int i = 0; i < sz(p); ++i) a += cross(p[i], p[(i + 1) % sz(p)]);
-  return abs(a) / 2.0; // Sin dividir entre 2 es siempre entero en coords enteras
+  for (int i = 0; i < sz(p); ++i) a += cross(p[i], p[(
+    i + 1) % sz(p)]);
+  // Sin dividir entre 2 es siempre entero en coords enteras
+  return abs(a) / 2.0;
 }
-// Retorna: 2 si esta en el BORDE, 1 si esta ESTRICTAMENTE DENTRO, 0 si FUERA
+// Retorna: 2 si esta en el BORDE, 1 si esta ESTRICTAMENTE
+// DENTRO, 0 si FUERA
 int point_in_polygon(const Pt& q, const vector<Pt>& p) {
   int n = sz(p), wn = 0;
   for (int i = 0; i < n; ++i) {
@@ -5649,28 +10888,181 @@ int point_in_polygon(const Pt& q, const vector<Pt>& p) {
   return wn != 0 ? 1 : 0;
 }
 
-// 5. Convex Hull (Monotone Chain de Andrew en O(N log N) — orden CCW)
+// Centroide de un poligono simple de area no nula en O(N):
+Pt polygon_centroid(const vector<Pt>& p) {
+  Pt c(0, 0);
+  ld a2 = 0;
+  for (int i = 0; i < sz(p); ++i) {
+    ld cr = cross(p[i], p[(i + 1) % sz(p)]);
+    c = c + (p[i] + p[(i + 1) % sz(p)]) * cr;
+    a2 += cr;
+  }
+  return c / (3.0L * a2);
+}
+
+// Punto en Poligono Convexo CCW en O(log N) (sin puntos
+// colineales redundantes):
+// Retorna: 2 en BORDE, 1 ESTRICTAMENTE DENTRO, 0 FUERA.
+int point_in_convex_polygon(const Pt& q,
+  const vector<Pt>& p) {
+  int n = sz(p);
+  if (n < 3) return 0;
+  if (cross(p[0], p[1], q) < -EPS || cross(p[0], p[n - 1],
+    q) > EPS) return 0;
+  if (on_segment(q, p[0], p[1]) || on_segment(q, p[0],
+    p[n - 1])) return 2;
+  int l = 1, r = n - 2, idx = 1;
+  while (l <= r) {
+    int mid = (l + r) / 2;
+    if (cross(p[0], p[mid], q) >= -EPS) { idx = mid;
+      l = mid + 1; }
+    else r = mid - 1;
+  }
+  ld c = cross(p[idx], p[idx + 1], q);
+  if (c < -EPS) return 0;
+  if (on_segment(q, p[idx], p[idx + 1])) return 2;
+  return 1;
+}
+
+// Kernel de Puntos Enteros con cross y doble area en i128
+// (sin error de punto flotante):
+struct PtLL {
+  ll x, y;
+  PtLL(ll x = 0, ll y = 0) : x(x), y(y) {}
+  PtLL operator+(const PtLL& o) const { return {
+    x + o.x, y + o.y}; }
+  PtLL operator-(const PtLL& o) const { return {
+    x - o.x, y - o.y}; }
+  bool operator<(const PtLL& o) const {
+    return x != o.x ? x < o.x : y < o.y; }
+  bool operator==(const PtLL& o) const {
+    return x == o.x && y == o.y; }
+};
+inline i128 cross128(const PtLL& a, const PtLL& b) {
+  return (i128)a.x * b.y - (i128)a.y * b.x;
+}
+inline i128 cross128(const PtLL& a, const PtLL& b,
+  const PtLL& c) {
+  return cross128(b - a, c - a);
+}
+inline i128 polygon_area2_int(const vector<PtLL>& p) {
+  i128 a2 = 0;
+  for (int i = 0; i < sz(p); ++i) a2 += cross128(p[i], p[(
+    i + 1) % sz(p)]);
+  return a2 < 0 ? -a2 : a2;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << fixed << setprecision(2) << polygon_area(
+  poly) << " "
+     << point_in_polygon(q, poly) << " "
+     << point_in_convex_polygon(q, poly) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Por el **Teorema de Pick**, en un polígono con vértices enteros, $2 \cdot \text{Área} = 2 I + B - 2$, donde $B = \sum \gcd(|\Delta x_i|, |\Delta y_i|)$ son los puntos enteros en el borde e $I$ los puntos estrictamente interiores.
+
+#### 9.1.4 Envolvente Convexa de Andrew (`convex_hull`)
+
+- **Cuándo usar:** Obtener el menor polígono convexo (en sentido antihorario CCW) que contiene a un conjunto de $N$ puntos en el plano.
+- **Cuándo no usar / alternativa:** Si los puntos se insertan online y solo son gráficas de rectas $y = kx + m$, usar `LineContainer` (§8.4.1).
+- **Contrato:** Elimina puntos duplicados y descarta puntos colineales intermedios en los lados (`cross(...) <= 0`). Retorna los vértices del casco en orden CCW sin repetir el primer vértice al final. Dependencias: `Pt`, `cross` (§9.1.1).
+- **Complejidad:** $\mathcal{O}(N \log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N` puntos `x y`.
+
+**Entrada:**
+```text
+5
+0 0
+4 0
+2 2
+4 4
+0 4
+```
+
+**Salida:**
+```text
+4
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<Pt> pts(n);
+for (auto& p : pts) cin >> p.x >> p.y;
+```
+
+**Implementación:**
+```cpp
+// 5. Convex Hull (Monotone Chain de Andrew en O(N log N) —
+// orden CCW)
 vector<Pt> convex_hull(vector<Pt> pts) {
   int n = sz(pts), k = 0;
   if (n <= 1) return pts;
   sort(all(pts));
-  pts.erase(unique(all(pts)), pts.end());
+  pts.erase(unique(all(pts), pt_eq_eps), pts.end());
   n = sz(pts);
   if (n <= 2) return pts;
   vector<Pt> h(2 * n);
   for (int i = 0; i < n; ++i) {
-    while (k >= 2 && cross(h[k - 2], h[k - 1], pts[i]) <= EPS) k--;
+    while (k >= 2 && cross(h[k - 2], h[k - 1],
+      pts[i]) <= EPS) k--;
     h[k++] = pts[i];
   }
   for (int i = n - 2, t = k + 1; i >= 0; --i) {
-    while (k >= t && cross(h[k - 2], h[k - 1], pts[i]) <= EPS) k--;
+    while (k >= t && cross(h[k - 2], h[k - 1],
+      pts[i]) <= EPS) k--;
     h[k++] = pts[i];
   }
   h.resize(k - 1);
   return h;
 }
+```
 
-// 6. Rotating Callipers: Mayor distancia al cuadrado en un poligono convexo CCW
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto h = convex_hull(pts);
+cout << sz(h) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Si el problema exige **conservar** los puntos colineales en el borde del Convex Hull, cambiar `<` (`<= 0` pasa a `< 0`) en la condición del `while` y cuidar de no duplicar los extremos.
+
+#### 9.1.5 Diámetro de Polígono Convexo por Rotating Callipers (`rotating_callipers_max_dist2`)
+
+- **Cuándo usar:** Encontrar la mayor distancia euclidiana al cuadrado entre dos puntos de una nube de $N$ puntos (pasándole su `convex_hull` CCW) en $\mathcal{O}(N)$.
+- **Cuándo no usar / alternativa:** Para la **menor** distancia entre dos puntos, el par más cercano no tiene por qué estar en el Convex Hull; usar `closest_pair_distance` (§9.1.6).
+- **Contrato:** Recibe un polígono convexo CCW `h` (resultado de `convex_hull`). Avanza el puntero antipodal `j` mientras el área del triángulo con la arista `i -> i+1` crezca. Dependencias: `Pt`, `cross` (§9.1.1).
+- **Complejidad:** $\mathcal{O}(N)$ sobre el casco convexo ($\mathcal{O}(N \log N)$ incluyendo `convex_hull`).
+- **Formato de entrada:** `N`, seguido de `N` puntos `x y`.
+
+**Entrada:**
+```text
+4
+0 0
+3 0
+3 4
+0 4
+```
+
+**Salida:**
+```text
+25.00
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<Pt> pts(n);
+for (auto& p : pts) cin >> p.x >> p.y;
+```
+
+**Implementación:**
+```cpp
+// 6. Rotating Callipers: Mayor distancia al cuadrado en un
+// poligono convexo CCW
 ld rotating_callipers_max_dist2(const vector<Pt>& h) {
   int n = sz(h);
   if (n <= 1) return 0;
@@ -5678,166 +11070,615 @@ ld rotating_callipers_max_dist2(const vector<Pt>& h) {
   ld max_d2 = 0;
   for (int i = 0, j = 1; i < n; ++i) {
     Pt edge = h[(i + 1) % n] - h[i];
-    while (cross(edge, h[(j + 1) % n] - h[i]) > cross(edge, h[j] - h[i]))
+    while (cross(edge, h[(j + 1) % n] - h[i]) > cross(edge,
+      h[j] - h[i]))
       j = (j + 1) % n;
     max_d2 = max({max_d2, (h[i] - h[j]).norm2(),
                   (h[(i + 1) % n] - h[j]).norm2()});
   }
   return max_d2;
 }
+```
 
-// 7. Par de Puntos Mas Cercanos (Sweep-Line con std::set en O(N log N))
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto h = convex_hull(pts);
+cout << fixed << setprecision(
+  2) << rotating_callipers_max_dist2(h) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Siempre pasar a `rotating_callipers_max_dist2` el polígono **sin puntos colineales redundantes** generado por `convex_hull`.
+
+#### 9.1.6 Par de Puntos Más Cercanos por Sweep-Line (`closest_pair_distance`)
+
+- **Cuándo usar:** Hallar la mínima distancia euclidiana entre dos puntos distintos (o `0` si hay puntos duplicados) de un conjunto de $N$ puntos en $\mathcal{O}(N \log N)$.
+- **Cuándo no usar / alternativa:** Si las distancias son Manhattan ($|x_1 - x_2| + |y_1 - y_2|$) y quieres el **máximo**, basta $\max(\max(x+y) - \min(x+y), \max(x-y) - \min(x-y))$ en $\mathcal{O}(N)$.
+- **Contrato:** Si `sz(pts) < 2` retorna `INF`. Detecta puntos idénticos antes de iniciar el barrido y retorna `0` sin producir división por cero ni comparación inválida en `std::set`. Dependencias: `Pt` (§9.1.1).
+- **Complejidad:** $\mathcal{O}(N \log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N` puntos `x y`.
+
+**Entrada:**
+```text
+4
+0 0
+3 4
+1 1
+10 10
+```
+
+**Salida:**
+```text
+1.414214
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<Pt> pts(n);
+for (auto& p : pts) cin >> p.x >> p.y;
+```
+
+**Implementación:**
+```cpp
+// 7. Par de Puntos Mas Cercanos (Sweep-Line con std::set en
+// O(N log N))
+// Precondicion: sz(pts) >= 2 (retorna INF si hay menos de 2
+// puntos).
 ld closest_pair_distance(vector<Pt> pts) {
+  if (sz(pts) < 2) return INF;
   sort(all(pts));
+  for (int i = 1; i < sz(pts); ++i)
+    if (pts[i] == pts[i - 1]) return 0;
   set<pair<ld, ld>> active; // Guarda {y, x}
-  ld best = 1e18;
+  ld best = INF;
   int j = 0;
   for (int i = 0; i < sz(pts); ++i) {
-    while (pts[i].x - pts[j].x >= best) {
+    while (j < i && pts[i].x - pts[j].x >= best) {
       active.erase({pts[j].y, pts[j].x});
       j++;
     }
-    auto it1 = active.lower_bound({pts[i].y - best, -1e18});
-    auto it2 = active.upper_bound({pts[i].y + best, 1e18});
+    auto it1 = active.lower_bound({pts[i].y - best, -INF});
+    auto it2 = active.upper_bound({pts[i].y + best, INF});
     for (auto it = it1; it != it2; ++it) {
-      ld dx = pts[i].x - it->second, dy = pts[i].y - it->first;
+      ld dx = pts[i].x - it->second,
+        dy = pts[i].y - it->first;
       best = min(best, hypot(dx, dy));
     }
+    if (best == 0) return 0;
     active.insert({pts[i].y, pts[i].x});
   }
   return best;
 }
 ```
 
-**Ejemplo de Input y Uso (Convex Hull + Área + Punto en Polígono):**
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << fixed << setprecision(6) << closest_pair_distance(
+  pts) << '\n';
+```
 
-```
-Input: 5 puntos: (0,0), (4,0), (4,4), (0,4), (2,2).
-Convex Hull descarta (2,2) y deja el cuadrado [(0,0), (4,0), (4,4), (0,4)] de area 16.
-```
-
-``` cpp
-int main() {
-  vector<Pt> pts = {{0, 0}, {4, 0}, {4, 4}, {0, 4}, {2, 2}};
-  vector<Pt> hull = convex_hull(pts);
-  cout << polygon_area(hull) << "\n";            // 16.0
-  cout << point_in_polygon({2, 2}, hull) << "\n";// 1 (estrictamente dentro)
-}
-```
+- **Trampas y adaptaciones:** (1) El `std::set` activo durante el barrido ordena por `(y, x)` (no por `(x, y)`) para poder acotar el rango vertical $[y - d, y + d]$ con `lower_bound`.
 
 ------------------------------------------------------------------------
 
+### 9.2 Geometría Analítica Básica y Círculos: Proyección, Reflexión, Distancia Punto-Recta y `Circle`
 
-### 8.4 Intersección de Semiplanos (Halfplane Intersection)
+#### 9.2.1 Proyección, Reflexión y Distancia Punto-Recta (`proj_point_line`, `reflect_point_line`, `dist_point_line`)
 
-- **¿Cuándo usar?**: Hallar el polígono convexo formado por la intersección de $N$ semiplanos dirigidos de la forma "a la izquierda del vector $\vec{pq}$" (o desigualdades lineales $Ax + By + C \le 0$). Útil en problemas de visibilidad (núcleo de un polígono / galería de arte), encontrar si un conjunto de restricciones 2D tiene región factible, o el corte continuo de una figura convexa.
-- **Complejidad**: $\mathcal{O}(N \log N)$.
+- **Cuándo usar:** Proyectar ortogonalmente un punto $P$ sobre una recta infinita $AB$, reflejar $P$ respecto al espejo $AB$, o medir la distancia perpendicular de $P$ a la recta infinita $AB$.
+- **Cuándo no usar / alternativa:** Si el espejo es un **segmento acotado** $AB$ y buscas distancia, usar `dist_point_segment` (§9.1.2).
+- **Contrato:** Maneja el caso degenerado $A = B$ retornando $A$ (o $|P - A|$ en distancia). Dependencias: `Pt`, `dot`, `cross` (§9.1.1).
+- **Complejidad:** $\mathcal{O}(1)$ tiempo y memoria.
+- **Formato de entrada:** Tres puntos `P A B`.
 
+**Entrada:**
+```text
+1 3 0 0 4 0
+```
+
+**Salida:**
+```text
+1.00 0.00
+1.00 -3.00
+3.00
+```
+
+**Cómo leer la entrada:**
+```cpp
+Pt p, a, b;
+cin >> p.x >> p.y >> a.x >> a.y >> b.x >> b.y;
+```
+
+**Implementación:**
+```cpp
+// 1. Proyeccion, Reflexion y Distancia Punto-Recta infinita
+// (a -> b)
+Pt proj_point_line(const Pt& p, const Pt& a, const Pt& b) {
+  if (pt_eq_eps(a, b)) return a;
+  Pt v = b - a;
+  return a + v * (dot(p - a, v) / v.norm2());
+}
+Pt reflect_point_line(const Pt& p, const Pt& a,
+  const Pt& b) {
+  Pt pr = proj_point_line(p, a, b);
+  return pr * 2.0L - p;
+}
+ld dist_point_line(const Pt& p, const Pt& a, const Pt& b) {
+  if (pt_eq_eps(a, b)) return (p - a).norm();
+  return abs(cross(a, b, p)) / (b - a).norm();
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+Pt pr = proj_point_line(p, a, b);
+Pt rf = reflect_point_line(p, a, b);
+cout << fixed << setprecision(
+  2) << pr.x << " " << pr.y << '\n'
+     << rf.x << " " << rf.y << '\n'
+     << dist_point_line(p, a, b) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) El camino más corto desde $S$ hasta $T$ tocando una recta $AB$ tiene longitud $|\text{reflect}(S, A, B) - T|$.
+
+#### 9.2.2 Geometría de Círculos: Intersecciones y Tangentes (`Circle`, `circle_line_intersection`, `circle_circle_intersection`, `circle_tangents_from_point`)
+
+- **Cuándo usar:** Hallar los puntos de corte entre una recta y un círculo, entre dos círculos, o los puntos de tangencia trazados a un círculo desde un punto exterior $P$.
+- **Cuándo no usar / alternativa:** Siempre distinguir el código `-1` de `circle_circle_intersection` (círculos idénticos con infinitos puntos de contacto) del código `0` (disjuntos).
+- **Contrato:** Usa `sqrt(max((ld)0.0, h2))` para evitar `NaN` cuando la recta o el círculo son casi tangentes ($h^2 \approx -10^{-16}$). Dependencias: `proj_point_line` (§9.2.1), `Pt`, `pt_eq_eps` (§9.1.1).
+- **Complejidad:** $\mathcal{O}(1)$ tiempo y memoria.
+- **Formato de entrada:** Centro y radio `cx cy r` de un círculo y dos puntos `ax ay bx by` de una recta.
+
+**Entrada:**
+```text
+0 0 5
+-5 3 5 3
+```
+
+**Salida:**
+```text
+2
+-4.00 3.00
+4.00 3.00
+```
+
+**Cómo leer la entrada:**
+```cpp
+Circle c; Pt a, b;
+cin >> c.c.x >> c.c.y >> c.r >> a.x >> a.y >> b.x >> b.y;
+```
+
+**Implementación:**
+```cpp
+// 2. Circulos: Interseccion Recta-Circulo, Circulo-Circulo
+// y Tangentes
+struct Circle { Pt c; ld r; };
+
+vector<Pt> circle_line_intersection(const Circle& C,
+                                    const Pt& a,
+    const Pt& b) {
+  if (pt_eq_eps(a, b)) return {};
+  Pt pr = proj_point_line(C.c, a, b);
+  ld d2 = (pr - C.c).norm2(), r2 = C.r * C.r;
+  if (d2 > r2 + EPS) return {};
+  ld h = sqrt(max((ld)0.0, r2 - d2));
+  Pt dir = (b - a) / (b - a).norm();
+  if (h <= EPS) return {pr};
+  return {pr - dir * h, pr + dir * h};
+}
+
+// Retorna {estado, puntos}: -1 coincidentes, 0 disjuntos, 1
+// tangente, 2 secantes
+pair<int, vector<Pt>> circle_circle_intersection(
+    const Circle& A, const Circle& B) {
+  Pt v = B.c - A.c;
+  ld d = v.norm();
+  if (d <= EPS)
+    return (abs(A.r - B.r) <= EPS)
+             ? make_pair(-1, vector<Pt>{})
+             : make_pair(0, vector<Pt>{});
+  if (d > A.r + B.r + EPS ||
+      d + min(A.r, B.r) < max(A.r, B.r) - EPS)
+    return {0, {}};
+  ld x = (d * d + A.r * A.r - B.r * B.r) / (2.0L * d);
+  ld h2 = A.r * A.r - x * x;
+  Pt base = A.c + v * (x / d);
+  if (h2 <= EPS) return {1, {base}};
+  ld h = sqrt(max((ld)0.0, h2));
+  Pt nrm = v.perp() * (h / d);
+  return {2, {base - nrm, base + nrm}};
+}
+
+// Puntos de contacto de las tangentes a C trazadas desde un
+// punto exterior P
+vector<Pt> circle_tangents_from_point(const Circle& C,
+  const Pt& p) {
+  Pt v = p - C.c;
+  ld d2 = v.norm2(), r2 = C.r * C.r;
+  // Punto estrictamente interior
+  if (d2 < r2 - EPS) return {};
+  if (abs(d2 - r2) <= EPS) return {p};
+  ld x = r2 / d2, h = sqrt(max((ld)0.0,
+    d2 - r2)) * C.r / d2;
+  Pt base = C.c + v * x, nrm = v.perp() * h;
+  return {base - nrm, base + nrm};
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto pts = circle_line_intersection(c, a, b);
+sort(all(pts));
+cout << sz(pts) << '\n' << fixed << setprecision(2);
+for (auto p : pts) cout << p.x << " " << p.y << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) En problemas de cobertura angular sobre un círculo (ej. cuántos círculos cubren el borde de $C_i$), convertir los dos puntos de `circle_circle_intersection` en ángulos con `atan2` y hacer sweep-line (§3.7.1).
+
+------------------------------------------------------------------------
+
+### 9.3 Intersección de Semiplanos (Halfplane Intersection)
+
+- **Cuándo usar:** Construir el polígono convexo que resulta de intersectar $N$ semiplanos dirigidos (región a la izquierda del vector $A \to B$), como el núcleo de visibilidad de un polígono (*Art Gallery Kernel*) o factibilidad de programación lineal en 2D.
+- **Cuándo no usar / alternativa:** Si solo necesitas saber el valor óptimo lineal en 2D o más dimensiones sin los vértices del polígono, `Simplex` (§7.9) también lo resuelve.
+- **Contrato:** Cada `Halfplane(a, b)` representa el semiplano a la **izquierda** del rayo $a \to b$ (`cross(b - a, q - a) >= 0`). Acota regiones abiertas con una caja `[-box, box]^2`. Si la intersección es vacía o degenerada (segmento/punto de área 0), retorna `{}`. Dependencias: `Pt`, `cross` (§9.1.1).
+- **Complejidad:** $\mathcal{O}(N \log N)$ tiempo y $\mathcal{O}(N)$ memoria.
+- **Formato de entrada:** `N`, seguido de `N` pares de puntos `x1 y1 x2 y2` que definen cada semiplano.
+
+**Entrada:**
+```text
+4
+0 0 4 0
+4 0 4 4
+4 4 0 4
+0 4 0 0
+```
+
+**Salida:**
+```text
+16.00
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n;
+cin >> n;
+vector<Halfplane> h;
+for (int i = 0; i < n; ++i) {
+  Pt a, b; cin >> a.x >> a.y >> b.x >> b.y;
+  h.pb(Halfplane(a, b));
+}
+```
+
+**Implementación:**
 ```cpp
 // Semiplanos a la izquierda del rayo p -> p + v
 struct Halfplane {
   Pt p, v;
   ld angle;
   Halfplane() {}
-  Halfplane(Pt a, Pt b) : p(a), v(b - a), angle(atan2(v.y, v.x)) {}
-  bool operator<(const Halfplane& o) const { return angle < o.angle; }
-  bool out(Pt q) const { return cross(v, q - p) < -EPS; }
+  Halfplane(Pt a, Pt b) : p(a), v(b - a), angle(atan2(v.y,
+    v.x)) {}
+  bool out(const Pt& q) const {
+    return cross(v, q - p) < -EPS; }
+  bool operator<(const Halfplane& o) const {
+    if (abs(angle - o.angle) > EPS) return angle < o.angle;
+    // Mas restrictivo primero si son paralelos
+    return cross(v, o.p - p) < 0;
+  }
 };
 
-Pt halfplane_intersect(Halfplane a, Halfplane b) {
+Pt halfplane_intersect(const Halfplane& a,
+  const Halfplane& b) {
   ld c = cross(a.v, b.v);
   return a.p + a.v * (cross(b.p - a.p, b.v) / c);
 }
 
-// Retorna vertices del poligono convexo en orden CCW (vacio si no hay interseccion)
-vector<Pt> halfplane_intersection(vector<Halfplane> h) {
-  const ld BOX = 1e9;
-  h.push_back({{-BOX, -BOX}, {BOX, -BOX}});
-  h.push_back({{BOX, -BOX}, {BOX, BOX}});
-  h.push_back({{BOX, BOX}, {-BOX, BOX}});
-  h.push_back({{-BOX, BOX}, {-BOX, -BOX}});
-
+// Retorna poligono convexo CCW (vacio si la interseccion es
+// vacia o degenerada).
+// Si box > 0, acota regiones abiertas al cuadrado [-box,
+// box]^2.
+vector<Pt> halfplane_intersection(vector<Halfplane> h,
+  ld box = 1e9) {
+  if (box > 0) {
+    h.push_back({{-box, -box}, {box, -box}});
+    h.push_back({{box, -box}, {box, box}});
+    h.push_back({{box, box}, {-box, box}});
+    h.push_back({{-box, box}, {-box, -box}});
+  }
   sort(all(h));
   deque<Halfplane> dq;
-  deque<Pt> pts;
-
-  for (auto& cur : h) {
-    while (!pts.empty() && cur.out(pts.back())) {
-      pts.pop_back(); dq.pop_back();
+  for (const auto& cur : h) {
+    if (!dq.empty() && abs(cur.angle - dq.back(
+      ).angle) <= EPS) continue;
+    while (sz(dq) >= 2 && cur.out(halfplane_intersect(dq[sz(
+      dq) - 2], dq.back())))
+      dq.pop_back();
+    while (sz(dq) >= 2 && cur.out(halfplane_intersect(dq[0],
+      dq[1])))
+      dq.pop_front();
+    if (!dq.empty() && abs(cross(cur.v, dq.back(
+      ).v)) <= EPS) {
+      if (dot(cur.v, dq.back().v) < 0 && cur.out(dq.back(
+        ).p)) return {};
     }
-    while (!pts.empty() && cur.out(pts.front())) {
-      pts.pop_front(); dq.pop_front();
-    }
-    if (!dq.empty() && abs(cross(cur.v, dq.back().v)) < EPS) {
-      if (dot(cur.v, dq.back().v) < 0) return {}; // Opuestos paralelos
-      if (cur.out(dq.back().p)) dq.back() = cur;  // Mismo sentido, mas restrictivo
-      continue;
-    }
-    if (!dq.empty()) pts.push_back(halfplane_intersect(dq.back(), cur));
     dq.push_back(cur);
   }
-  while (!pts.empty() && dq.front().out(pts.back())) {
-    pts.pop_back(); dq.pop_back();
-  }
+  while (sz(dq) >= 3 && dq[0].out(halfplane_intersect(dq[sz(
+    dq) - 2], dq.back())))
+    dq.pop_back();
+  while (sz(dq) >= 3 && dq.back().out(halfplane_intersect(
+    dq[0], dq[1])))
+    dq.pop_front();
   if (sz(dq) < 3) return {};
-  pts.push_back(halfplane_intersect(dq.back(), dq.front()));
-  return vector<Pt>(all(pts));
+
+  vector<Pt> poly;
+  for (int i = 0; i < sz(dq); ++i) {
+    const auto& a = dq[i];
+    const auto& b = dq[(i + 1) % sz(dq)];
+    if (abs(cross(a.v, b.v)) <= EPS) return {};
+    poly.push_back(halfplane_intersect(a, b));
+  }
+  return convex_hull(poly);
 }
 ```
 
-### 8.5 Suma de Minkowski de Polígonos Convexos
-
-- **¿Cuándo usar?**: Dados dos polígonos convexos $P$ y $Q$, calcular el polígono convexo resultante de la suma vectorial $P + Q = \{p + q : p \in P, q \in Q\}$.
-  - **Detección de Colisión / Distancia**: $P$ y $Q$ se intersectan si y solo si el origen $(0,0)$ está dentro de la suma de Minkowski $P + (-Q)$.
-- **Complejidad**: $\mathcal{O}(|P| + |Q|)$.
-
+**Cómo llamarlo y producir la salida:**
 ```cpp
-// Suma de Minkowski P + Q para dos poligonos convexos en orden CCW
+auto poly = halfplane_intersection(h);
+cout << fixed << setprecision(2) << polygon_area(
+  poly) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Para el núcleo de un polígono dado en orden CCW, agregar un `Halfplane(p[i], p[(i + 1) % n])` por cada lado del polígono.
+
+### 9.4 Suma de Minkowski de Polígonos Convexos
+
+- **Cuándo usar:** Construir en $\mathcal{O}(N + M)$ el polígono convexo $P + Q = \{p + q : p \in P, q \in Q\}$, útil para colisión de polígonos convexos ($P$ intersecta a $Q + v \iff v \in P + (-Q)$) o máximo de dos funciones convexas.
+- **Cuándo no usar / alternativa:** Ambos polígonos de entrada deben estar en orden **antihorario (CCW)**.
+- **Contrato:** Soporta casos degenerados donde $P$ o $Q$ tienen $1$ o $2$ puntos. Reordena ambos polígonos empezando por el vértice de menor $(y, x)$ y fusiona sus vectores de aristas por ángulo. Dependencias: `Pt`, `cross` (§9.1.1).
+- **Complejidad:** $\mathcal{O}(|P| + |Q|)$ tiempo y memoria.
+- **Formato de entrada:** `N M`, luego `N` vértices CCW de `P` y `M` vértices CCW de `Q`.
+
+**Entrada:**
+```text
+3 3
+0 0
+2 0
+0 2
+0 0
+1 0
+0 1
+```
+
+**Salida:**
+```text
+3 4.50
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+vector<Pt> P(n), Q(m);
+for (auto& p : P) cin >> p.x >> p.y;
+for (auto& q : Q) cin >> q.x >> q.y;
+```
+
+**Implementación:**
+```cpp
+// Suma de Minkowski P + Q para dos conjuntos convexos CCW
+// (admite punto o segmento)
 vector<Pt> minkowski_sum(vector<Pt> P, vector<Pt> Q) {
+  if (P.empty() || Q.empty()) return {};
+  if (sz(P) == 1) {
+    for (auto& q : Q) q = q + P[0];
+    return Q;
+  }
+  if (sz(Q) == 1) {
+    for (auto& p : P) p = p + Q[0];
+    return P;
+  }
   auto reorder = [](vector<Pt>& pts) {
     int pos = 0;
     for (int i = 1; i < sz(pts); ++i)
-      if (pts[i].y < pts[pos].y || (pts[i].y == pts[pos].y && pts[i].x < pts[pos].x))
+      if (pts[i].y < pts[pos].y || (
+        pts[i].y == pts[pos].y && pts[i].x < pts[pos].x))
         pos = i;
     rotate(pts.begin(), pts.begin() + pos, pts.end());
   };
   reorder(P); reorder(Q);
+  int n = sz(P), m = sz(Q);
   P.push_back(P[0]); P.push_back(P[1]);
   Q.push_back(Q[0]); Q.push_back(Q[1]);
 
   vector<Pt> res;
   int i = 0, j = 0;
-  while (i + 2 < sz(P) || j + 2 < sz(Q)) {
+  while (i < n || j < m) {
     res.push_back(P[i] + Q[j]);
     ld c = cross(P[i + 1] - P[i], Q[j + 1] - Q[j]);
-    if (c >= -EPS) i++;
-    if (c <= EPS) j++;
+    bool adv_i = (i < n) && (j == m || c >= -EPS);
+    bool adv_j = (j < m) && (i == n || c <= EPS);
+    if (adv_i) i++;
+    if (adv_j) j++;
   }
   return res;
 }
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+auto S = minkowski_sum(P, Q);
+cout << sz(S) << " " << fixed << setprecision(2)
+     << polygon_area(S) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) La distancia mínima entre dos polígonos convexos disjuntos $P$ y $Q$ es la distancia del origen $(0, 0)$ al polígono $P + (-Q)$.
 
 ------------------------------------------------------------------------
 
+## Bloque 10: Búsqueda en Mitades (MITM), Parsing y Clique Máximo
 
-## Bloque 9: Miscelánea y Parsing Especial
+### 10.1 Meet in the Middle (MITM): Subset Sum Exacto, Conteo con Multiplicidades y Máximo $\le S$
 
-### 9.1 Evaluador de Expresiones Aritméticas (Shunting-Yard Parser)
+#### 10.1.1 Meet in the Middle: Conteo de Subconjuntos con Suma Exacta (`get_subset_sums`, `mitm_subset_sum_count`)
 
-- **¿Cuándo usar?**: Evaluar en $\mathcal{O}(|S|)$ expresiones matemáticas en un string que contienen números enteros, operadores `+`, `-`, `*`, `/`, paréntesis `(` `)` y signo menos unario `-x`.
-- **Complejidad**: $\mathcal{O}(|S|)$.
+- **Cuándo usar:** Contar cuántos de los $2^N$ subconjuntos suman exactamente `target` cuando $N \in [25, 42]$ y los valores $a_i \le 10^{12}$ no permiten DP por suma.
+- **Cuándo no usar / alternativa:** Si $N \le 20$, basta una sola mitad; si $\sum a_i \le 10^6$, usar Knapsack DP (§8.1.1).
+- **Contrato:** Usa `inplace_merge` para generar las $2^{N/2}$ sumas de cada mitad **ya ordenadas en $\mathcal{O}(2^{N/2})$** sin pagar el factor $\log(2^{N/2})$ de `std::sort`. Cuenta multiplicidades con `equal_range`. Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(2^{N/2} \cdot (N/2))$ tiempo y $\mathcal{O}(2^{N/2})$ memoria.
+- **Formato de entrada:** `N target`, seguido de `N` enteros.
 
+**Entrada:**
+```text
+4 5
+1 2 3 4
+```
+
+**Salida:**
+```text
+2
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n; ll target;
+cin >> n >> target;
+vll a(n);
+for (ll& x : a) cin >> x;
+```
+
+**Implementación:**
+```cpp
+// Genera las 2^k sumas de subconjuntos de un rango [l, r)
+// en O(2^k)
+vll get_subset_sums(const vll& a, int l, int r) {
+  vll sums = {0};
+  for (int i = l; i < r; ++i) {
+    int cur_sz = sz(sums);
+    sums.resize(2 * cur_sz);
+    for (int j = 0; j < cur_sz; ++j)
+      sums[cur_sz + j] = sums[j] + a[i];
+    inplace_merge(sums.begin(), sums.begin() + cur_sz,
+      sums.end());
+  }
+  return sums; // Ya queda ordenado en O(2^(r-l))!
+}
+
+// 1. Cuenta cuantos subconjuntos (con multiplicidad) suman
+// 'target'
+ll mitm_subset_sum_count(const vll& a, ll target) {
+  int n = sz(a), mid = n / 2;
+  vll L = get_subset_sums(a, 0, mid);
+  vll R = get_subset_sums(a, mid, n);
+  ll ways = 0;
+  for (ll x : L) {
+    auto [it1, it2] = equal_range(all(R), target - x);
+    ways += (it2 - it1);
+  }
+  return ways;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << mitm_subset_sum_count(a, target) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Los subconjuntos se distinguen por sus **índices** (si `a = {5, 5}` y `target = 5`, cuenta 2 subconjuntos).
+
+#### 10.1.2 Meet in the Middle: Mayor Suma de Subconjunto $\le S$ (`mitm_max_subset_sum_le`)
+
+- **Cuándo usar:** Encontrar la mayor suma de un subconjunto que no exceda `limit` ($N \le 42, \text{limit} \le 10^{18}$) combinando las dos mitades ordenadas con dos punteros en $\mathcal{O}(2^{N/2})$.
+- **Cuándo no usar / alternativa:** Asume `limit >= 0` (pues el subconjunto vacío suma `0`).
+- **Contrato:** Genera `L` y `R` ordenados con `get_subset_sums` y barre `x` creciente en `L` contra `j` decreciente en `R` en tiempo lineal sobre las listas. Dependencias: `get_subset_sums` (§10.1.1).
+- **Complejidad:** $\mathcal{O}(2^{N/2})$ tiempo y memoria.
+- **Formato de entrada:** `N limit`, seguido de `N` enteros.
+
+**Entrada:**
+```text
+4 8
+3 5 7 2
+```
+
+**Salida:**
+```text
+8
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n; ll lim;
+cin >> n >> lim;
+vll a(n);
+for (ll& x : a) cin >> x;
+```
+
+**Implementación:**
+```cpp
+// 2. Mayor suma de subconjunto <= limit (usando two
+// pointers en O(2^(N/2)))
+ll mitm_max_subset_sum_le(const vll& a, ll limit) {
+  int n = sz(a), mid = n / 2;
+  vll L = get_subset_sums(a, 0, mid);
+  vll R = get_subset_sums(a, mid, n);
+  ll best = -INF;
+  int j = sz(R) - 1;
+  for (ll x : L) {
+    while (j >= 0 && x + R[j] > limit) --j;
+    if (j >= 0) best = max(best, x + R[j]);
+  }
+  return best;
+}
+```
+
+**Cómo llamarlo y producir la salida:**
+```cpp
+cout << mitm_max_subset_sum_le(a, lim) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) Gracias a `inplace_merge` + dos punteros, este algoritmo corre en $\mathcal{O}(2^{N/2})$ puro sin ningún factor logarítmico.
+
+------------------------------------------------------------------------
+
+### 10.2 Evaluador de Expresiones Aritméticas (Shunting-Yard Parser)
+
+- **Cuándo usar:** Evaluar en $\mathcal{O}(|S|)$ una cadena con números enteros, paréntesis `()`, operadores binarios `+ - * /` y signos unarios `+x` y `-x` respetando precedencia y asociatividad.
+- **Cuándo no usar / alternativa:** Si el problema permite usar Python y la expresión no excede límites de seguridad ni tiene división `/` con semántica hacia cero para negativos, ver §12.15.
+- **Contrato:** Usa el centinela `UNARY_NEG = '~'` (compatible con `-funsigned-char`) con prioridad `3` y asociatividad a derecha (`- - 5 == 5`). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(|S|)$ tiempo y memoria.
+- **Formato de entrada:** Una línea con la expresión aritmética.
+
+**Entrada:**
+```text
+-5 + 3 * (-2) + (+4)
+```
+
+**Salida:**
+```text
+-7
+```
+
+**Cómo leer la entrada:**
+```cpp
+string s;
+getline(cin >> ws, s);
+```
+
+**Implementación:**
 ```cpp
 struct ExpressionParser {
-  int priority(char op) {
-    if (op < 0) return 3; // Operador unario (-x)
+  static constexpr char UNARY_NEG = '~';
+  int priority(char op) const {
+    // Menos unario (-x), asociativo a derecha
+    if (op == UNARY_NEG) return 3;
     if (op == '+' || op == '-') return 1;
     if (op == '*' || op == '/') return 2;
     return -1;
   }
-  void apply_op(stack<ll>& st, char op) {
-    if (op < 0) {
+  void apply_op(stack<ll>& st, char op) const {
+    if (op == UNARY_NEG) {
       ll x = st.top(); st.pop();
       st.push(-x);
     } else {
@@ -5849,12 +11690,12 @@ struct ExpressionParser {
       if (op == '/') st.push(a / b);
     }
   }
-  ll evaluate(const string& s) {
+  ll evaluate(const string& s) const {
     stack<ll> st;
     stack<char> op;
     bool may_be_unary = true;
     for (int i = 0; i < sz(s); ++i) {
-      if (isspace(s[i])) continue;
+      if (isspace((unsigned char)s[i])) continue;
       if (s[i] == '(') {
         op.push('('); may_be_unary = true;
       } else if (s[i] == ')') {
@@ -5862,15 +11703,20 @@ struct ExpressionParser {
           apply_op(st, op.top()); op.pop();
         }
         op.pop(); may_be_unary = false;
-      } else if (s[i] == '+' || s[i] == '-' || s[i] == '*' || s[i] == '/') {
+      } else if (
+        s[i] == '+' || s[i] == '-' || s[i] == '*' || s[i]
+          == '/') {
         char cur_op = s[i];
-        if (may_be_unary && (cur_op == '+' || cur_op == '-')) {
-          if (cur_op == '-') cur_op = -cur_op;
+        if (may_be_unary && (
+          cur_op == '+' || cur_op == '-')) {
+          if (cur_op == '-') cur_op = UNARY_NEG;
           else continue;
         }
         while (!op.empty() && (
-          (cur_op >= 0 && priority(op.top()) >= priority(cur_op)) ||
-          (cur_op < 0 && priority(op.top()) > priority(cur_op)))) {
+          (cur_op != UNARY_NEG && priority(op.top(
+            )) >= priority(cur_op)) ||
+          (cur_op == UNARY_NEG && priority(op.top(
+            )) > priority(cur_op)))) {
           apply_op(st, op.top()); op.pop();
         }
         op.push(cur_op); may_be_unary = true;
@@ -5890,11 +11736,49 @@ struct ExpressionParser {
 };
 ```
 
-### 9.2 Clique Máximo (Bron-Kerbosch Branch & Bound)
+**Cómo llamarlo y producir la salida:**
+```cpp
+ExpressionParser parser;
+cout << parser.evaluate(s) << '\n';
+```
 
-- **¿Cuándo usar?**: Encontrar el clique máximo (subgrafo completo más grande) en un grafo no dirigido con $N \le 60$. (También resuelve el **Conjunto Independiente Máximo** corriendo el algoritmo en el grafo complemento).
-- **Complejidad**: $\mathcal{O}(3^{N/3})$ en el peor caso; instantáneo para $N \le 60$ con podas de bitset.
+- **Trampas y adaptaciones:** (1) Para evaluar expresiones modulares, reemplazar `a / b` en `apply_op` por `mul_mod(a, inv_fermat(b))` (§7.4.1).
 
+### 10.3 Clique Máximo (Bron-Kerbosch Branch & Bound)
+
+- **Cuándo usar:** Hallar el mayor subconjunto de vértices mutuamente adyacentes (**Maximum Clique**) o el mayor conjunto independiente (**Maximum Independent Set**, pasándole el grafo complemento) para $N \le 60$.
+- **Cuándo no usar / alternativa:** Si el grafo es bipartito, el Maximum Independent Set se halla en tiempo polinomial con König (`BipartiteMVC`, §6.6.3).
+- **Contrato:** Nodos **0-indexed** (`0..n-1`) con $N \le 64$ representados en máscaras `ull`. Usa pivoteo de Tomita (`u = __builtin_ctzll(P | X)`) y poda por cota superior (`sz(cur) + popcount(P) <= sz(best_clique)`). Dependencias: template base (§1.1).
+- **Complejidad:** $\mathcal{O}(3^{N/3})$ peor caso teórico (extremadamente rápido con poda en grafos de competencia hasta $N \approx 55$).
+- **Formato de entrada:** `N M`, seguido de `M` aristas 0-indexed `u v`.
+
+**Entrada:**
+```text
+4 5
+0 1
+1 2
+2 0
+2 3
+3 0
+```
+
+**Salida:**
+```text
+3
+```
+
+**Cómo leer la entrada:**
+```cpp
+int n, m;
+cin >> n >> m;
+MaxClique mc(n);
+for (int i = 0; i < m; ++i) {
+  int u, v; cin >> u >> v;
+  mc.add_edge(u, v);
+}
+```
+
+**Implementación:**
 ```cpp
 // Max Clique para N <= 64 usando mascaras ull
 struct MaxClique {
@@ -5912,7 +11796,8 @@ struct MaxClique {
       if (sz(cur) > sz(best_clique)) best_clique = cur;
       return;
     }
-    if (sz(cur) + __builtin_popcountll(P) <= sz(best_clique)) return;
+    if (sz(cur) + __builtin_popcountll(P) <= sz(
+      best_clique)) return;
     int u = __builtin_ctzll(P | X);
     ull cand = P & ~adj[u];
     while (cand) {
@@ -5935,27 +11820,28 @@ struct MaxClique {
 };
 ```
 
+**Cómo llamarlo y producir la salida:**
+```cpp
+vi clq = mc.solve();
+cout << sz(clq) << '\n';
+```
+
+- **Trampas y adaptaciones:** (1) El **Maximum Independent Set** de $G$ es exactamente el `MaxClique` del grafo complemento $\overline{G}$ (agregar arista $(u, v)$ si y solo si $u \neq v$ y $(u, v) \notin E(G)$).
 
 ------------------------------------------------------------------------
 
+## Bloque 11: Compendio Teórico, Teoremas, Fórmulas e Identidades
 
-## Bloque 10: Compendio Teórico, Teoremas, Fórmulas e Identidades
+### 11.1 Condiciones de Optimización de Programación Dinámica (DP Speedups)
 
-### 10.1 Tabla de Optimización de Programación Dinámica (DP Speedups)
-
-| Nombre | Recurrencia Original | Condición Suficiente | De | A |
-| :--- | :--- | :--- | :--- | :--- |
-| **CHT 1** | $dp[i] = \min_{j < i}\{dp[j] + b[j] \cdot a[i]\}$ | $b[j] \ge b[j+1]$ (si $a[i] \le a[i+1]$, monótona) | $\mathcal{O}(N^2)$ | $\mathcal{O}(N)$ |
-| **CHT 2** | $dp[i][j] = \min_{k < j}\{dp[i-1][k] + b[k] \cdot a[j]\}$ | $b[k] \ge b[k+1]$ | $\mathcal{O}(K N^2)$ | $\mathcal{O}(K N)$ |
-| **D&Q** | $dp[i][j] = \min_{k < j}\{dp[i-1][k] + C[k][j]\}$ | $opt[i][j] \le opt[i][j+1]$ (Desigualdad Cuadrilátero) | $\mathcal{O}(K N^2)$ | $\mathcal{O}(K N \log N)$ |
-| **Knuth** | $dp[i][j] = \min_{i < k < j}\{dp[i][k] + dp[k][j]\} + C[i][j]$ | $opt[i][j-1] \le opt[i][j] \le opt[i+1][j]$ | $\mathcal{O}(N^3)$ | $\mathcal{O}(N^2)$ |
-| **Aliens / WQS** | $\min dp[N][K]$ con $K$ fijo | $f(k) = dp[N][k]$ es convexa/cóncava en $k$ | $\mathcal{O}(K N)$ | $\mathcal{O}(N \log(\text{costo}))$ |
-
-- **Desigualdad del Cuadrilátero**: $C[a][c] + C[b][d] \le C[a][d] + C[b][c]$ para todo $a \le b \le c \le d$. Garantiza la monotonicidad de los puntos óptimos $opt[i][j]$.
+- **Tabla autoritativa de recurrencias y complejidades**: ver **§8.4**.
+- **Desigualdad del Cuadrilátero**: $C(a, c) + C(b, d) \le C(a, d) + C(b, c)$ para todo $a \le b \le c \le d$. Es condición suficiente para que $opt[k][i] \le opt[k][i+1]$ en Divide & Conquer DP. Si además $C(b, c) \le C(a, d)$ (monotonicidad en inclusión), garantiza $opt[l][r-1] \le opt[l][r] \le opt[l+1][r]$ en Knuth DP.
+- **CHT ($\mathcal{O}(N)$ vs $\mathcal{O}(N \log N)$)**: Lograr $\mathcal{O}(N)$ con dos punteros exige **simultáneamente** que las pendientes $m_j$ se inserten en orden monótono y que las abscisas de consulta $x_i$ sean monótonas. Si solo $m_j$ es monótona pero $x_i$ es arbitraria, se requiere búsqueda binaria sobre la envolvente en $\mathcal{O}(N \log N)$; si las pendientes tampoco son monótonas, usar `LineContainer` ($\mathcal{O}(N \log N)$).
+- **WQS / Aliens Trick**: Para **minimizar** $f(k)$ (costo mínimo usando exactamente $k$ transiciones/grupos), se requiere que $f(k)$ sea **convexa** ($f(k+1) - f(k) \ge f(k) - f(k-1)$); para **maximizar**, que $f(k)$ sea **cóncava** ($f(k+1) - f(k) \le f(k) - f(k-1)$). Al penalizar cada grupo con $\lambda$, si hay tramos colineales en $f(k)$, desempatar siempre tomando la menor (o mayor) cantidad de grupos para reconstruir $K$.
 
 ---
 
-### 10.2 Combinatoria y Sumatorias
+### 11.2 Combinatoria y Sumatorias
 
 - **Sumas Polinomiales**:
   - $\sum_{k=1}^n k = \frac{n(n+1)}{2}$
@@ -6004,7 +11890,7 @@ struct MaxClique {
 
 ---
 
-### 10.3 Teoría de Números y Aritmética Modular
+### 11.3 Teoría de Números y Aritmética Modular
 
 - **Ecuaciones Diofánticas Lineales**:
   - $a x + b y = c$ tiene solución entera si y solo si $g = \gcd(a, b) \mid c$.
@@ -6053,7 +11939,7 @@ struct MaxClique {
 
 ---
 
-### 10.4 Teoría de Grafos, Árboles y Redes
+### 11.4 Teoría de Grafos, Árboles y Redes
 
 - **Teorema Matriz-Árbol de Kirchhoff (Matrix-Tree Theorem)**:
   - Sea $L = D - A$ la matriz Laplaciana del grafo ($D_{ii} = \operatorname{deg}(v_i)$, $A_{ij} = \text{aristas entre } i \text{ y } j$).
@@ -6108,13 +11994,13 @@ struct MaxClique {
 
 ---
 
-### 10.5 Geometría y Distancias
+### 11.5 Geometría y Distancias
 
 - **Teorema de Pick**:
   - Para un polígono simple con vértices en coordenadas enteras (retícula):
     $\text{Área} = I + \frac{B}{2} - 1$
     donde $I$ es el número de puntos enteros estrictamente interiores y $B$ es el número de puntos enteros en el borde.
-  - Para un segmento de $(x_1, y_1)$ a $(x_2, y_2)$, el número de puntos en el borde es $\gcd(|x_2 - x_1|, |y_2 - y_1|)$.
+  - Un **segmento cerrado** entre $(x_1, y_1)$ y $(x_2, y_2)$ contiene exactamente $\gcd(|x_2 - x_1|, |y_2 - y_1|) + 1$ puntos enteros; al sumar sobre las aristas cerrando el polígono (contando cada vértice una sola vez, arista semiabierta $[P_i, P_{i+1})$), la contribución de cada lado al total $B$ del borde es $\gcd(|x_2 - x_1|, |y_2 - y_1|)$.
 
 - **Fórmula de Herón y Radios de Triángulos**:
   - Semiperímetro: $s = \frac{a+b+c}{2}$.
@@ -6128,24 +12014,24 @@ struct MaxClique {
 
 ---
 
-### 10.6 Teoría de Juegos y XOR
+### 11.6 Teoría de Juegos y XOR
 
 - **Teorema de Sprague-Grundy**:
-  - Todo juego imparcial de información perfecta bajo juego normal es equivalente a un montón de Nim con tamaño igual a su valor de Grundy $G(u) = \operatorname{mex}\{G(v) : u \to v\}$.
+  - Todo juego **imparcial, finito/terminante (acíclico)** de información perfecta bajo **convención normal** (gana quien realiza la última jugada) es equivalente a un montón de Nim con tamaño igual a su valor de Grundy $G(u) = \operatorname{mex}\{G(v) : u \to v\}$.
   - Para la suma disjunta de juegos independientes: $G(S_1 + S_2 + \dots) = G(S_1) \oplus G(S_2) \oplus \dots$
   - El estado es **ganador** para el primer jugador si y solo si la suma XOR es $\neq 0$.
 
 - **Juego de Nim**:
   - Posición ganadora $\iff x_1 \oplus x_2 \oplus \dots \oplus x_n \neq 0$.
-  - **Regla de Misère Nim** (gana quien toma la última ficha): Se juega idéntico al Nim normal con suma XOR $\neq 0$, EXCEPTO cuando todos los montones tienen tamaño $\le 1$: en ese caso, la posición es ganadora si y solo si el número de montones de tamaño 1 es **par**.
+  - **Regla de Misère Nim** (pierde quien toma la última ficha): Se juega idéntico al Nim normal con suma XOR $\neq 0$, EXCEPTO cuando todos los montones tienen tamaño $\le 1$: en ese caso, la posición es ganadora si y solo si el número de montones de tamaño 1 es **par**.
 
-- **Juego de Moore ($	ext{Nim}_k$)**:
+- **Juego de Moore ($\text{Nim}_k$)**:
   - En cada turno, el jugador puede retirar fichas de entre $1$ y $k$ montones distintos.
   - Condición de victoria: Sumar cada columna binaria de los tamaños de los montones en base 10; la posición es perdedora si y solo si la suma de cada columna binaria es un múltiplo de $k + 1$.
 
 ---
 
-### 10.7 Reglas Lógicas de 2-SAT
+### 11.7 Reglas Lógicas de 2-SAT
 
 | Cláusula Deseada | Implicaciones en el Grafo de 2-SAT |
 | :--- | :--- |
@@ -6161,7 +12047,7 @@ struct MaxClique {
 
 ---
 
-### 10.8 Tabla de Constantes, Primos y Módulos Frecuentes
+### 11.8 Tabla de Constantes, Primos y Módulos Frecuentes
 
 | Tipo | Constante / Primo | Propiedades Clave |
 | :--- | :--- | :--- |
@@ -6171,15 +12057,15 @@ struct MaxClique {
 | **NTT Primo 1** | $998244353 = 119 \cdot 2^{23} + 1$ | Raíz primitiva $g = 3$. Soporta transformadas de tamaño hasta $2^{23} \approx 8.38 \times 10^6$. |
 | **NTT Primo 2** | $1004535809 = 479 \cdot 2^{21} + 1$ | Raíz primitiva $g = 3$. Soporta tamaños hasta $2^{21} \approx 2.09 \times 10^6$. |
 | **NTT Primo 3** | $469762049 = 7 \cdot 2^{26} + 1$ | Raíz primitiva $g = 3$. Soporta tamaños hasta $2^{26} \approx 6.71 \times 10^7$. |
-| **64-bit Prime** | $10^{18} + 9 = 1000000000000000009$ | Primo de 64 bits para pruebas con Miller-Rabin. |
-| **64-bit Prime** | $10^{18} + 31 = 1000000000000000031$ | Segundo primo de 64 bits. |
-| **Bases Miller-Rabin** | $\{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37\}$ | Conjunto determinista para probar primalidad de cualquier $N < 2^{64}$. |
+| **64-bit Prime** | $10^{18} + 9$ (`1000000000000000009`) | Primo de 64 bits para pruebas con Miller-Rabin. |
+| **64-bit Prime** | $10^{18} + 31$ (`1000000000000000031`) | Segundo primo de 64 bits. |
+| **Bases Miller-Rabin** | `2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37` | Conjunto determinista para probar primalidad de cualquier $N < 2^{64}$. |
 | **Primos Gemelos** | $(10^9 + 7, 10^9 + 9)$ | Pareja de primos gemelos útiles para hashes combinados. |
 
 
 ------------------------------------------------------------------------
 
-## Bloque 11: Python 3 para ICPC — Trucos, BigInt, Bases y Librería Estándar
+## Bloque 12: Python 3 para ICPC — Trucos, BigInt, Bases y Librería Estándar
 
 > **¿Cuándo usar Python en competencia?**:
 > - Cuando el problema requiere **BigInt** (miles de dígitos sin límite de 64 o 128 bits).
@@ -6189,8 +12075,32 @@ struct MaxClique {
 > - Cuando parsear strings en C++ tome decenas de líneas y en Python salga con `re` o `eval`.
 > - Cuando una DP con estados complejos (strings o tuplas) se resuelva en 5 líneas con `@cache`.
 
-### 11.1 Template Base, Fast I/O, Límites de Recursión y Digits en BigInt
+### 12.1 Template Base, Fast I/O, Límites de Recursión y Digits en BigInt
 
+- **Cuándo usar:** Plantilla inicial en Python 3 para lectura masiva de tokens (`sys.stdin.read().split()`), recursión profunda (`setrecursionlimit`) y conversión de enteros de más de 4300 dígitos a texto (`set_int_max_str_digits`).
+- **Cuándo no usar / alternativa:** En problemas interactivos donde debes leer línea por línea y hacer `flush`, no usar `sys.stdin.read()` (que espera hasta `EOF`); usar `sys.stdin.readline()` y `print(..., flush=True)`.
+- **Contrato:** En Python 3.11+, imprimir un entero de más de 4300 dígitos lanza `ValueError` si no se llama antes a `sys.set_int_max_str_digits(10**6)`. Dependencias: librería estándar de Python 3.
+- **Complejidad:** $\mathcal{O}(\text{tokens})$ para lectura completa de entrada.
+- **Formato de entrada:** `N`, seguido de `N` enteros en cualquier cantidad de líneas.
+
+**Entrada:**
+```text
+4
+10 20
+30 40
+```
+
+**Salida:**
+```text
+100
+```
+
+**Cómo leer la entrada:**
+```python
+data = [10, 20, 30, 40]
+```
+
+**Implementación:**
 ```python
 import sys
 from math import gcd, isqrt, comb, perm, factorial
@@ -6205,7 +12115,8 @@ import re
 # Aumentar limite de recursion para DFS profunda
 sys.setrecursionlimit(10**6)
 
-# OBLIGATORIO en Python 3.11+ para BigInt > 4300 digitos a string
+# OBLIGATORIO en Python 3.11+ para BigInt > 4300 digitos a
+# string
 sys.set_int_max_str_digits(10**6)
 
 def solve():
@@ -6220,10 +12131,39 @@ if __name__ == '__main__':
     solve()
 ```
 
-### 11.2 Conversión de Bases Arbitrarias (Base $A \leftrightarrow B$) y Formateo
+**Cómo llamarlo y producir la salida:**
+```python
+print(sum(data))
+```
 
-- **¿Cuándo usar?**: Convertir números entre cualquier base del rango $[2, 36]$ (o hasta $62$) sin implementar división manual.
+- **Trampas y adaptaciones:** (1) En PyPy3 / CPython, una recursión profunda con `@cache` o DFS que supere $10^5$ niveles puede agotar la pila del sistema operativo aunque `setrecursionlimit` sea alto; preferir BFS/iterativo si $N > 10^5$.
 
+### 12.2 Conversión de Bases Arbitrarias (Base $A \leftrightarrow B$) y Formateo
+
+- **Cuándo usar:** Convertir números (incluso gigantes) entre cualquier par de bases $A, B \in [2, 62]$ o formatear en binario/octal/hexadecimal con relleno de ceros.
+- **Cuándo no usar / alternativa:** No aplica.
+- **Contrato:** `int(s, base)` soporta nativamente bases $2 \le \text{base} \le 36$; `to_base(n, b)` soporta bases hasta $62$ (`0-9A-Za-z`) y maneja `n = 0` y negativos. Dependencias: ninguna.
+- **Complejidad:** $\mathcal{O}(L^2)$ para conversión de cadenas de longitud $L$ en BigInt.
+- **Formato de entrada:** Una cadena `s` y dos bases `base_a base_b`.
+
+**Entrada:**
+```text
+1A3F 16 2
+```
+
+**Salida:**
+```text
+1101000111111
+```
+
+**Cómo leer la entrada:**
+```python
+import sys
+s_in, ba, bb = sys.stdin.read().split()
+ba, bb = int(ba), int(bb)
+```
+
+**Implementación:**
 ```python
 # 1. De cualquier Base B a Entero Decimal: int(string, base)
 num = int("1A3F", 16)       # Hexadecimal a int -> 6719
@@ -6261,30 +12201,95 @@ def base_a_to_b(s: str, base_a: int, base_b: int) -> str:
     return to_base(int(s, base_a), base_b)
 ```
 
-### 11.3 Aritmética Gigante (BigInt), Potencia Modular y Raíz Entera
+**Cómo llamarlo y producir la salida:**
+```python
+print(base_a_to_b(s_in, ba, bb))
+```
 
-- **¿Cuándo usar?**: Multiplicación, suma y potencias de números de cientos de dígitos. `pow(b, e, mod)` se ejecuta en C a nivel interno en $\mathcal{O}(\log e)$.
+- **Trampas y adaptaciones:** (1) `bin(x)` devuelve el prefijo `'0b'` (y `'-0b'` si es negativo); usar `f'{x:b}'` evita tener que cortar `bin(x)[2:]`.
 
+### 12.3 Aritmética Gigante (BigInt), Potencia Modular y Raíz Entera
+
+- **Cuándo usar:** Operar con enteros de miles de dígitos sin overflow, calcular $b^e \pmod m$ en $\mathcal{O}(\log e)$ con `pow(b, e, mod)`, truncar divisiones hacia cero (`trunc_div`) y extraer $\lfloor\sqrt{N}\rfloor$ exacta con `math.isqrt(N)`.
+- **Cuándo no usar / alternativa:** Nunca escribir `(b ** e) % mod` (que construye el número gigante $b^e$ en memoria y da TLE/MLE); usar siempre el tercer argumento `pow(b, e, mod)`.
+- **Contrato:** En Python, `-7 // 3 == -3` (redondea hacia $-\infty$); `trunc_div(a, b)` trunca hacia cero igual que C++ usando solo aritmética entera (sin `int(a / b)`, que falla para $> 10^{16}$ por precisión de `float`). En Python 3.8+, `pow(a, -1, m)` calcula directamente el inverso modular. Dependencias: `from math import isqrt`.
+- **Complejidad:** `pow(b, e, m)` en $\mathcal{O}(\log e)$; `isqrt(N)` en $\mathcal{O}(M(\text{bits}))$.
+- **Formato de entrada:** Tres enteros `a b n_sq`.
+
+**Entrada:**
+```text
+-7 3 100000000000000000000
+```
+
+**Salida:**
+```text
+-2 10000000000
+```
+
+**Cómo leer la entrada:**
+```python
+import sys
+from math import isqrt
+a_in, b_in, n_sq = map(int, sys.stdin.read().split())
+```
+
+**Implementación:**
 ```python
 # Potencia Modular BigInt en O(log e): pow(b, e, mod)
 # Mucho mas veloz que (b ** e) % mod
 ans = pow(3, 10**18, 10**9 + 7)
 
-# Division entera con negativos:
-# En Python -7 // 3 da -3 (hacia -infinito).
-# Para truncar hacia cero como en C++: int(-7 / 3) -> -2
+# Division entera con negativos (sin usar float, exacto para
+# BigInt):
+# En Python -7 // 3 da -3 (floor hacia -infinito).
+# Para truncar hacia cero como en C++ sin perder precision
+# en BigInt:
+def trunc_div(a: int, b: int) -> int:
+    return -(
+        abs(
+            a) // abs(
+                b)) if (
+                    a < 0) ^ (b < 0) else abs(a) // abs(b)
 
 # Raiz Cuadrada Entera Exacta: isqrt(N)
-# Retorna floor(sqrt(N)) sin perder precision de punto flotante
+# Retorna floor(sqrt(N)) sin perder precision de punto
+# flotante
 r = isqrt(10**50)  # 10^25 exacto (double fallaria aqui)
 ```
 
-### 11.4 Fracciones Exactas (`Fraction`) y Decimales de Alta Precisión (`Decimal`)
+**Cómo llamarlo y producir la salida:**
+```python
+print(trunc_div(a_in, b_in), isqrt(n_sq))
+```
 
-- **¿Cuándo usar?**:
-  - `Fraction`: Cálculos de probabilidad o geometría donde se exige respuesta irreducible $P/Q$.
-  - `Decimal`: Problemas con $100$ o más dígitos de precisión donde `long double` sufre redondeos.
+- **Trampas y adaptaciones:** (1) Nunca usar `int(math.sqrt(N))` para $N > 10^{15}$; usar siempre `math.isqrt(N)`.
 
+### 12.4 Fracciones Exactas (`Fraction`) y Decimales de Alta Precisión (`Decimal`)
+
+- **Cuándo usar:** Geometría, probabilidades o sistemas lineales pequeños donde el punto flotante de 64/80 bits da WA por precisión, o cálculo de raíces/divisiones con 100+ cifras decimales exactas.
+- **Cuándo no usar / alternativa:** Si el denominador crece exponencialmente en miles de pasos, `Fraction` se vuelve lento por el cálculo de GCD en cada suma.
+- **Contrato:** Construir siempre `Fraction(num, den)` o `Fraction('0.25')` (desde `str`, nunca desde `float` binario inexacto). En `Decimal`, ajustar `getcontext().prec = 100` antes de operar. Dependencias: `fractions`, `decimal`.
+- **Complejidad:** $\mathcal{O}(\log(\text{den}))$ por operación racional.
+- **Formato de entrada:** No requiere entrada externa (demostración autocontenida).
+
+**Entrada:**
+```text
+3 6
+```
+
+**Salida:**
+```text
+3/4
+1.41421
+```
+
+**Cómo leer la entrada:**
+```python
+import sys
+p_in, q_in = map(int, sys.stdin.read().split())
+```
+
+**Implementación:**
 ```python
 # 1. Fracciones Exactas (simplifica automaticamente)
 from fractions import Fraction
@@ -6302,10 +12307,40 @@ pi_approx = Decimal(22) / Decimal(7)
 raiz_2 = Decimal(2).sqrt()
 ```
 
-### 11.5 Manejo de Fechas y Calendarios (`datetime`)
+**Cómo llamarlo y producir la salida:**
+```python
+print(f"{raiz_2:.5f}")
+```
 
-- **¿Cuándo usar?**: Contar días entre dos fechas, saber qué día de la semana cayó una fecha o sumar días considerando años bisiestos.
+- **Trampas y adaptaciones:** (1) `Decimal(0.1)` hereda la imprecisión binaria de `float`; pasar siempre strings `Decimal('0.1')` o enteros `Decimal(1) / Decimal(10)`.
 
+### 12.5 Manejo de Fechas y Calendarios (`datetime`)
+
+- **Cuándo usar:** Contar días exactos entre dos fechas, avanzar/retroceder $K$ días o determinar el día de la semana respetando años bisiestos automáticamente.
+- **Cuándo no usar / alternativa:** Si los años superan `9999` (`datetime.MAXYEAR = 9999`), reducir el año módulo `400` (el calendario gregoriano se repite exactamente cada $400$ años = $146097$ días).
+- **Contrato:** `weekday()` retorna `0` para Lunes hasta `6` para Domingo. Dependencias: `import datetime`.
+- **Complejidad:** $\mathcal{O}(1)$ tiempo y memoria.
+- **Formato de entrada:** Dos fechas `Y1 M1 D1` y `Y2 M2 D2`.
+
+**Entrada:**
+```text
+2024 2 28
+2024 3 1
+```
+
+**Salida:**
+```text
+2 2
+```
+
+**Cómo leer la entrada:**
+```python
+import sys, datetime
+y1, m1, day1, y2, m2, day2 = map(int,
+    sys.stdin.read().split())
+```
+
+**Implementación:**
 ```python
 import datetime
 
@@ -6326,10 +12361,45 @@ dia_sem = d1.weekday()
 texto = d1.strftime("%Y-%m-%d, %A")
 ```
 
-### 11.6 DP con Memoización Automática (`@cache` / `cache_clear`)
+**Cómo llamarlo y producir la salida:**
+```python
+dt1 = datetime.date(y1, m1, day1)
+dt2 = datetime.date(y2, m2, day2)
+print((dt2 - dt1).days, dt1.weekday())
+```
 
-- **¿Cuándo usar?**: Programación dinámica top-down con estados compuestos (tuplas, strings o enteros con offsets negativos). Evita matrices manuales y llamadas a `memset`.
+- **Trampas y adaptaciones:** (1) El ciclo gregoriano de 400 años tiene exactamente $400 \times 365 + 97 = 146097$ días, que es divisible por $7$ (por lo que los días de la semana también coinciden cada 400 años).
 
+### 12.6 DP con Memoización Automática (`@cache` / `cache_clear`)
+
+- **Cuándo usar:** Prototipar rápidamente DP top-down sobre estados dispersos (Digit DP, juegos, árboles) sin dimensionar arreglos multidimensionales a mano.
+- **Cuándo no usar / alternativa:** Si el estado es denso y hay millones de transiciones simples, un bucle iterativo en C++ (Bloque 8) es $20\times$–$50\times$ más rápido.
+- **Contrato:** Todos los argumentos de la función decorada con `@cache` deben ser *hashables* (`int`, `str`, `tuple`; nunca `list`). Llamar `dp.cache_clear()` al final de cada caso de prueba en problemas multi-test. Dependencias: `from functools import cache`.
+- **Complejidad:** Tiempo y memoria proporcionales al número de estados alcanzables.
+- **Formato de entrada:** `N W`, seguido de `N` pesos y `N` valores.
+
+**Entrada:**
+```text
+3 5
+2 3 4
+3 4 5
+```
+
+**Salida:**
+```text
+7
+```
+
+**Cómo leer la entrada:**
+```python
+import sys
+it = map(int, sys.stdin.read().split())
+n, W = next(it), next(it)
+weight = [next(it) for _ in range(n)]
+val = [next(it) for _ in range(n)]
+```
+
+**Implementación:**
 ```python
 from functools import cache
 
@@ -6342,17 +12412,47 @@ def dp(i: int, rem_weight: int) -> int:
     res = dp(i + 1, rem_weight)
     # Opcion 2: Tomar
     if weight[i] <= rem_weight:
-        res = max(res, val[i] + dp(i + 1, rem_weight - weight[i]))
+        res = max(res, val[i] + dp(i + 1,
+            rem_weight - weight[i]))
     return res
 
 # Limpiar memoizacion entre casos de prueba:
 dp.cache_clear()
 ```
 
-### 11.7 Extracción de Números en Texto Sucio con Expresiones Regulares (`re`)
+**Cómo llamarlo y producir la salida:**
+```python
+print(dp(0, W))
+dp.cache_clear()
+```
 
-- **¿Cuándo usar?**: Cuando la entrada tiene formatos irregulares o molestos (ej. `Point(x=12, y=-45) -> [100, -5]`).
+- **Trampas y adaptaciones:** (1) Si olvidas `dp.cache_clear()` entre casos de prueba que leen arreglos globales `weight`/`val`, Python reutilizará resultados del caso anterior y dará WA.
 
+### 12.7 Extracción de Números en Texto Sucio con Expresiones Regulares (`re`)
+
+- **Cuándo usar:** Parsear entradas con formato sucio (coordenadas entre paréntesis, comas, signos, etiquetas de texto) extrayendo todos los enteros en una sola línea.
+- **Cuándo no usar / alternativa:** Si la entrada solo contiene enteros separados por espacios, `map(int, sys.stdin.read().split())` es más rápido.
+- **Contrato:** `re.findall(r'-?\d+', s)` extrae todos los enteros con o sin signo `-`. Dependencias: `import re`.
+- **Complejidad:** $\mathcal{O}(|S|)$ tiempo y memoria.
+- **Formato de entrada:** Una línea de texto con enteros embebidos.
+
+**Entrada:**
+```text
+x=-15, y=+40, z=10
+```
+
+**Salida:**
+```text
+35
+```
+
+**Cómo leer la entrada:**
+```python
+import sys
+line_in = sys.stdin.read()
+```
+
+**Implementación:**
 ```python
 import re
 
@@ -6362,10 +12462,39 @@ nums = [int(x) for x in re.findall(r'-?\d+', s)]
 # nums = [15, -42, 100, -5, 8]
 ```
 
-### 11.8 Frecuencias y Álgebra de Multiconjuntos (`Counter`)
+**Cómo llamarlo y producir la salida:**
+```python
+vals = [int(x) for x in re.findall(r'-?\d+', line_in)]
+print(sum(vals))
+```
 
-- **¿Cuándo usar?**: Conteo de frecuencias, multiconjuntos y hallar los $K$ elementos más frecuentes.
+- **Trampas y adaptaciones:** (1) Si `'2026-11-01'` debe leerse como tres números positivos separados por guiones y no como `2026, -11, -1`, usar `r'\d+'` sin el `-?`.
 
+### 12.8 Frecuencias y Álgebra de Multiconjuntos (`Counter`)
+
+- **Cuándo usar:** Contar frecuencias de elementos o caracteres en $\mathcal{O}(N)$, hallar los $K$ más frecuentes (`most_common(K)`) u operar multiconjuntos con suma `+`, resta `-`, intersección `&` (mínimo) y unión `|` (máximo).
+- **Cuándo no usar / alternativa:** Si un adversario construye colisiones contra el hash de enteros en Codeforces/AtCoder con `Counter(int)`, envolver las llaves con `x ^ RANDOM_SEED` o convertirlas a `str`.
+- **Contrato:** La resta `c1 - c2` elimina automáticamente las llaves cuya frecuencia quede $\le 0$; para conservar negativos usar `c1.subtract(c2)`. Dependencias: `from collections import Counter`.
+- **Complejidad:** $\mathcal{O}(N)$ esperado.
+- **Formato de entrada:** Una cadena `s`.
+
+**Entrada:**
+```text
+abracadabra
+```
+
+**Salida:**
+```text
+a 5
+```
+
+**Cómo leer la entrada:**
+```python
+import sys
+s_in = sys.stdin.read().strip()
+```
+
+**Implementación:**
 ```python
 from collections import Counter
 
@@ -6374,18 +12503,53 @@ c2 = Counter([2, 3, 3, 4])
 
 # Operaciones algebraicas de multiconjuntos:
 suma  = c1 + c2     # Suma conteos: {2: 3, 3: 3, 1: 1, 4: 1}
-resta = c1 - c2     # Resta (mantiene solo positivos): {1: 1, 2: 1}
-inter = c1 & c2     # Minimo conteo (interseccion): {2: 1, 3: 1}
-union = c1 | c2     # Maximo conteo (union): {1: 1, 2: 2, 3: 2, 4: 1}
+# Resta (mantiene solo positivos): {1: 1, 2: 1}
+resta = c1 - c2
+# Minimo conteo (interseccion): {2: 1, 3: 1}
+inter = c1 & c2
+# Maximo conteo (union): {1: 1, 2: 2, 3: 2, 4: 1}
+union = c1 | c2
 
 # Top K elementos mas frecuentes en O(N log K):
 top2 = c1.most_common(2) # [(2, 2), (1, 1)]
 ```
 
-### 11.9 Agrupación y Grafos Instantáneos (`defaultdict`)
+**Cómo llamarlo y producir la salida:**
+```python
+ch, cnt = Counter(s_in).most_common(1)[0]
+print(ch, cnt)
+```
 
-- **¿Cuándo usar?**: Listas de adyacencia de grafos o agrupamientos sin necesidad de inicializar tamaños $N$.
+- **Trampas y adaptaciones:** (1) `sum(c.values())` (o `c.total()` en Python 3.10+) devuelve el total de elementos contando multiplicidades.
 
+### 12.9 Agrupación y Grafos Instantáneos (`defaultdict`)
+
+- **Cuándo usar:** Agrupar elementos por clave (ej. anagramas por firma ordenada `''.join(sorted(w))`) o representar grafos dispersos con etiquetas arbitrarias (strings, tuplas) sin inicializar llaves previamente.
+- **Cuándo no usar / alternativa:** Si los nodos son enteros `0..N-1`, una lista de listas `[[] for _ in range(N)]` es más rápida y consume menos memoria.
+- **Contrato:** Al acceder a `d[k]` por primera vez, invoca la fábrica (`list`, `int`, `set`) y crea la entrada automáticamente. Dependencias: `from collections import defaultdict`.
+- **Complejidad:** $\mathcal{O}(1)$ promedio por acceso/inserción.
+- **Formato de entrada:** `u v`, seguido de palabras para agrupar por anagrama.
+
+**Entrada:**
+```text
+1 2
+eat tea tan ate nat bat
+```
+
+**Salida:**
+```text
+3
+```
+
+**Cómo leer la entrada:**
+```python
+import sys
+toks = sys.stdin.read().split()
+u, v = int(toks[0]), int(toks[1])
+words = toks[2:]
+```
+
+**Implementación:**
 ```python
 from collections import defaultdict
 
@@ -6399,10 +12563,39 @@ for w in words:
     grupos["".join(sorted(w))].append(w)
 ```
 
-### 11.10 Rotación y Transposición de Matrices en 1 Línea (`zip(*mat)`)
+**Cómo llamarlo y producir la salida:**
+```python
+print(len(grupos))
+```
 
-- **¿Cuándo usar?**: Rotar grillas 2D en simulaciones sin bucles anidados manuales.
+- **Trampas y adaptaciones:** (1) Iterar `for k in d:` mientras lees `d[otra_llave]` dentro del bucle lanza `RuntimeError: dictionary changed size during iteration`; usar `d.get(otra_llave)` si no quieres crear llaves vacías.
 
+### 12.10 Rotación y Transposición de Matrices en 1 Línea (`zip(*mat)`)
+
+- **Cuándo usar:** Transponer una grilla $R \times C$ (convertir columnas en filas) o rotarla $90^\circ$ en sentido horario o antihorario en una sola línea.
+- **Cuándo no usar / alternativa:** No aplica.
+- **Contrato:** `zip(*mat)` empareja los elementos de igual columna de cada fila. `col[::-1]` invierte cada columna para rotar $90^\circ$ en sentido horario. Dependencias: ninguna.
+- **Complejidad:** $\mathcal{O}(R \cdot C)$ tiempo y memoria.
+- **Formato de entrada:** No requiere entrada adicional (opera sobre `mat`).
+
+**Entrada:**
+```text
+
+```
+
+**Salida:**
+```text
+4 1
+5 2
+6 3
+```
+
+**Cómo leer la entrada:**
+```python
+
+```
+
+**Implementación:**
 ```python
 mat = [
     [1, 2, 3],
@@ -6419,10 +12612,38 @@ rot90 = [list(col[::-1]) for col in zip(*mat)]
 rot90_ccw = [list(col) for col in zip(*mat)][::-1]
 ```
 
-### 11.11 Álgebra de Conjuntos Nativos (`set`)
+**Cómo llamarlo y producir la salida:**
+```python
+for row in rot90:
+    print(*row)
+```
 
-- **¿Cuándo usar?**: Unión, intersección o diferencia de conjuntos en $\mathcal{O}(\min(|A|, |B|))$ sin ordenar previamente como en `std::set_intersection`.
+- **Trampas y adaptaciones:** (1) Si las filas son strings (`['abc', 'def']`), usar `[''.join(col) for col in zip(*mat)]` para obtener una lista de strings.
 
+### 12.11 Álgebra de Conjuntos Nativos (`set`)
+
+- **Cuándo usar:** Operaciones de intersección (`A & B`), unión (`A | B`), diferencia (`A - B`), diferencia simétrica (`A ^ B`) y prueba de subconjunto (`A <= B`).
+- **Cuándo no usar / alternativa:** Si necesitas mantener los elementos **ordenados** con búsqueda binaria (`lower_bound`), el `set` de Python es una tabla hash desordenada; usar C++ `std::set` o `ordered_set` (§1.3).
+- **Contrato:** `set()` crea un conjunto vacío (`{}` crea un diccionario vacío). Dependencias: ninguna.
+- **Complejidad:** $\mathcal{O}(|A| + |B|)$ para operaciones binarias entre conjuntos.
+- **Formato de entrada:** No requiere entrada adicional.
+
+**Entrada:**
+```text
+
+```
+
+**Salida:**
+```text
+2 6 4
+```
+
+**Cómo leer la entrada:**
+```python
+
+```
+
+**Implementación:**
 ```python
 A = {1, 2, 3, 4}
 B = {3, 4, 5, 6}
@@ -6434,10 +12655,38 @@ simet = A ^ B       # Diferencia simetrica: {1, 2, 5, 6}
 sub   = A <= B      # True si A es subconjunto de B
 ```
 
-### 11.12 Bits en Números Gigantes (`bit_count`, `bit_length`)
+**Cómo llamarlo y producir la salida:**
+```python
+print(len(inter), len(union), len(simet))
+```
 
-- **¿Cuándo usar?**: Operaciones de bits sobre números que exceden 64 bits (donde `__builtin_popcountll` en C++ no funciona).
+- **Trampas y adaptaciones:** (1) Un `set` no puede contener elementos mutables (`list`, `set`); usar `tuple` o `frozenset` si necesitas un conjunto de conjuntos.
 
+### 12.12 Bits en Números Gigantes (`bit_count`, `bit_length`)
+
+- **Cuándo usar:** Contar bits encendidos (`n.bit_count()`, equivalente a `popcount`) o el índice del bit más alto (`n.bit_length()`, cantidad de bits necesarios para representar `n`) en enteros de precisión arbitraria.
+- **Cuándo no usar / alternativa:** En Python $< 3.10$ donde no exista `bit_count()`, usar `bin(n).count('1')`.
+- **Contrato:** Para `n = 0`, `0.bit_count() == 0` y `0.bit_length() == 0`. Para $n > 0$, $\lfloor \log_2 n \rfloor = \text{n.bit\_length}() - 1$. Dependencias: Python 3.10+.
+- **Complejidad:** $\mathcal{O}(\text{palabras de } n)$.
+- **Formato de entrada:** Un entero no negativo `x`.
+
+**Entrada:**
+```text
+255
+```
+
+**Salida:**
+```text
+8 8
+```
+
+**Cómo leer la entrada:**
+```python
+import sys
+x_in = int(sys.stdin.read())
+```
+
+**Implementación:**
 ```python
 n = 10**60
 
@@ -6448,29 +12697,92 @@ unos = n.bit_count()
 bits_necesarios = n.bit_length()
 ```
 
-### 11.13 Búsqueda Binaria con Proyección (`bisect` con `key`) y Ordenamiento Multi-Criterio
+**Cómo llamarlo y producir la salida:**
+```python
+print(x_in.bit_count(), x_in.bit_length())
+```
 
-- **¿Cuándo usar?**: Búsqueda binaria sobre arreglos de tuplas sin struct ficticio, y ordenamiento con múltiples criterios de desempate.
+- **Trampas y adaptaciones:** (1) En Python los enteros con signo negativo tienen extensión infinita de bits en complemento a 2 (`~x == -x - 1`); aplicar siempre máscara `(x & ((1 << B) - 1))` si simulas registros de $B$ bits.
 
+### 12.13 Búsqueda Binaria con Proyección (`bisect` con `key`) y Ordenamiento Multi-Criterio
+
+- **Cuándo usar:** Hacer `lower_bound` (`bisect_left`) o `upper_bound` (`bisect_right`) proyectando por un atributo con `key=`, u ordenar objetos por múltiples criterios ascendentes/descendentes.
+- **Cuándo no usar / alternativa:** En Python $< 3.10$ el parámetro `key=` no existe en `bisect`; en ese caso buscar sobre una lista de tuplas `(clave, ...)`.
+- **Contrato:** El `sort` de Python (*Timsort*) es **estable** y $\mathcal{O}(N \log N)$ ($\mathcal{O}(N)$ en datos casi ordenados). Dependencias: `import bisect`.
+- **Complejidad:** `bisect` en $\mathcal{O}(\log N)$; `sort` en $\mathcal{O}(N \log N)$.
+- **Formato de entrada:** Un umbral de tiempo `t_q`.
+
+**Entrada:**
+```text
+30
+```
+
+**Salida:**
+```text
+2 Alice
+```
+
+**Cómo leer la entrada:**
+```python
+import sys
+t_q = int(sys.stdin.read())
+jugadores = [
+    {'nom': 'Bob', 'pts': 100, 'pen': 50},
+    {'nom': 'Alice', 'pts': 100, 'pen': 30},
+]
+```
+
+**Implementación:**
 ```python
 import bisect
 
 # 1. Búsqueda binaria con funcion key (Python 3.10+):
 eventos = [(10, "A"), (25, "B"), (40, "C"), (90, "D")]
 # lower_bound por el primer elemento (tiempo >= 30):
-idx = bisect.bisect_left(eventos, 30, key=lambda x: x[0]) # idx = 2
+# idx = 2
+idx = bisect.bisect_left(eventos, 30, key=lambda x: x[0])
 
 # 2. Ordenamiento multi-criterio:
 # 1) Puntos descendente (-x['pts'])
 # 2) Penalidad ascendente (+x['pen'])
 # 3) Nombre alfabetico (+x['nom'])
-jugadores.sort(key=lambda x: (-x['pts'], x['pen'], x['nom']))
+jugadores.sort(key=lambda x: (-x['pts'], x['pen'],
+    x['nom']))
 ```
 
-### 11.14 Combinatoria y Generadores Nativos (`comb`, `perm`, `itertools`)
+**Cómo llamarlo y producir la salida:**
+```python
+pos = bisect.bisect_left(eventos, t_q, key=lambda x: x[0])
+print(pos, jugadores[0]['nom'])
+```
 
-- **¿Cuándo usar?**: Calcular combinaciones gigantes $nCr$ en $\mathcal{O}(\min(k, n-k))$ o generar permutaciones sin `next_permutation`.
+- **Trampas y adaptaciones:** (1) Para ordenar strings en orden **descendente** dentro de una tupla mixta sin implementar `cmp_to_key`, aprovechar la estabilidad de `sort` ordenando primero por el criterio secundario y luego por el primario.
 
+### 12.14 Combinatoria y Generadores Nativos (`comb`, `perm`, `itertools`)
+
+- **Cuándo usar:** Calcular $\binom{n}{k}$, $P(n, k)$ o $n!$ exactos en enteros gigantes, o iterar todas las permutaciones, combinaciones y productos cartesianos en pocas líneas para fuerza bruta o *stress testing*.
+- **Cuándo no usar / alternativa:** Si necesitas $\binom{n}{k} \pmod{10^9+7}$ para $n = 10^6$, `math.comb(10**6, 5*10**5)` construye un número de $300\,000$ bits y da TLE; usar factoriales modulares (§7.4.2).
+- **Contrato:** `comb(n, k)` retorna `0` si $k < 0$ o $k > n$. `permutations`, `combinations` y `product` devuelven iteradores perezosos en orden lexicográfico. Dependencias: `math`, `itertools`.
+- **Complejidad:** $\mathcal{O}(k)$ operaciones BigInt para `comb(n, k)`.
+- **Formato de entrada:** Dos enteros `n k`.
+
+**Entrada:**
+```text
+6 2
+```
+
+**Salida:**
+```text
+15 6 6 8
+```
+
+**Cómo leer la entrada:**
+```python
+import sys
+n_in, k_in = map(int, sys.stdin.read().split())
+```
+
+**Implementación:**
 ```python
 from math import comb, perm, factorial
 from itertools import permutations, combinations, product
@@ -6483,18 +12795,58 @@ fact_100 = factorial(100)
 # Generacion exhaustiva:
 perms = list(permutations([1, 2, 3]))        # 3! formas
 combs = list(combinations([1, 2, 3, 4], 2))  # 4C2 formas
-cart  = list(product([0, 1], repeat=3))      # 2^3 producto cartesiano
+# 2^3 producto cartesiano
+cart  = list(product([0, 1], repeat=3))
 ```
 
-### 11.15 Evaluación de Expresiones Aritméticas (`eval`)
+**Cómo llamarlo y producir la salida:**
+```python
+print(comb(n_in, k_in), len(perms), len(combs), len(cart))
+```
 
-- **¿Cuándo usar?**: Evaluar expresiones aritméticas en strings con paréntesis y precedencia en 1 sola línea.
+- **Trampas y adaptaciones:** (1) `itertools.combinations_with_replacement(iterable, r)` genera multiconjuntos de tamaño `r` con repetición permitida.
 
+### 12.15 Evaluación de Expresiones Aritméticas (`eval`)
+
+- **Cuándo usar:** Evaluar expresiones con paréntesis, `+`, `-`, `*`, `//`, `%`, `**` o bitmasks (`|`, `&`, `^`) directamente con el parser de Python.
+- **Cuándo no usar / alternativa:** Si hay divisiones con operandos **negativos** y el problema exige truncamiento hacia cero estilo C++ (`-7 / 3 == -2`), `//` de Python dará `-3` (hacia $-\infty$); en ese caso usar `ExpressionParser` en C++ (§10.2).
+- **Contrato:** La expresión regular `r'(?<!/)/(?!/)'` reemplaza únicamente las barras simples `/` por división entera `//` sin corromper los `//` que ya existían en la cadena. Dependencias: `import re`.
+- **Complejidad:** $\mathcal{O}(|S|)$ para expresiones con enteros de tamaño fijo.
+- **Formato de entrada:** Una línea con la expresión aritmética.
+
+**Entrada:**
+```text
+(10 + 20) / 3 + 8 // 2
+```
+
+**Salida:**
+```text
+14
+```
+
+**Cómo leer la entrada:**
+```python
+import sys
+s_in = sys.stdin.read().strip()
+```
+
+**Implementación:**
 ```python
 # eval() procesa operadores (+, -, *, //, %, **)
 expr = "((15 + 25) * 3) // 4"
 resultado = eval(expr)      # 30
 
-# Reemplazar division para forzar division entera:
-expr_safe = expr.replace("/", "//")
+# Reemplazar solo '/' simples por '//' sin duplicar '//'
+# existentes:
+import re
+expr_safe = re.sub(r"(?<!/)/(?!/)", "//", expr)
 ```
+
+**Cómo llamarlo y producir la salida:**
+```python
+s_safe = re.sub(r"(?<!/)/(?!/)", "//", s_in)
+print(eval(s_safe))
+```
+
+- **Trampas y adaptaciones:** (1) Nunca usar `.replace('/', '//')` porque convertiría un `'//'` ya existente en `'////'` (`SyntaxError`).
+
