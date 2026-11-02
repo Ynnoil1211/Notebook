@@ -13,6 +13,13 @@
 
 -- dsu.cpp
 
+- **Lectura de entrada y uso:** Crear `DSU dsu(n)` (1-indexed), leer $M$ aristas `u v` y unir/consultar componentes:
+```cpp
+int n, m; cin >> n >> m;
+DSU dsu(n);
+forn(i, m) { int u, v; cin >> u >> v; dsu.unite(u, v); }
+// dsu.same(u, v), dsu.get_size(u), dsu.num_comp
+```
 - **Trampas y adaptaciones:** (1) Acceder siempre a las propiedades del componente a través de su representante `dsu.find(u)` (nunca `sz[u]` directo); (2) `num_comp` se inicializa en `n` (si usas nodos `1..n`, ignora el índice `0`).
 
 #### 4.1.2 DSU con Rollback y Conectividad Dinámica Offline (`RollbackDSU`, `DynCon`) [opcional]
@@ -24,6 +31,21 @@
 
 -- rollback_dsu.cpp
 
+- **Lectura de entrada y uso:** Registrar operaciones offline (`+` agregar, `-` borrar, `?` consultar componentes) y llamar `dc.solve()`:
+```cpp
+int n, q; cin >> n >> q;
+DynCon dc(n);
+while (q--) {
+  char op; cin >> op;
+  if (op == '?') dc.add_query();
+  else {
+    int u, v; cin >> u >> v;
+    if (op == '+') dc.add_edge(u, v);
+    else dc.rem_edge(u, v);
+  }
+}
+vi ans = dc.solve();
+```
 - **Trampas y adaptaciones:** (1) No agregar compresión de caminos a `RollbackDSU::find`, porque destruiría el historial de `rollback`; (2) si pueden insertarse aristas paralelas idénticas, guardar un `vector<int>` de tiempos de inicio en `active[{u, v}]` en vez de un solo `int`.
 
 ------------------------------------------------------------------------
@@ -37,6 +59,15 @@
 
 -- sparse_table.cpp
 
+- **Lectura de entrada y uso:** Leer `a[0..n-1]`, construir `SparseTable st(a)` y consultar en **0-based** (`l - 1, r - 1` si el input es 1-based):
+```cpp
+int n, q; cin >> n >> q;
+vll a(n); forn(i, n) cin >> a[i];
+SparseTable st(a);
+while (q--) {
+  int l, r; cin >> l >> r; cout << st.query(l, r) << "\n";
+}
+```
 - **Trampas y adaptaciones:** (1) Verificar siempre `L <= R` antes de llamar a `query(L, R)` (de lo contrario `R - L + 1 <= 0` indexa fuera de `lg`).
 
 ------------------------------------------------------------------------
@@ -52,6 +83,17 @@
 
 -- fenwick_1d.cpp
 
+- **Lectura de entrada y uso:** Indexación **1-based** (`1..n`); cargar con `ft.add(i, x)` y consultar `ft.query(l, r)` o `ft.lower_bound(k)`:
+```cpp
+int n, q; cin >> n >> q;
+Fenwick ft(n);
+for1(i, n) { ll x; cin >> x; ft.add(i, x); }
+while (q--) {
+  int t, l, r; cin >> t >> l >> r;
+  if (t == 1) ft.add(l, r); // suma r en pos l (1-based)
+  else cout << ft.query(l, r) << "\n";
+}
+```
 - **Trampas y adaptaciones:** (1) **Jamás** llamar `ft.add(0, delta)`: como `0 & -0 == 0`, produce un **bucle infinito**; si tus datos son 0-based, suma `+ 1` al índice.
 
 #### 4.3.2 Fenwick Tree 2D (`Fenwick2D`) [opcional]
@@ -78,6 +120,17 @@
 
 -- segtree_iter.cpp
 
+- **Lectura de entrada y uso:** Indexación **0-based** (`0..n-1`); restar 1 si la entrada viene 1-based (`p - 1`, `l - 1, r - 1`):
+```cpp
+int n, q; cin >> n >> q;
+vll a(n); forn(i, n) cin >> a[i];
+IterSegTree st(a); // o SegTree st(a) (4.4.2)
+while (q--) {
+  int t, x, y; cin >> t >> x >> y;
+  if (t == 1) st.update(x - 1, y); // asigna a[x-1] = y
+  else cout << st.query(x - 1, y - 1) << "\n";
+}
+```
 - **Trampas y adaptaciones:** (1) Aunque internamente el bucle convierte a semiabierto `[l, r + 1)`, la interfaz pública `query(l, r)` recibe un rango **cerrado** `[l, r]` 0-based.
 
 #### 4.4.2 Segment Tree Recursivo Clásico (`SegTree`)
@@ -104,6 +157,17 @@
 
 -- lazy_segtree.cpp
 
+- **Lectura de entrada y uso:** Indexación **0-based** (`0..n-1`); si las consultas `l r` son 1-based, pasar `l - 1, r - 1`:
+```cpp
+int n, q; cin >> n >> q;
+vll a(n); forn(i, n) cin >> a[i];
+LazySegTree st(a);
+while (q--) {
+  int t, l, r; cin >> t >> l >> r; --l; --r;
+  if (t == 1) { ll v; cin >> v; st.add_range(l, r, v); }
+  else cout << st.query_sum(l, r) << "\n"; // o query_min
+}
+```
 - **Trampas y adaptaciones:** (1) Para soportar asignación en rango (`a[l..r] = v`) además de suma, mantener un booleano `has_set` y al aplicar un `set` limpiar el `lazy` de suma previo.
 
 #### 4.5.2 Segment Tree 2D Iterativo (`SegTree2D`) [opcional]
@@ -126,6 +190,12 @@
 
 -- persistent_segtree.cpp
 
+- **Lectura de entrada y uso:** Versión inicial es `0` (0-based `0..n-1`); `create_version` retorna el ID de la nueva versión:
+```cpp
+PersistentST pst(a); // version 0
+int v1 = pst.create_version(0, pos, val); // pos 0-based
+ll sum = pst.query_version(v1, l, r);     // [l, r] 0-based
+```
 - **Trampas y adaptaciones:** (1) Con $Q$ actualizaciones se crean $\approx Q (\lceil \log_2 N \rceil + 2)$ nodos; `reserve` evita realocaciones.
 
 #### 4.5.4 Persistent Segment Tree de Frecuencias: $k$-ésimo en Subarreglo (`PersistentFreqST`) [opcional]
@@ -137,6 +207,11 @@
 
 -- persistent_freq_segtree.cpp
 
+- **Lectura de entrada y uso:** Rango `[l, r]` **0-based**, orden `k` **1-based** ($1 \le k \le r - l + 1$):
+```cpp
+PersistentFreqST pst(a);
+ll kth = pst.query_kth(l, r, k); // l,r 0-based; k 1-based
+```
 - **Trampas y adaptaciones:** (1) Verificar siempre `1 <= k && k <= r - l + 1` antes de llamar a `query_kth(l, r, k)`.
 
 ------------------------------------------------------------------------
@@ -163,6 +238,14 @@
 
 -- mo_algorithm.cpp
 
+- **Lectura de entrada y uso:** Leer `a[0..n-1]` y consultas 0-based `{l, r, id}`:
+```cpp
+int n, q; cin >> n >> q;
+vi a(n); forn(i, n) cin >> a[i];
+vector<MoQuery> qs(q);
+forn(i, q) { cin >> qs[i].l >> qs[i].r; qs[i].id = i; }
+vll ans = solve_mo(a, qs);
+```
 - **Trampas y adaptaciones:** (1) **Orden de los 4 `while`**: siempre expandir (`--cur_l`, `++cur_r`) **antes** de contraer (`cur_l++`, `cur_r--`); de lo contrario `cur_l` puede cruzar a `cur_r + 2` y causar conteos negativos.
 
 ------------------------------------------------------------------------
@@ -176,6 +259,14 @@
 
 -- implicit_treap.cpp
 
+- **Lectura de entrada y uso:** Insertar elementos en `0..n-1` y operar por rango **0-based** `[l, r]`:
+```cpp
+ImplicitTreap tr;
+forn(i, n) tr.insert(i, a[i]);
+tr.reverse_range(l, r);   // invierte [l, r] (0-based)
+tr.add_range(l, r, val);  // suma val en [l, r]
+ll s = tr.query_sum(l, r);
+```
 - **Trampas y adaptaciones:** (1) En `split(t, l, r, k)`, el parámetro `k` es la **cantidad de elementos** que quedan en el árbol izquierdo `l` (es decir, índices `0..k-1`), no un valor de llave.
 
 ------------------------------------------------------------------------
@@ -191,6 +282,17 @@
 
 -- hld.cpp
 
+- **Lectura de entrada y uso:** Nodos **1-based** (`1..n`); pasar `vals[1..n]` y lista de adyacencia `g[1..n]`:
+```cpp
+int n, q; cin >> n >> q;
+vll vals(n + 1); for1(i, n) cin >> vals[i];
+vector<vi> g(n + 1);
+forn(i, n - 1) {
+  int u, v; cin >> u >> v; g[u].pb(v); g[v].pb(u);
+}
+HLD hld(n, 1, g, vals);
+// hld.update_node(u, x), hld.query_path(u, v)
+```
 - **Trampas y adaptaciones:** (1) Si los valores están en las **aristas** en lugar de los nodos, asignar el peso de cada arista al nodo hijo (el más profundo) y en la última etapa de `query_path` consultar `st.query(pos[u] + 1, pos[v])` para excluir el LCA `u`.
 
 #### 4.8.2 DSU on Tree / Small-to-Large en Subárboles (`pre_sack`, `dfs_sack`) [opcional]
@@ -202,6 +304,17 @@
 
 -- dsu_on_tree.cpp
 
+- **Lectura de entrada y uso:** Cargar `col_s[1..n]` y `adj_s[1..n]`, correr `pre_sack(1, 0)` y `dfs_sack(1, 0, false)`:
+```cpp
+int n; cin >> n; timer_s = 0;
+for1(i, n) {
+  cin >> col_s[i]; adj_s[i].clear(); big_c[i] = 0;
+}
+forn(i, n - 1) {
+  int u, v; cin >> u >> v; adj_s[u].pb(v); adj_s[v].pb(u);
+}
+pre_sack(1, 0); dfs_sack(1, 0, false); // ans_sack[1..n]
+```
 - **Trampas y adaptaciones:** (1) Entre casos de prueba múltiples, limpiar `adj_s[1..n]`, `big_c[1..n] = 0`, `timer_s = 0` y asegurarse de que la raíz se llame con `keep = false` si quieres dejar `cnt_col` limpio en 0 al terminar.
 
 ------------------------------------------------------------------------
@@ -215,4 +328,11 @@
 
 -- link_cut_tree.cpp
 
+- **Lectura de entrada y uso:** Nodos **1-based** (`1..n`); conectar con `lct.link(u, v)`, desconectar con `lct.cut(u, v)`:
+```cpp
+LinkCut lct(n);
+lct.link(u, v);          // agrega arista u-v
+lct.cut(u, v);           // elimina arista u-v
+bool ok = lct.connected(u, v);
+```
 - **Trampas y adaptaciones:** (1) Verificar siempre `!lct.connected(u, v)` antes de `lct.link(u, v)` porque crear un ciclo rompe la invariante de los Splay Trees auxiliares.

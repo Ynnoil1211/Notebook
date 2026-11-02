@@ -13,6 +13,13 @@
 
 -- knapsack.cpp
 
+- **Lectura de entrada y uso:** Leer $N$ ítems y capacidad $W$, cargar vectores `weight[0..n-1]` y `val[0..n-1]`:
+```cpp
+int n, W; cin >> n >> W;
+vi w(n); vll v(n);
+forn(i, n) cin >> w[i] >> v[i];
+cout << knapsack_01(W, w, v) << "\n";
+```
 - **Trampas y adaptaciones:** (1) Para **Unbounded Knapsack** (cada ítem se puede repetir infinitas veces), cambiar únicamente el bucle interno para que avance hacia adelante (`for (int w = weight[i]; w <= W; ++w)`).
 
 #### 8.1.2 Subsecuencia Común Más Larga con Reconstrucción (`lcs_string`)
@@ -57,6 +64,11 @@
 
 -- digit_dp.cpp
 
+- **Lectura de entrada y uso:** Para contar en el rango $[L, R]$, calcular `solve_digit_dp(R, K) - solve_digit_dp(L - 1, K)`:
+```cpp
+ll L, R; int K; cin >> L >> R >> K;
+ll ans = solve_digit_dp(R, K) - solve_digit_dp(L - 1, K);
+```
 - **Trampas y adaptaciones:** (1) Si la propiedad depende de los ceros a la izquierda (ej. contar ceros o exigir dígitos distintos), agregar una bandera booleana `started` al estado.
 
 #### 8.1.6 SOS DP / Suma Sobre Submáscaras (`sos_dp`) [opcional]
@@ -83,6 +95,13 @@
 
 -- subset_dp_assignment.cpp
 
+- **Lectura de entrada y uso:** Leer matriz 0-based `cost[0..n-1][0..n-1]` ($N \le 20$) y llamar `subset_assignment_dp(cost)`:
+```cpp
+int n; cin >> n;
+vector<vll> cost(n, vll(n));
+forn(i, n) forn(j, n) cin >> cost[i][j];
+cout << subset_assignment_dp(cost) << "\n";
+```
 - **Trampas y adaptaciones:** (1) Iterar solo los bits apagados o encendidos con `__builtin_ctz` reduce la constante práctica a la mitad.
 
 #### 8.2.2 DP de Caminos / Travelling Salesperson Problem con Reconstrucción (`tsp_subset_dp`)
@@ -94,6 +113,17 @@
 
 -- subset_dp_tsp.cpp
 
+- **Lectura de entrada y uso:** Inicializar `dist[0..n-1][0..n-1]` con `INF` y `dist[i][i] = 0`, cargar aristas 0-based y llamar `tsp_subset_dp`:
+```cpp
+int n, m; cin >> n >> m;
+vector<vll> dist(n, vll(n, INF));
+forn(i, n) dist[i][i] = 0;
+forn(i, m) {
+  int u, v; ll w; cin >> u >> v >> w; --u; --v;
+  dist[u][v] = min(dist[u][v], w);
+}
+auto [ans, path] = tsp_subset_dp(dist, 0, true);
+```
 - **Trampas y adaptaciones:** (1) Para camino Hamiltoniano que puede empezar en **cualquier** nodo, inicializar `dp[1 << i][i] = 0` para todo $i \in [0, N-1]$ y pasar `close_cycle = false`.
 
 ------------------------------------------------------------------------
@@ -107,6 +137,15 @@
 
 -- rerooting_dp.cpp
 
+- **Lectura de entrada y uso:** Leer árbol **1-based** en `adj[1..n]` y obtener respuesta para todas las raíces en `ans[1..n]`:
+```cpp
+int n; cin >> n;
+vector<vi> adj(n + 1);
+forn(i, n - 1) {
+  int u, v; cin >> u >> v; adj[u].pb(v); adj[v].pb(u);
+}
+vll ans = rerooting_sum_distances(n, adj); // ans[1..n]
+```
 - **Trampas y adaptaciones:** (1) Cuando la operación que combina hijos no es invertible (como `max` o producto módulo $M$), precalcular prefijos y sufijos sobre la lista de hijos de `u` para excluir la rama de `v` en $\mathcal{O}(1)$.
 
 ------------------------------------------------------------------------
@@ -122,6 +161,12 @@
 
 -- cht_dynamic.cpp
 
+- **Lectura de entrada y uso:** `LineContainer` halla el **máximo**; para **mínimo**, insertar `(-k, -m)` y negar `query(x)`:
+```cpp
+LineContainer cht;
+cht.add(-k, -m);        // inserta recta y = k*x + m (min)
+ll min_y = -cht.query(x);
+```
 - **Trampas y adaptaciones:** (1) No llamar `query(x)` con el contenedor vacío (`assert(!empty())`); insertar primero el caso base `dp[0]`.
 
 #### 8.4.2 Convex Hull Trick Estático / Monótono con Deque (`MonotoneCHT`) [opcional]
@@ -144,6 +189,13 @@
 
 -- divide_and_conquer_dp.cpp
 
+- **Lectura de entrada y uso:** Definir `cost_fn(j, i)` (costo del segmento **1-based** `[j..i]`) y llamar `solve_dc_dp(n, k, cost_fn)`:
+```cpp
+auto cost_fn = [&](int l, int r) -> ll {
+  ll s = pref[r] - pref[l - 1]; return s * s; // 1-based
+};
+ll ans = solve_dc_dp(n, k, cost_fn);
+```
 - **Trampas y adaptaciones:** (1) En problemas donde evaluar $C(l, r)$ cuesta $\mathcal{O}(1)$ con dos punteros tipo Mo (ej. pares iguales en `[l, r]`), mantener una ventana `[cur_l, cur_r]` global dentro de `compute_dc` sigue costando $\mathcal{O}(K N \log N)$.
 
 #### 8.4.4 Optimización de Knuth para DP de Intervalos (`solve_knuth`) [opcional]

@@ -24,6 +24,13 @@
 
 -- mitm_max_subset_sum.cpp
 
+- **Lectura de entrada y uso:** Leer `a[0..n-1]` ($N \le 40$) y el objetivo $S$:
+```cpp
+int n; ll S; cin >> n >> S;
+vll a(n); forn(i, n) cin >> a[i];
+ll ways = mitm_subset_sum_count(a, S);   // suma == S
+ll best = mitm_max_subset_sum_le(a, S);  // max suma <= S
+```
 - **Trampas y adaptaciones:** (1) Gracias a `inplace_merge` + dos punteros, este algoritmo corre en $\mathcal{O}(2^{N/2})$ puro sin ningún factor logarítmico.
 
 ------------------------------------------------------------------------
@@ -37,6 +44,11 @@
 
 -- shunting_yard.cpp
 
+- **Lectura de entrada y uso:** Leer la línea completa (con posibles espacios) usando `getline(cin >> ws, s)` y llamar `evaluate_expr(s)`:
+```cpp
+string s; getline(cin >> ws, s);
+cout << evaluate_expr(s) << "\n";
+```
 - **Trampas y adaptaciones:** (1) Para evaluar expresiones modulares, reemplazar `a / b` en `apply_op` por `mul_mod(a, inv_fermat(b))` (§7.4.1).
 
 ### 10.3 Clique Máximo (Bron-Kerbosch Branch & Bound) [opcional]
@@ -48,4 +60,13 @@
 
 -- max_clique.cpp
 
+- **Lectura de entrada y uso:** Nodos **0-based** (`0..n-1`); restar 1 si el input viene 1-based:
+```cpp
+int n, m; cin >> n >> m;
+MaxClique mc(n);
+forn(i, m) {
+  int u, v; cin >> u >> v; mc.add_edge(u - 1, v - 1);
+}
+int sz_clq = mc.solve(); // nodos en mc.best_clique
+```
 - **Trampas y adaptaciones:** (1) El **Maximum Independent Set** de $G$ es exactamente el `MaxClique` del grafo complemento $\overline{G}$ (agregar arista $(u, v)$ si y solo si $u \neq v$ y $(u, v) \notin E(G)$).

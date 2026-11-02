@@ -336,7 +336,12 @@ def iter_markdown_files(source_path: str, lang_filter: str = "all") -> List[str]
 OPTIONAL_TAG_RE = re.compile(r"\s*(?:\[(?:opcional|optional)\]|<!--\s*(?:opcional|optional)\s*-->)\s*$", re.IGNORECASE)
 
 
-def expand_markdown_file(md_file: str, lang_filter: str = "all", include_optional: bool = True) -> str:
+def expand_markdown_file(
+    md_file: str,
+    lang_filter: str = "all",
+    include_optional: bool = True,
+    only_directives: bool = False,
+) -> str:
     norm = normalize_lang_filter(lang_filter)
     base_dir = os.path.dirname(os.path.abspath(md_file))
     with open(md_file, "r", encoding="utf-8") as f:
@@ -361,7 +366,7 @@ def expand_markdown_file(md_file: str, lang_filter: str = "all", include_optiona
             if m_fence:
                 in_fence = True
                 fence_marker = m_fence.group(1)
-                if skip_until_level is None:
+                if skip_until_level is None and not only_directives:
                     out.append(line)
                 continue
 
@@ -423,10 +428,10 @@ def expand_markdown_file(md_file: str, lang_filter: str = "all", include_optiona
         else:
             if stripped.startswith(fence_marker) and len(stripped) == len(fence_marker):
                 in_fence = False
-                if skip_until_level is None:
+                if skip_until_level is None and not only_directives:
                     out.append(line)
                 continue
-            if skip_until_level is not None:
+            if skip_until_level is not None or only_directives:
                 continue
 
         out.append(line)
@@ -438,12 +443,18 @@ def load_markdown_source(
     source_path: str = DEFAULT_SOURCE_PATH,
     lang_filter: str = "all",
     include_optional: bool = True,
+    only_directives: bool = False,
 ) -> str:
     md_files = iter_markdown_files(source_path, lang_filter=lang_filter)
     if not md_files:
         raise FileNotFoundError(f"No se hallaron archivos .md en '{source_path}' para lang='{lang_filter}'")
     combined = "\n\n".join(
-        expand_markdown_file(p, lang_filter=lang_filter, include_optional=include_optional).rstrip()
+        expand_markdown_file(
+            p,
+            lang_filter=lang_filter,
+            include_optional=include_optional,
+            only_directives=only_directives,
+        ).rstrip()
         for p in md_files
     )
     combined = re.sub(r"^\s*-{3,}\s*\n+", "", combined)
@@ -456,7 +467,10 @@ def extract_snippets(
     include_optional: bool = True,
 ) -> List[Snippet]:
     lines = load_markdown_source(
-        md_path, lang_filter=lang_filter, include_optional=include_optional
+        md_path,
+        lang_filter=lang_filter,
+        include_optional=include_optional,
+        only_directives=True,
     ).splitlines(keepends=True)
 
     snippets: List[Snippet] = []

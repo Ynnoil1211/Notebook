@@ -11,6 +11,13 @@
 
 -- coord_comp.cpp
 
+- **Lectura de entrada y uso:** Leer $N$ valores en `vll a(n)`, llamar `cc.init(a)` y mapear cada $a[i]$ a $[0, K-1]$ con `cc.get_id(a[i])`:
+```cpp
+int n; cin >> n;
+vll a(n); forn(i, n) cin >> a[i];
+CoordComp cc; cc.init(a);
+forn(i, n) a[i] = cc.get_id(a[i]); // +1 si va a Fenwick
+```
 - **Trampas y adaptaciones:** (1) En `accumulate(all(v), 0LL)`, pasar siempre `0LL` para evitar overflow en `int`; (2) si el Fenwick Tree es 1-indexed, sumar `+ 1` al resultado de `cc.get_id(x)`.
 
 ------------------------------------------------------------------------
@@ -76,4 +83,13 @@
 
 -- pbds_ordered_set.cpp
 
+- **Lectura de entrada y uso:** En `ordered_multiset`, acompañar cada valor con un `uid++` único; borrar con `lower_bound({x, 0})`:
+```cpp
+ordered_multiset<ll> oms; int uid = 0;
+oms.insert({x, uid++}); // insertar x
+auto it = oms.lower_bound({x, 0});
+if (it != oms.end() && it->fi == x) oms.erase(it);
+ll men = oms.order_of_key({x, -1}); // cuantos < x
+ll kth = oms.find_by_order(k)->fi;  // k-esimo (0-based)
+```
 - **Trampas y adaptaciones:** (1) Verificar siempre `k < (int)oms.size()` antes de desreferenciar `find_by_order(k)`; (2) `rope` tiene constante alta; si el límite de tiempo es ajustado o hay reversiones de rango, usar `ImplicitTreap` (§4.7).

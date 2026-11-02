@@ -13,6 +13,18 @@
 
 -- flood_fill_bfs.cpp
 
+- **Lectura de entrada y uso:** Leer `n_g, m_g` y las filas en `grid_g[0..n_g-1]`, inicializar `comp_g` en `-1` y lanzar BFS por cada celda `'.'` libre:
+```cpp
+cin >> n_g >> m_g;
+forn(r, n_g) {
+  cin >> grid_g[r];
+  forn(c, m_g) comp_g[r][c] = -1;
+}
+int id = 0;
+forn(r, n_g) forn(c, m_g)
+  if (grid_g[r][c] == '.' && comp_g[r][c] == -1)
+    flood_fill_bfs(r, c, id++); // ans_comp[comp_g[r][c]]
+```
 - **Trampas y adaptaciones:** (1) Marcar `comp_g[nr][nc] = id` **al encolar** (no al desencolar) para no insertar la misma celda múltiples veces y provocar TLE/MLE.
 
 #### 6.1.2 Multi-Source BFS y Aristas Invertidas (`multi_source_bfs`)
@@ -24,6 +36,17 @@
 
 -- multi_source_bfs.cpp
 
+- **Lectura de entrada y uso:** Limpiar `adj_rev[1..n]`, leer las $K$ fuentes (1-based) y las $M$ aristas:
+```cpp
+int n, m, k; cin >> n >> m >> k;
+for1(i, n) adj_rev[i].clear();
+vi src(k); forn(i, k) cin >> src[i];
+forn(i, m) {
+  int u, v; cin >> u >> v;
+  adj_rev[v].pb(u); // + adj_rev[u].pb(v) si es no dirigido
+}
+multi_source_bfs(src, n); // dist_ms[1..n]
+```
 - **Trampas y adaptaciones:** (1) No correr un BFS separado desde cada fuente ($\mathcal{O}(K(V+E))$ da TLE); meter las $K$ fuentes juntas en la cola inicial.
 
 #### 6.1.3 0-1 BFS con `std::deque` y Reconstrucción (`bfs_01`, `get_path_01`)
@@ -35,6 +58,16 @@
 
 -- bfs_01.cpp
 
+- **Lectura de entrada y uso:** Nodos **1-based** (`1..n`); limpiar `adj01[1..n]`, leer aristas con $w \in \{0, 1\}$ y llamar `bfs_01(s, n)`:
+```cpp
+int n, m, s, t; cin >> n >> m >> s >> t;
+for1(i, n) adj01[i].clear();
+forn(i, m) {
+  int u, v, w; cin >> u >> v >> w;
+  adj01[u].pb({v, w}); adj01[v].pb({u, w});
+}
+bfs_01(s, n); // dist01[t], ruta = get_path_01(t)
+```
 - **Trampas y adaptaciones:** (1) Un mismo nodo puede entrar al `deque` primero con costo $+1$ y luego mejorarse con costo $+0$; verificar `dist01[u] + w < dist01[v]` antes de relajar.
 
 ------------------------------------------------------------------------
@@ -50,6 +83,17 @@
 
 -- dfs_bipartite.cpp
 
+- **Lectura de entrada y uso:** Limpiar `adj_dfs[1..n]` y `col_bip[1..n] = 0`, cargar aristas no dirigidas y probar cada componente:
+```cpp
+int n, m; cin >> n >> m;
+for1(i, n) { adj_dfs[i].clear(); col_bip[i] = 0; }
+forn(i, m) {
+  int u, v; cin >> u >> v;
+  adj_dfs[u].pb(v); adj_dfs[v].pb(u);
+}
+bool ok = true;
+for1(i, n) if (!col_bip[i]) ok &= dfs_bipartite(i, 1);
+```
 - **Trampas y adaptaciones:** (1) Iterar `for (int i = 1; i <= n; ++i)` porque el grafo puede ser desconexo.
 
 #### 6.2.2 Detección de Ciclo en Grafo Dirigido con 3 Estados (`dfs_dir_cycle`)
@@ -61,6 +105,14 @@
 
 -- dfs_cycle.cpp
 
+- **Lectura de entrada y uso:** Limpiar `adj_dfs[1..n]` y `state_dir[1..n] = 0`, cargar aristas dirigidas y buscar ciclo desde cada nodo no visitado:
+```cpp
+int n, m; cin >> n >> m;
+for1(i, n) { adj_dfs[i].clear(); state_dir[i] = 0; }
+forn(i, m) { int u, v; cin >> u >> v; adj_dfs[u].pb(v); }
+bool has_cyc = false;
+for1(i, n) if (!state_dir[i]) has_cyc |= dfs_dir_cycle(i);
+```
 - **Trampas y adaptaciones:** (1) En grafos dirigidos, ver un nodo ya visitado con `state_dir[v] == 2` (*cross-edge* o *forward-edge*) **no** es un ciclo; solo `state_dir[v] == 1` (*back-edge*) indica ciclo.
 
 #### 6.2.3 Euler Tour en Árboles y Ancestralidad en $\mathcal{O}(1)$ (`dfs_euler`, `is_ancestor`)
@@ -72,6 +124,16 @@
 
 -- euler_tour.cpp
 
+- **Lectura de entrada y uso:** Cargar el árbol en `adj_dfs[1..n]`, reiniciar `timer_e = 0` y llamar `dfs_euler(1, 0)` (subárbol de $u$: rango 1-based `[tin_e[u], tout_e[u]]`):
+```cpp
+int n; cin >> n; timer_e = 0;
+for1(i, n) adj_dfs[i].clear();
+forn(i, n - 1) {
+  int u, v; cin >> u >> v;
+  adj_dfs[u].pb(v); adj_dfs[v].pb(u);
+}
+dfs_euler(1, 0); // is_ancestor(u, v) en O(1)
+```
 - **Trampas y adaptaciones:** (1) Con este Euler Tour de $N$ tiempos (`++timer_e` solo al entrar), el tamaño del subárbol de `u` es `tout_e[u] - tin_e[u] + 1`.
 
 #### 6.2.4 Componentes Conexas en el Grafo Complemento (`complement_components`) [opcional]
@@ -109,6 +171,16 @@
 
 -- dijkstra.cpp
 
+- **Lectura de entrada y uso:** Nodos **1-based** (`1..n`); limpiar `adj_dij[1..n]`, cargar aristas `{v, w}` y llamar `dijkstra(s, n)`:
+```cpp
+int n, m, s, t; cin >> n >> m >> s >> t;
+for1(i, n) adj_dij[i].clear();
+forn(i, m) {
+  int u, v; ll w; cin >> u >> v >> w;
+  adj_dij[u].pb({v, w}); // + adj_dij[v].pb({u, w})
+}
+dijkstra(s, n); // dist_dij[t], ruta = get_path_dij(t)
+```
 - **Trampas y adaptaciones:** (1) La guarda `if (d > dist_dij[u]) continue;` es obligatoria para mantener complejidad $\mathcal{O}(E \log V)$ sin `decrease-key`.
 
 #### 6.3.2 Bellman-Ford con Reconstrucción de Ciclo Negativo (`bellman_ford_cycle`)
@@ -120,6 +192,14 @@
 
 -- bellman_ford.cpp
 
+- **Lectura de entrada y uso:** Leer las $M$ aristas dirigidas en `vector<BFEdge> ed(m)` (nodos 1-based) y llamar `bellman_ford_cycle`:
+```cpp
+int n, m, s; cin >> n >> m >> s;
+vector<BFEdge> ed(m);
+forn(i, m) cin >> ed[i].u >> ed[i].v >> ed[i].w;
+vll d; vi cyc;
+bool has_neg = bellman_ford_cycle(s, n, ed, d, cyc);
+```
 - **Trampas y adaptaciones:** (1) Retroceder `n` veces con `x = p[x]` antes de reconstruir el ciclo es indispensable porque el último nodo relajado en la iteración $N$ puede estar en una cola que sale del ciclo negativo y no dentro del ciclo mismo; (2) para detectar cualquier ciclo negativo global sin importar `s`, inicializar `d[1..n] = 0`.
 
 #### 6.3.3 Floyd-Warshall Todos contra Todos (`floyd_warshall`)
@@ -131,6 +211,17 @@
 
 -- floyd_warshall.cpp
 
+- **Lectura de entrada y uso:** Inicializar matriz `d[1..n][1..n]` con `INF` y `d[i][i] = 0`, cargar aristas con `min` y llamar `floyd_warshall(n, d)`:
+```cpp
+int n, m; cin >> n >> m;
+vector<vll> d(n + 1, vll(n + 1, INF));
+for1(i, n) d[i][i] = 0;
+forn(i, m) {
+  int u, v; ll w; cin >> u >> v >> w;
+  d[u][v] = min(d[u][v], w); // y d[v][u] si es no dirigido
+}
+floyd_warshall(n, d);
+```
 - **Trampas y adaptaciones:** (1) El nodo intermedio `k` **siempre** debe ser el bucle más externo (`for k ... for i ... for j`); (2) al leer la entrada, hacer `d[u][v] = min(d[u][v], w)` por si vienen aristas paralelas.
 
 ------------------------------------------------------------------------
@@ -146,6 +237,16 @@
 
 -- tree_diameter.cpp
 
+- **Lectura de entrada y uso:** Cargar las $N - 1$ aristas en `adj_tr[1..n]` y llamar `get_diameter_path(n)`:
+```cpp
+int n; cin >> n;
+for1(i, n) adj_tr[i].clear();
+forn(i, n - 1) {
+  int u, v; cin >> u >> v;
+  adj_tr[u].pb(v); adj_tr[v].pb(u);
+}
+vi path = get_diameter_path(n); // diam = sz(path) - 1
+```
 - **Trampas y adaptaciones:** (1) El centro del árbol (nodo que minimiza la máxima distancia al resto) es `path[sz(path) / 2]`.
 
 #### 6.4.2 Árbol Generador Mínimo de Kruskal (`kruskal_mst`)
@@ -157,6 +258,13 @@
 
 -- mst_kruskal_prim.cpp
 
+- **Lectura de entrada y uso:** Leer $M$ aristas en `vector<KrEdge> ed(m)` (nodos 1-based) y llamar `kruskal_mst(n, ed, mst)`:
+```cpp
+int n, m; cin >> n >> m;
+vector<KrEdge> ed(m), mst;
+forn(i, m) cin >> ed[i].u >> ed[i].v >> ed[i].w;
+ll cost = kruskal_mst(n, ed, mst); // -1 si es desconexo
+```
 - **Trampas y adaptaciones:** (1) Para Maximum Spanning Tree, invertir el comparador (`w > o.w`); (2) si el problema pide un *Minimum Spanning Forest*, ignorar el chequeo `dsu.num_comp == 1` y usar `cost` directamente.
 
 #### 6.4.3 LCA, $K$-ésimo Ancestro y Distancia por Binary Lifting (`LCA`)
@@ -168,6 +276,15 @@
 
 -- lca_binary_lifting.cpp
 
+- **Lectura de entrada y uso:** Leer las $N - 1$ aristas en `vector<vi> adj(n + 1)` (1-based) y construir `LCA lca(n, root, adj)`:
+```cpp
+int n, q; cin >> n >> q;
+vector<vi> adj(n + 1);
+forn(i, n - 1) {
+  int u, v; cin >> u >> v; adj[u].pb(v); adj[v].pb(u);
+}
+LCA lca(n, 1, adj); // lca.lca(u, v), lca.dist(u, v)
+```
 - **Trampas y adaptaciones:** (1) Para encontrar el nodo en el camino de `u` a `v` a distancia `d` desde `u` ($0 \le d \le \text{dist}(u, v)$): sea $w = \text{lca}(u, v)$; si $d \le \text{dep}[u] - \text{dep}[w]$ es `kth_ancestor(u, d)`, si no es `kth_ancestor(v, dist(u, v) - d)`.
 
 #### 6.4.4 Descomposición por Centroides (`CentroidDecomp`) [opcional]
@@ -194,6 +311,13 @@
 
 -- toposort.cpp
 
+- **Lectura de entrada y uso:** Leer aristas dirigidas $u \to v$ en `adj[1..n]` y verificar `sz(ord) == n` (si es menor, hay ciclo):
+```cpp
+int n, m; cin >> n >> m;
+vector<vi> adj(n + 1);
+forn(i, m) { int u, v; cin >> u >> v; adj[u].pb(v); }
+vi ord = topological_sort(n, adj); // ciclo si sz(ord) < n
+```
 - **Trampas y adaptaciones:** (1) Si el problema pide el **orden topológico lexicográficamente menor**, cambiar `queue<int> q` por `priority_queue<int, vi, greater<int>> q` ($\mathcal{O}((V+E)\log V)$).
 
 #### 6.5.2 Puentes y Puntos de Articulación de Tarjan (`BridgesAndCuts`)
@@ -205,6 +329,15 @@
 
 -- bridges_and_cuts.cpp
 
+- **Lectura de entrada y uso:** Leer grafo no dirigido en `adj[1..n]` y construir `BridgesAndCuts bc(n, adj)`:
+```cpp
+int n, m; cin >> n >> m;
+vector<vi> adj(n + 1);
+forn(i, m) {
+  int u, v; cin >> u >> v; adj[u].pb(v); adj[v].pb(u);
+}
+BridgesAndCuts bc(n, adj); // bc.bridges, bc.is_cut[1..n]
+```
 - **Trampas y adaptaciones:** (1) La raíz del árbol DFS (`p == -1`) es punto de articulación si y solo si tiene `children > 1` en el árbol DFS (no en la lista de adyacencia).
 
 #### 6.5.3 Componentes Fuertemente Conexas de Tarjan (`TarjanSCC`)
@@ -216,6 +349,13 @@
 
 -- tarjan_scc.cpp
 
+- **Lectura de entrada y uso:** Leer grafo dirigido en `adj[1..n]` y construir `TarjanSCC scc(n, adj)`:
+```cpp
+int n, m; cin >> n >> m;
+vector<vi> adj(n + 1);
+forn(i, m) { int u, v; cin >> u >> v; adj[u].pb(v); }
+TarjanSCC scc(n, adj); // scc.scc_cnt, scc.comp_id[1..n]
+```
 - **Trampas y adaptaciones:** (1) Al actualizar `low[u]` con un vecino ya visitado `v`, verificar obligatoriamente `if (in_st[v])` (si `v` ya salió de la pila en otra SCC cerrada, ignorarlo).
 
 #### 6.5.4 Solucionador 2-SAT en Tiempo Lineal (`TwoSAT`) [opcional]
@@ -227,6 +367,13 @@
 
 -- twosat.cpp
 
+- **Lectura de entrada y uso:** Variables **0-based** (`0..n-1`); agregar cláusulas y llamar `sat.solve()`:
+```cpp
+TwoSAT sat(n);
+sat.add_or(u, true, v, false); // x_u OR !x_v
+sat.add_imp(u, true, v, true); // x_u => x_v
+if (sat.solve()) { /* sat.ans[0..n-1] tiene asignacion */ }
+```
 - **Trampas y adaptaciones:** (1) Para prohibir que $x$ e $y$ sean ambas verdaderas ($\neg(x \land y)$), llamar `add_or(x, false, y, false)`.
 
 ------------------------------------------------------------------------
@@ -242,6 +389,16 @@
 
 -- dinic.cpp
 
+- **Lectura de entrada y uso:** Nodos **1-based** (`1..n`); crear `Dinic mf(n, s, t)`, agregar aristas `(u, v, cap)` y llamar `mf.max_flow()`:
+```cpp
+int n, m, s, t; cin >> n >> m >> s >> t;
+Dinic mf(n, s, t);
+forn(i, m) {
+  int u, v; ll c; cin >> u >> v >> c;
+  mf.add_edge(u, v, c);
+}
+ll flow = mf.max_flow(); // corte min: mf.left_of_min_cut(u)
+```
 - **Trampas y adaptaciones:** (1) El puntero `int& cid = ptr[u]` (*current arc optimization*) es indispensable: sin referencia `&`, Dinic degrada a $\mathcal{O}(V E^2)$ y da TLE.
 
 #### 6.6.2 Flujo Máximo de Costo Mínimo (`MCMF`) [opcional]
@@ -253,6 +410,16 @@
 
 -- mcmf.cpp
 
+- **Lectura de entrada y uso:** Nodos **1-based** (`1..n`); agregar aristas `(u, v, cap, cost)` y llamar `mcmf.solve(s, t)`:
+```cpp
+int n, m, s, t; cin >> n >> m >> s >> t;
+MCMF mcmf(n);
+forn(i, m) {
+  int u, v; ll cap, cost; cin >> u >> v >> cap >> cost;
+  mcmf.add_edge(u, v, cap, cost);
+}
+auto [flow, min_cost] = mcmf.solve(s, t);
+```
 - **Trampas y adaptaciones:** (1) Para **Max-Cost Max-Flow** en un DAG, insertar los costos negados (`-cost`) y negar el costo retornado.
 
 #### 6.6.3 Matching Bipartito de Kuhn y Reconstrucción de König (`BipartiteMVC`)
@@ -264,6 +431,14 @@
 
 -- bipartite_mvc.cpp
 
+- **Lectura de entrada y uso:** Lado izq `1..n1`, lado der `1..n2`; agregar aristas `bip.add_edge(u, v)` y llamar `bip.max_matching()` o `bip.min_vertex_cover()`:
+```cpp
+int n1, n2, m; cin >> n1 >> n2 >> m;
+BipartiteMVC bip(n1, n2);
+forn(i, m) { int u, v; cin >> u >> v; bip.add_edge(u, v); }
+auto [cov_l, cov_r] = bip.min_vertex_cover();
+// Pareja de u: bip.mt_l[u]; de v: bip.mt_r[v] (0 si libre)
+```
 - **Trampas y adaptaciones:** (1) El **Maximum Independent Set** bipartito es exactamente el complemento del Minimum Vertex Cover: los nodos con `vis_l[u] == 1` a la izquierda y `vis_r[v] == 0` a la derecha.
 
 #### 6.6.4 Algoritmo Húngaro de Asignación de Costo Mínimo (`hungarian`) [opcional]
@@ -275,6 +450,13 @@
 
 -- hungarian.cpp
 
+- **Lectura de entrada y uso:** Leer matriz **1-based** `a[1..n][1..m]` con $n \le m$ y llamar `hungarian(n, m, a)`:
+```cpp
+int n, m; cin >> n >> m;
+vector<vll> a(n + 1, vll(m + 1, 0));
+for1(i, n) for1(j, m) cin >> a[i][j];
+auto [min_cost, col_of_row] = hungarian(n, m, a);
+```
 - **Trampas y adaptaciones:** (1) Si $N > M$, transponer la matriz antes de llamar; (2) para **maximizar** la ganancia total, negar todas las entradas `a[i][j] = -a[i][j]` y tomar `-cost`.
 
 #### 6.6.5 Matching Máximo en Grafo General: Algoritmo Blossom de Edmonds (`Blossom`) [opcional]
@@ -286,6 +468,13 @@
 
 -- blossom.cpp
 
+- **Lectura de entrada y uso:** Nodos **1-based** (`1..n`); llamar `bl.add_edge(u, v)` una vez por arista y `bl.solve()`:
+```cpp
+int n, m; cin >> n >> m;
+Blossom bl(n);
+forn(i, m) { int u, v; cin >> u >> v; bl.add_edge(u, v); }
+int pairs = bl.solve(); // pareja de u en bl.match[u]
+```
 - **Trampas y adaptaciones:** (1) No agregar dos veces la arista en la entrada porque `add_edge(u, v)` ya inserta ambas direcciones.
 
 ------------------------------------------------------------------------
@@ -299,6 +488,16 @@
 
 -- directed_mst.cpp
 
+- **Lectura de entrada y uso:** Nodos **0-based** (`0..n-1`); leer aristas en `vector<DirEdge> ed(m)` y llamar `directed_mst(n, root, ed)`:
+```cpp
+int n, m, root; cin >> n >> m >> root; --root;
+vector<DirEdge> ed(m);
+forn(i, m) {
+  cin >> ed[i].u >> ed[i].v >> ed[i].w;
+  --ed[i].u; --ed[i].v;
+}
+auto [cost, par] = directed_mst(n, root, ed);
+```
 - **Trampas y adaptaciones:** (1) A diferencia del resto del bloque de grafos, esta implementación de Edmonds es **0-indexed** (`0..n-1`); restar `1` a `u, v, root` si la entrada viene 1-indexed.
 
 ### 6.8 Componentes Biconexas y Block-Cut Tree [opcional]
@@ -310,6 +509,13 @@
 
 -- block_cut_tree.cpp
 
+- **Lectura de entrada y uso:** Nodos **1-based** (`1..n`); agregar aristas y llamar `bct.build()`:
+```cpp
+int n, m; cin >> n >> m;
+BlockCutTree bct(n);
+forn(i, m) { int u, v; cin >> u >> v; bct.add_edge(u, v); }
+bct.build(); // arbol en bct.bct_adj[1..bct.bct_nodes]
+```
 - **Trampas y adaptaciones:** (1) Un vértice `c` es obligatorio en todo camino simple entre `u` y `v` ($c \neq u, v$) si y solo si `c` es punto de articulación (`is_cut[c] == 1`) y `c` está en el camino del árbol `bct_adj` entre `u` y `v`.
 
 ### 6.9 Camino y Ciclo Euleriano (Hierholzer) [opcional]
@@ -321,6 +527,13 @@
 
 -- eulerian_directed.cpp
 
+- **Lectura de entrada y uso:** Nodos **1-based** (`1..n`); agregar las $M$ aristas dirigidas y llamar `eu.find_tour()`:
+```cpp
+int n, m; cin >> n >> m;
+EulerianDirected eu(n);
+forn(i, m) { int u, v; cin >> u >> v; eu.add_edge(u, v); }
+vi tour = eu.find_tour(); // vacio si no existe
+```
 - **Trampas y adaptaciones:** (1) Para grafo **no dirigido**, existe camino euleriano si a lo sumo 2 vértices tienen grado impar y todas las aristas pertenecen a una sola componente conexa; marcar `used_edge[id] = true` para ambas direcciones de la arista `id`.
 
 ### 6.10 Flujo Máximo en Redes Densas: Push-Relabel (Highest-Label + Gap) [opcional]
@@ -332,6 +545,15 @@
 
 -- push_relabel.cpp
 
+- **Lectura de entrada y uso:** Nodos **1-based** (`1..n`); agregar aristas `pr.add_edge(u, v, cap)` y llamar `pr.max_flow(s, t)`:
+```cpp
+int n, m, s, t; cin >> n >> m >> s >> t;
+PushRelabel pr(n);
+forn(i, m) {
+  int u, v; ll c; cin >> u >> v >> c; pr.add_edge(u, v, c);
+}
+ll flow = pr.max_flow(s, t);
+```
 - **Trampas y adaptaciones:** (1) Para capacidades no dirigidas, agregar dos llamadas `add_edge(u, v, cap)` y `add_edge(v, u, cap)`.
 
 ------------------------------------------------------------------------
@@ -345,4 +567,11 @@
 
 -- functional_graph.cpp
 
+- **Lectura de entrada y uso:** Leer `nxt[1..n]` (1-based) y construir `FunctionalGraph fg(n, nxt)`:
+```cpp
+int n, q; cin >> n >> q;
+vi nxt(n + 1); for1(i, n) cin >> nxt[i];
+FunctionalGraph fg(n, nxt);
+// fg.jump(u, k), fg.min_steps(u, v)
+```
 - **Trampas y adaptaciones:** (1) Un nodo en la cola (`dist_cyc > 0`) nunca puede ser alcanzado desde un nodo que ya entró al ciclo (`dist_cyc == 0`).

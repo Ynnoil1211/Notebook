@@ -35,6 +35,15 @@
 
 -- linear_sieve_spf.cpp
 
+- **Lectura de entrada y uso:** Llamar `linear_sieve_spf()` **una sola vez** al inicio de `main()` antes del bucle de consultas:
+```cpp
+linear_sieve_spf(); // una vez en main()
+int q; cin >> q;
+while (q--) {
+  int x; cin >> x;
+  vi pf = get_prime_factors(x); // ej: 12 -> {2, 2, 3}
+}
+```
 - **Trampas y adaptaciones:** (1) No olvidar llamar `linear_sieve_spf(max_val)` una vez al inicio de `main()` antes de invocar `get_prime_factors(x)`.
 
 #### 7.1.4 Criba Segmentada en Rango $[L, R]$ (`segmented_sieve`)
@@ -142,6 +151,13 @@
 
 -- crt_general.cpp
 
+- **Lectura de entrada y uso:** Leer $K$ congruencias $x \equiv r_i \pmod{m_i}$ en `r[0..k-1]`, `m[0..k-1]`:
+```cpp
+int k; cin >> k;
+vll r(k), m(k);
+forn(i, k) cin >> r[i] >> m[i];
+auto [x, lcm] = crt_general(r, m); // x = -1 si incompatible
+```
 - **Trampas y adaptaciones:** (1) Toda ecuación lineal modular $a x \equiv b \pmod m$ puede reducirse a $x \equiv r' \pmod{m/g}$ con `extgcd` antes de meterla en `crt_general`.
 
 ------------------------------------------------------------------------
@@ -168,6 +184,15 @@
 
 -- combinatorics.cpp
 
+- **Lectura de entrada y uso:** Llamar `init_fact()` una sola vez en `main()` para consultas $\mathcal{O}(1)$, o `nCr_iter(n, r)` cuando $N \le 10^{18}, R \le 10^6$:
+```cpp
+init_fact(); // una sola vez al inicio de main()
+int q; cin >> q;
+while (q--) {
+  ll n, r; cin >> n >> r;
+  cout << nCr(n, r) << "\n"; // o nCr_iter(n, r)
+}
+```
 - **Trampas y adaptaciones:** (1) Por el Teorema de Lucas en base 2, $\binom{n}{r}$ es **impar** si y solo si $(n \text{ AND } r) == r$ ($r$ es submáscara de bits de $n$).
 
 ------------------------------------------------------------------------
@@ -209,6 +234,16 @@
 
 -- matrix_exp.cpp
 
+- **Lectura de entrada y uso:** Cargar matriz de adyacencia/transición 0-based `Matrix T(n)` y elevar a la $K$:
+```cpp
+int n, m; ll k; cin >> n >> m >> k;
+Matrix T(n);
+forn(i, m) {
+  int u, v; cin >> u >> v; --u; --v;
+  T.m[u][v] = (T.m[u][v] + 1) % MOD;
+}
+Matrix Tk = mat_pow(T, k); // Tk.m[u][v]: caminos u->v
+```
 - **Trampas y adaptaciones:** (1) En el triple bucle de `operator*`, poner `k` como segundo bucle (`for i ... for k ... if (a[i][k]) for j`) mejora drásticamente la localidad de caché.
 
 #### 7.6.2 Base Lineal de XOR / Eliminación Gaussiana en $\mathbb{F}_2$ (`XorBasis`) [opcional]
@@ -231,6 +266,14 @@
 
 -- gauss_double.cpp
 
+- **Lectura de entrada y uso:** Leer matriz aumentada `a[0..n-1][0..m]` (la columna `m` es el lado derecho $b_i$):
+```cpp
+int n, m; cin >> n >> m;
+vector<vector<double>> a(n, vector<double>(m + 1));
+forn(i, n) forn(j, m + 1) cin >> a[i][j];
+vector<double> ans;
+int st = gauss_double(a, ans); // 0:sin sol, 1:unica, 2:inf
+```
 - **Trampas y adaptaciones:** (1) El pivoteo parcial (`abs(a[i][col]) > abs(a[sel][col])`) es obligatorio; elegir el primer no nulo causa catástrofe numérica.
 
 #### 7.6.4 Eliminación Gaussiana Modular (`gauss_mod`) [opcional]
@@ -347,6 +390,16 @@
 
 -- simplex.cpp
 
+- **Lectura de entrada y uso:** Crear `Simplex lp(n, m)` ($n$ restricciones $Ax \le b$, $m$ variables $x \ge 0$), llenar `lp.a`, `lp.b`, `lp.c` (0-based) y llamar `lp.solve()`:
+```cpp
+Simplex lp(n, m);
+forn(j, m) cin >> lp.c[j];
+forn(i, n) {
+  forn(j, m) cin >> lp.a[i][j];
+  cin >> lp.b[i];
+}
+auto [best, x] = lp.solve(); // -INF_LP infact, +INF_LP ilim
+```
 - **Trampas y adaptaciones:** (1) Una restricción $\ge$ ($a^T x \ge b$) se convierte multiplicando por $-1$: $(-a)^T x \le -b$; una igualdad $a^T x = b$ se representa con ambas desigualdades $\le$ y $\ge$.
 
 ### 7.9 Berlekamp-Massey y Recurrencias Lineales Modulares [opcional]

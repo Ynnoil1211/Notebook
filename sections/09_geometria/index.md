@@ -35,6 +35,20 @@
 
 -- geometry_int.cpp
 
+- **Lectura de entrada y uso:** Leer los $N$ vértices en orden; usar `PtLL` para doble área entera exacta y `Pt` para inclusión de puntos:
+```cpp
+int n, q; cin >> n >> q;
+vector<Pt> poly(n); vector<PtLL> poly_i(n);
+forn(i, n) {
+  ll x, y; cin >> x >> y;
+  poly[i] = {(ld)x, (ld)y}; poly_i[i] = {x, y};
+}
+ll area2 = polygon_area2_int(poly_i); // 2 * Area exacta
+while (q--) {
+  Pt p; cin >> p.x >> p.y;
+  int st = point_in_polygon(p, poly); // 0:out, 1:in, 2:on
+}
+```
 - **Trampas y adaptaciones:** (1) Por el **Teorema de Pick**, en un polígono con vértices enteros, $2 \cdot \text{Área} = 2 I + B - 2$, donde $B = \sum \gcd(|\Delta x_i|, |\Delta y_i|)$ son los puntos enteros en el borde e $I$ los puntos estrictamente interiores.
 
 #### 9.1.4 Envolvente Convexa de Andrew (`convex_hull`)
@@ -46,6 +60,13 @@
 
 -- convex_hull.cpp
 
+- **Lectura de entrada y uso:** Leer $N$ puntos en `vector<Pt> pts(n)` y obtener el polígono convexo CCW en `convex_hull(pts)`:
+```cpp
+int n; cin >> n;
+vector<Pt> pts(n);
+forn(i, n) cin >> pts[i].x >> pts[i].y;
+vector<Pt> hull = convex_hull(pts); // vertices en orden CCW
+```
 - **Trampas y adaptaciones:** (1) Si el problema exige **conservar** los puntos colineales en el borde del Convex Hull, cambiar `<` (`<= 0` pasa a `< 0`) en la condición del `while` y cuidar de no duplicar los extremos.
 
 #### 9.1.5 Diámetro de Polígono Convexo por Rotating Callipers (`rotating_callipers_max_dist2`) [opcional]
@@ -107,6 +128,15 @@
 
 -- halfplane_intersection.cpp
 
+- **Lectura de entrada y uso:** Cada `Halfplane(a, b)` conserva el semiplano a la **izquierda** del vector dirigido $a \to b$:
+```cpp
+vector<Halfplane> hps;
+forn(i, n) {
+  Pt a, b; cin >> a.x >> a.y >> b.x >> b.y;
+  hps.pb(Halfplane(a, b));
+}
+vector<Pt> poly = halfplane_intersection(hps);
+```
 - **Trampas y adaptaciones:** (1) Para el núcleo de un polígono dado en orden CCW, agregar un `Halfplane(p[i], p[(i + 1) % n])` por cada lado del polígono.
 
 ### 9.4 Suma de Minkowski de Polígonos Convexos [opcional]

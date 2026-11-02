@@ -24,6 +24,15 @@
 
 -- rolling_hash.cpp
 
+- **Lectura de entrada y uso:** Construir `PolyHash rh(s)` y consultar rangos **0-based** `[l, r]`:
+```cpp
+string s; int q; cin >> s >> q;
+PolyHash rh(s);
+while (q--) {
+  int l1, r1, l2, r2; cin >> l1 >> r1 >> l2 >> r2;
+  bool eq = (rh.get(l1, r1) == rh.get(l2, r2)); // 0-based
+}
+```
 - **Trampas y adaptaciones:** (1) Nunca mapear `'a' -> 0` (si `'a' == 0`, entonces `"a"`, `"aa"` y `"aaa"` tendrían todas hash `0`).
 
 ------------------------------------------------------------------------
@@ -91,6 +100,15 @@
 
 -- string_trie.cpp
 
+- **Lectura de entrada y uso:** Insertar las $N$ cadenas con `tr.insert(s)` y consultar con `tr.count_prefix(p)` / `tr.count_exact(p)`:
+```cpp
+int n, q; cin >> n >> q;
+StringTrie tr;
+forn(i, n) { string s; cin >> s; tr.insert(s); }
+while (q--) {
+  string p; cin >> p; cout << tr.count_prefix(p) << "\n";
+}
+```
 - **Trampas y adaptaciones:** (1) Si la memoria es ajustada y el alfabeto es grande, reemplazar `int nxt[26]` por `map<char, int>` (paga $\mathcal{O}(\log \Sigma)$ pero ahorra memoria).
 
 #### 5.5.2 Trie Binario para Max/Min XOR Dinámico (`BitTrie`) [opcional]
@@ -102,6 +120,13 @@
 
 -- bit_trie.cpp
 
+- **Lectura de entrada y uso:** `update(x, +1)` inserta $x$, `update(x, -1)` borra una copia de $x$:
+```cpp
+BitTrie bt; bt.update(0, +1); // ej: prefijo vacio
+bt.update(x, +1);             // insertar x
+ll mx = bt.max_xor(q);        // max(q ^ y)
+bt.update(x, -1);             // borrar una copia de x
+```
 - **Trampas y adaptaciones:** (1) Para contar cuántos elementos $y$ cumplen $(x \oplus y) < K$, recorrer de `B` a `0`: si el bit de $K$ es `1`, sumar `cnt` de la rama donde `(x ^ y)` tiene bit `0` y bajar por la rama donde tiene bit `1`.
 
 #### 5.5.3 Autómata de Aho-Corasick para Múltiples Patrones (`AhoCorasick`) [opcional]
@@ -113,6 +138,15 @@
 
 -- aho_corasick.cpp
 
+- **Lectura de entrada y uso:** Insertar todos los patrones, llamar **una vez** a `ac.build()` y evaluar el texto:
+```cpp
+int k; cin >> k;
+AhoCorasick ac;
+forn(i, k) { string p; cin >> p; ac.insert(p, i); }
+ac.build();
+string txt; cin >> txt;
+cout << ac.count_matches(txt) << "\n";
+```
 - **Trampas y adaptaciones:** (1) Si necesitas la frecuencia individual de **cada** patrón $P_i$ (en vez de la suma total), acumular visitas en los nodos durante el recorrido de `text` y propagar en orden inverso de BFS hacia `t[u].link`.
 
 ------------------------------------------------------------------------
@@ -128,6 +162,13 @@
 
 -- suffix_array.cpp
 
+- **Lectura de entrada y uso:** Sufijos reales en `sa[1..n]`; `lcp[i] = LCP(sa[i-1], sa[i])` para $i \in [2..n]$:
+```cpp
+string s; cin >> s; int n = sz(s);
+SuffixArray sa(s);
+ll dist_subs = 1LL * n * (n + 1) / 2;
+fore(i, 2, n) dist_subs -= sa.lcp[i];
+```
 - **Trampas y adaptaciones:** (1) Para el LCP entre dos sufijos cualesquiera `i` y `j` con `rk[i] < rk[j]`, construir una `SparseTable` (§4.2) sobre `lcp` y consultar el mínimo en `[rk[i] + 1, rk[j]]`.
 
 #### 5.6.2 Suffix Automaton (`SuffixAutomaton`) [opcional]
@@ -139,6 +180,14 @@
 
 -- suffix_automaton.cpp
 
+- **Lectura de entrada y uso:** Construir `SuffixAutomaton sam(s)` y llamar `sam.prepare_occurrences()` si necesitas frecuencias `st[u].cnt`:
+```cpp
+string s, t; cin >> s >> t;
+SuffixAutomaton sam(s);
+sam.prepare_occurrences();
+ll sub = sam.count_distinct_substrings();
+string lcs = sam.longest_common_substring(t);
+```
 - **Trampas y adaptaciones:** (1) Si el alfabeto es fijo `'a'..'z'` y el tiempo es muy ajustado, cambiar `map<char, int> next` por `int next[26]` inicializado en `-1` para quitar el factor $\log \Sigma$.
 
 #### 5.6.3 Palindromic Tree / Eertree (`PalindromicTree`) [opcional]
@@ -150,4 +199,12 @@
 
 -- palindromic_tree.cpp
 
-- **Trampas y adaptaciones:** (1) Para obtener el número total de ocurrencias de cada palíndromo en $S$, recorrer los nodos desde `sz(pt.t) - 1` hacia `3` haciendo `t[t[i].link].cnt += t[i].cnt`.
+- **Lectura de entrada y uso:** Construir `PalindromicTree pt(s)`; cantidad de palíndromos distintos es `sz(pt.st) - 2`:
+```cpp
+string s; cin >> s;
+PalindromicTree pt(s);
+int dist_pal = sz(pt.st) - 2;
+ford(i, sz(pt.st)) if (i >= 2)
+  pt.st[pt.st[i].link].cnt += pt.st[i].cnt;
+```
+- **Trampas y adaptaciones:** (1) Para obtener el número total de ocurrencias de cada palíndromo en $S$, recorrer los nodos desde `sz(pt.st) - 1` hacia `2` haciendo `st[st[i].link].cnt += st[i].cnt`.

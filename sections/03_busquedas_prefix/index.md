@@ -13,6 +13,17 @@
 
 -- binary_search_discrete.cpp
 
+- **Lectura de entrada y uso:** Leer el arreglo, definir `check(mid)` con lambda y llamar `bs_max` (último `true`) o `bs_min` (primer `true`):
+```cpp
+int n; ll k; cin >> n >> k;
+vll a(n); forn(i, n) cin >> a[i]; sort(all(a));
+auto check = [&](ll d) { // ej: colocar k puntos a dist >= d
+  int cnt = 1; ll last = a[0];
+  forn(i, n) if (a[i] - last >= d) cnt++, last = a[i];
+  return cnt >= k;
+};
+cout << bs_max(0, a.back() - a[0], check) << "\n";
+```
 - **Trampas y adaptaciones:** (1) Nunca evaluar `L = 0` si `check(L)` divide entre `L` (`low >= 1`); (2) elegir `high` suficientemente grande pero sin causar overflow en `mid * algo` dentro de `check(mid)`.
 
 #### 3.1.2 Binary Search Continua en Punto Flotante (`bs_double`)
@@ -102,6 +113,15 @@
 
 -- prefix_sum_1d.cpp
 
+- **Lectura de entrada y uso:** Leer `a[0..n-1]` (0-based) y responder $Q$ consultas `l r` **1-based inclusivas**:
+```cpp
+int n, q; cin >> n >> q;
+vll a(n); forn(i, n) cin >> a[i];
+PrefixSum ps(a);
+while (q--) {
+  int l, r; cin >> l >> r; cout << ps.query(l, r) << "\n";
+}
+```
 - **Trampas y adaptaciones:** (1) Los prefijos deben guardarse siempre en `ll` (`vll pref`) aunque el arreglo original quepa en `int`; (2) si las consultas del enunciado son 0-based `[l, r]`, llamar `ps.query(l + 1, r + 1)`.
 
 #### 3.4.2 Prefix Sum 2D en Submatrices (`PrefixSum2D`)
@@ -113,6 +133,17 @@
 
 -- prefix_sum_2d.cpp
 
+- **Lectura de entrada y uso:** Leer grilla `mat` $N 	imes M$ (0-based) y consultar rectángulos `r1 c1 r2 c2` **1-based**:
+```cpp
+int n, m, q; cin >> n >> m >> q;
+vector<vll> mat(n, vll(m));
+forn(i, n) forn(j, m) cin >> mat[i][j];
+PrefixSum2D ps(mat);
+while (q--) {
+  int r1, c1, r2, c2; cin >> r1 >> c1 >> r2 >> c2;
+  cout << ps.query(r1, c1, r2, c2) << "\n";
+}
+```
 - **Trampas y adaptaciones:** (1) Al aplicar inclusión-exclusión 2D, recordar sumar de vuelta `+ p[r1 - 1][c1 - 1]` que fue restado dos veces.
 
 #### 3.4.3 Patrones de Prefijos (Suma $K$, Divisibles por $M$, Prefix XOR) y Kadane
@@ -139,6 +170,16 @@
 
 -- diff_array_1d.cpp
 
+- **Lectura de entrada y uso:** Aplicar $Q$ sumas en rango **1-based** `[l, r]` y reconstruir `res[1..n]` al final con `build()`:
+```cpp
+int n, q; cin >> n >> q;
+DiffArray1D da(n);
+while (q--) {
+  int l, r; ll v; cin >> l >> r >> v;
+  da.add_range(l, r, v);
+}
+vll res = da.build(); // res[1..n]
+```
 - **Trampas y adaptaciones:** (1) El vector interno `diff` debe tener tamaño `n + 2` porque `add_range` accede a `diff[r + 1]` cuando `r == n`.
 
 #### 3.5.2 Difference Array 2D en Submatrices (`DiffArray2D`)
@@ -150,6 +191,17 @@
 
 -- diff_array_2d.cpp
 
+- **Lectura de entrada y uso:** Aplicar $Q$ sumas rectangulares **1-based** y reconstruir `mat[1..n][1..m]` con `build()`:
+```cpp
+int n, m, q; cin >> n >> m >> q;
+DiffArray2D da(n, m);
+while (q--) {
+  int r1, c1, r2, c2; ll v;
+  cin >> r1 >> c1 >> r2 >> c2 >> v;
+  da.add_rect(r1, c1, r2, c2, v);
+}
+auto mat = da.build(); // mat[1..n][1..m]
+```
 - **Trampas y adaptaciones:** (1) Recordar los signos de las 4 esquinas: `+val` en `(r1, c1)` y `(r2+1, c2+1)`, y `-val` en `(r1, c2+1)` y `(r2+1, c1)`.
 
 ------------------------------------------------------------------------
