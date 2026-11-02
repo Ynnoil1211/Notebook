@@ -68,29 +68,6 @@ def check_prerequisites(need_pandoc: bool, body_path: str) -> None:
         sys.exit(1)
 
 
-def clean_markdown_math(text: str) -> str:
-    """
-    Normaliza delimitadores matemáticos comunes de Markdown en memoria:
-      $`...`$  ->  $...$
-      &lt;     ->  <
-      &gt;     ->  >
-    """
-    bt = chr(96)
-    target_start = "$" + bt
-    target_end = bt + "$"
-    parts = text.split(target_start)
-    out = [parts[0]]
-    for p in parts[1:]:
-        if target_end in p:
-            m, rest = p.split(target_end, 1)
-            out.append("$" + m + "$" + rest)
-        else:
-            out.append(target_start + p)
-    cleaned = "".join(out)
-    cleaned = cleaned.replace("&lt;", "<").replace("&gt;", ">")
-    return cleaned
-
-
 def postprocess_typst_tables(typ_text: str) -> str:
     """
     Ajusta las tablas generadas por Pandoc para el diseño de 3 columnas de Typst:
@@ -123,52 +100,202 @@ def postprocess_typst_tables(typ_text: str) -> str:
     return typ_text
 
 
-def convert_markdown_to_typst(md_path: str, typ_body_path: str) -> None:
-    """Preprocesa el Markdown en memoria (sin alterar md_path) y genera typ_body_path con Pandoc."""
-    if not os.path.exists(md_path):
-        print(f"[ERROR] Archivo Markdown no encontrado: {md_path}", file=sys.stderr)
+def normalize_lang_filter(lang_filter: str = "all") -> str:
+    val = (lang_filter or "all").strip().lower()
+    if val in ("py", "python"):
+        return "py"
+    if val in ("cpp", "c++"):
+        return "cpp"
+    return "all"
+
+
+def iter_markdown_files(source_path: str, lang_filter: str = "all") -> list[str]:
+    norm = normalize_lang_filter(lang_filter)
+    if os.path.isfile(source_path):
+        return [source_path]
+    if not os.path.isdir(source_path):
+        return []
+    md_files: list[str] = []
+    for root, dirs, files in os.walk(source_path):
+        dirs.sort()
+        has_cpp = any(f.endswith((".cpp", ".cc", ".cxx", ".hpp", ".h")) for f in files)
+        has_py = any(f.endswith(".py") for f in files)
+        if norm == "cpp" and has_py and not has_cpp:
+            continue
+        if norm == "py" and not has_py:
+            continue
+        for fname in sorted(files):
+            if fname.endswith(".md"):
+                md_files.append(os.path.join(root, fname))
+    return md_files
+
+
+OPTIONAL_TAG_RE = re.compile(
+    r"\s*(?:\[(?:opcional|optional)\]|<!--\s*(?:opcional|optional)\s*-->)\s*$",
+    re.IGNORECASE,
+)
+
+
+def expand_markdown_file(md_file: str, lang_filter: str = "all", include_optional: bool = False) -> str:
+    norm = normalize_lang_filter(lang_filter)
+    base_dir = os.path.dirname(os.path.abspath(md_file))
+    with open(md_file, "r", encoding="utf-8") as f:
+        raw_lines = f.read().splitlines()
+
+    out: list[str] = []
+    in_fence = False
+    fence_marker = ""
+    skip_until_level: int | None = None
+    has_emitted_h3 = False
+    pending_hr = False
+    include_re = re.compile(
+        r"^--\s+(\S+\.(?:cpp|cc|cxx|hpp|h|py))(?:\s+\[(?:opcional|optional)\])?\s*$",
+        re.IGNORECASE,
+    )
+    heading_re = re.compile(r"^(#{2,4})\s+(.*)$")
+
+    for line_no, line in enumerate(raw_lines, start=1):
+        stripped = line.strip()
+        if not in_fence:
+            m_fence = re.match(r"^(`{3,}|~{3,})\s*(\S*).*$", stripped)
+            if m_fence:
+                in_fence = True
+                fence_marker = m_fence.group(1)
+                if skip_until_level is None:
+                    out.append(line)
+                continue
+
+            if re.match(r"^-{3,}\s*$", stripped):
+                if has_emitted_h3:
+                    pending_hr = True
+                continue
+
+            m_head = heading_re.match(stripped)
+            if m_head:
+                level = len(m_head.group(1))
+                if skip_until_level is not None and level <= skip_until_level:
+                    skip_until_level = None
+                is_opt = bool(OPTIONAL_TAG_RE.search(stripped))
+                if skip_until_level is not None:
+                    continue
+                if is_opt and not include_optional:
+                    skip_until_level = level
+                    continue
+                if level == 2:
+                    has_emitted_h3 = False
+                    pending_hr = False
+                elif level == 3:
+                    if pending_hr and has_emitted_h3:
+                        out.append("---")
+                        out.append("")
+                    has_emitted_h3 = True
+                    pending_hr = False
+                clean_line = OPTIONAL_TAG_RE.sub("", line)
+                out.append(clean_line)
+                continue
+
+            if skip_until_level is not None:
+                continue
+
+            m_inc = include_re.match(stripped)
+            if m_inc:
+                is_opt_inc = bool(OPTIONAL_TAG_RE.search(stripped))
+                if is_opt_inc and not include_optional:
+                    continue
+                rel_code = m_inc.group(1)
+                is_py = rel_code.endswith(".py")
+                if norm == "cpp" and is_py:
+                    continue
+                if norm == "py" and not is_py:
+                    continue
+                code_path = os.path.join(base_dir, rel_code)
+                if not os.path.isfile(code_path):
+                    raise FileNotFoundError(
+                        f"Archivo de código '{rel_code}' no encontrado (referenciado en {md_file}:{line_no})"
+                    )
+                with open(code_path, "r", encoding="utf-8") as cf:
+                    code_body = cf.read().rstrip()
+                lang = "python" if is_py else "cpp"
+                out.append(f"```{lang}")
+                out.append(code_body)
+                out.append("```")
+                continue
+        else:
+            if stripped.startswith(fence_marker) and len(stripped) == len(fence_marker):
+                in_fence = False
+                if skip_until_level is None:
+                    out.append(line)
+                continue
+            if skip_until_level is not None:
+                continue
+
+        out.append(line)
+
+    return "\n".join(out).strip() + "\n"
+
+
+def get_source_mtime(source_path: str) -> float:
+    if os.path.isfile(source_path):
+        return os.path.getmtime(source_path)
+    if not os.path.isdir(source_path):
+        return 0.0
+    latest = 0.0
+    for root, dirs, files in os.walk(source_path):
+        for fname in files:
+            if fname.endswith((".md", ".cpp", ".cc", ".cxx", ".hpp", ".h", ".py")):
+                p = os.path.join(root, fname)
+                if os.path.exists(p):
+                    latest = max(latest, os.path.getmtime(p))
+    return latest
+
+
+def convert_markdown_to_typst(
+    md_path: str,
+    typ_body_path: str,
+    lang_filter: str = "all",
+    include_optional: bool = False,
+) -> None:
+    """Convierte md_path (directorio modular o archivo .md) a typ_body_path con Pandoc."""
+    norm = normalize_lang_filter(lang_filter)
+    md_files = iter_markdown_files(md_path, lang_filter=norm)
+    if not md_files:
+        print(f"[ERROR] Fuente Markdown no encontrada: {md_path} (lang={norm})", file=sys.stderr)
         sys.exit(1)
 
-    print(f"[1/2] Preprocesando en memoria {os.path.basename(md_path)} (sin modificar el original)...")
-    with open(md_path, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    cleaned = clean_markdown_math(content)
     os.makedirs(os.path.dirname(os.path.abspath(typ_body_path)), exist_ok=True)
-
-    print(f"[2/2] Convirtiendo a Typst mediante Pandoc -> {os.path.basename(typ_body_path)}...")
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".md", encoding="utf-8", delete=False
-    ) as tmp_md:
-        tmp_md.write(cleaned)
-        tmp_md_path = tmp_md.name
-
-    try:
-        cmd = [
-            "pandoc",
-            tmp_md_path,
-            "-f",
-            "markdown",
-            "-t",
-            "typst",
-            "-o",
-            typ_body_path,
-        ]
-        res = subprocess.run(
-            cmd, capture_output=True, text=True, encoding="utf-8", errors="replace"
-        )
-        if res.returncode != 0:
-            print("[ERROR] Pandoc falló:", file=sys.stderr)
-            print(res.stderr, file=sys.stderr)
-            sys.exit(res.returncode)
-        with open(typ_body_path, "r", encoding="utf-8") as tf:
-            typ_content = tf.read()
-        typ_content = postprocess_typst_tables(typ_content)
-        with open(typ_body_path, "w", encoding="utf-8") as tf:
-            tf.write(typ_content)
-    finally:
-        if os.path.exists(tmp_md_path):
-            os.remove(tmp_md_path)
+    opt_label = "opcionales=incluidos" if include_optional else "opcionales=omitidos"
+    label = (
+        f"{os.path.basename(md_path)}/ ({len(md_files)} bloques, lang={norm}, {opt_label})"
+        if os.path.isdir(md_path)
+        else f"{os.path.basename(md_path)} (lang={norm}, {opt_label})"
+    )
+    print(f"[PANDOC] Convirtiendo {label} -> {os.path.basename(typ_body_path)}...")
+    combined_md = "\n\n".join(
+        expand_markdown_file(p, lang_filter=norm, include_optional=include_optional).rstrip()
+        for p in md_files
+    )
+    combined_md = re.sub(r"^\s*-{3,}\s*\n+", "", combined_md).strip() + "\n"
+    cmd = [
+        "pandoc",
+        "-f",
+        "markdown",
+        "-t",
+        "typst",
+        "-o",
+        typ_body_path,
+    ]
+    res = subprocess.run(
+        cmd, input=combined_md, capture_output=True, text=True, encoding="utf-8", errors="replace"
+    )
+    if res.returncode != 0:
+        print("[ERROR] Pandoc falló:", file=sys.stderr)
+        print(res.stderr, file=sys.stderr)
+        sys.exit(res.returncode)
+    with open(typ_body_path, "r", encoding="utf-8") as tf:
+        typ_content = tf.read()
+    typ_content = postprocess_typst_tables(typ_content)
+    with open(typ_body_path, "w", encoding="utf-8") as tf:
+        tf.write(typ_content)
 
 
 def compile_typst_once(template_path: str, body_path: str, output_pdf_path: str) -> int:
@@ -238,6 +365,8 @@ def watch_loop(
     body_path: str,
     output_pdf_path: str,
     no_pandoc: bool,
+    lang_filter: str = "all",
+    include_optional: bool = False,
 ) -> None:
     """
     Modo vigilancia real: monitorea cambios tanto en el .md fuente (si no es --no-pandoc)
@@ -252,14 +381,16 @@ def watch_loop(
 
     try:
         while True:
-            md_mtime = os.path.getmtime(md_path) if (not no_pandoc and os.path.exists(md_path)) else 0.0
+            md_mtime = get_source_mtime(md_path) if not no_pandoc else 0.0
             tpl_mtime = os.path.getmtime(template_path) if os.path.exists(template_path) else 0.0
             body_mtime = os.path.getmtime(body_path) if os.path.exists(body_path) else 0.0
 
             need_compile = False
             if not no_pandoc and md_mtime > last_md_mtime:
                 last_md_mtime = md_mtime
-                convert_markdown_to_typst(md_path, body_path)
+                convert_markdown_to_typst(
+                    md_path, body_path, lang_filter=lang_filter, include_optional=include_optional
+                )
                 body_mtime = os.path.getmtime(body_path) if os.path.exists(body_path) else 0.0
                 last_body_mtime = body_mtime
                 need_compile = True
@@ -284,8 +415,8 @@ def main() -> None:
     parser.add_argument(
         "--input",
         "-i",
-        default="Notebook_ICPC_Final.md",
-        help="Archivo Markdown de entrada",
+        default="sections",
+        help="Directorio modular (sections/) o archivo Markdown de entrada",
     )
     parser.add_argument(
         "--template",
@@ -316,8 +447,46 @@ def main() -> None:
         action="store_true",
         help="Omite la conversión de Pandoc y reusa el archivo --body existente",
     )
+    lang_group = parser.add_mutually_exclusive_group()
+    lang_group.add_argument(
+        "--lang",
+        "-l",
+        choices=["all", "cpp", "py", "python"],
+        default="all",
+        help="Filtra qué lenguaje compilar: all (por defecto), cpp (solo C++) o py (solo Python)",
+    )
+    lang_group.add_argument(
+        "--cpp",
+        action="store_true",
+        help="Atajo para --lang cpp (compila únicamente los bloques de C++ y teoría general)",
+    )
+    lang_group.add_argument(
+        "--py",
+        "--python",
+        action="store_true",
+        help="Atajo para --lang py (compila únicamente el bloque de Python)",
+    )
+    opt_group = parser.add_mutually_exclusive_group()
+    opt_group.add_argument(
+        "--optional",
+        "--include-optional",
+        "--full",
+        dest="include_optional",
+        action="store_true",
+        help="Incluye las secciones avanzadas marcadas con [opcional] en los index.md",
+    )
+    opt_group.add_argument(
+        "--no-optional",
+        "--essential",
+        "--core",
+        dest="exclude_optional",
+        action="store_true",
+        help="Omite las secciones avanzadas marcadas con [opcional] (comportamiento por defecto)",
+    )
 
     args = parser.parse_args()
+    lang_filter = "cpp" if args.cpp else ("py" if args.py else normalize_lang_filter(args.lang))
+    include_optional = bool(args.include_optional)
 
     md_path = resolve_path(args.input, is_output=False)
     template_path = resolve_path(args.template, is_output=False)
@@ -327,11 +496,21 @@ def main() -> None:
     check_prerequisites(need_pandoc=not args.no_pandoc, body_path=body_path)
 
     if args.watch:
-        watch_loop(md_path, template_path, body_path, output_pdf_path, args.no_pandoc)
+        watch_loop(
+            md_path,
+            template_path,
+            body_path,
+            output_pdf_path,
+            args.no_pandoc,
+            lang_filter=lang_filter,
+            include_optional=include_optional,
+        )
         return
 
     if not args.no_pandoc:
-        convert_markdown_to_typst(md_path, body_path)
+        convert_markdown_to_typst(
+            md_path, body_path, lang_filter=lang_filter, include_optional=include_optional
+        )
 
     rc = compile_typst_once(template_path, body_path, output_pdf_path)
     if rc != 0:

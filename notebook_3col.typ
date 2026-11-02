@@ -2,17 +2,6 @@
 // Equipo: OUR BRAINS ARE DIAZ O
 // Compilación automática recomendada: python build_pdf.py
 
-#let horizontalrule = line(length: 100%, stroke: 0.4pt + luma(200))
-
-#let blockquote(body) = block(
-  fill: rgb("#eff6ff"),
-  stroke: (left: 2.5pt + rgb("#2563eb")),
-  inset: 5pt,
-  radius: 2pt,
-  width: 100%,
-  body
-)
-
 #set page(
   paper: "a4",
   flipped: true, // Horizontal (Landscape) ideal para 3 columnas
@@ -96,7 +85,7 @@
 #show raw.where(block: false): set text(font: "Consolas", size: 6.3pt, fill: rgb("#0f172a"))
 
 // Tablas compactas y rompibles entre columnas para diseño de 3 columnas
-#show figure.where(kind: table): set block(breakable: true, width: 100%, above: 4pt, below: 4pt)
+#show figure.where(kind: table): set block(breakable: true)
 #show figure.where(kind: table): it => block(breakable: true, width: 100%, above: 4pt, below: 4pt, it.body)
 #show table: set text(size: 5.9pt, hyphenate: false)
 #show table: set par(justify: false, leading: 0.34em)
@@ -118,6 +107,8 @@
   width: 100%,
   [
     #set text(size: 6.4pt)
+    #show outline.entry.where(level: 1): set text(weight: "bold")
+    #show regex("Bloque(\s+\d+:?)?"): set text(weight: "bold", fill: rgb("#2563eb"))
     #outline(title: [Índice General con Páginas], depth: 3, indent: 0.8em)
   ]
 )

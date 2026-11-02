@@ -4,10 +4,8 @@ tools/extract_snippets.py — Extractor y ensamblador de snippets del Notebook I
 =================================================================================
 
 Identifica bloques de código en Notebook_ICPC_Final.md mediante IDs estables
-(basados en metadatos explícitos, símbolos definidos o slugs de sección),
-clasifica cada bloque (algorithm, reader, usage, driver, illustrative, template),
-separa el código reutilizable de funciones main() de demostración y permite
-ensamblar programas completos en un directorio temporal para pruebas.
+(basados en símbolos definidos o slugs de sección), separa el código reutilizable
+de funciones main() de demostración y permite ensamblar programas completos para pruebas.
 """
 
 from __future__ import annotations
@@ -16,8 +14,9 @@ import dataclasses
 import json
 import os
 import re
-import sys
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set
+
+DEFAULT_SOURCE_PATH = "sections"
 
 
 @dataclasses.dataclass
@@ -27,7 +26,7 @@ class Snippet:
     section_title: str
     heading_title: str
     lang: str
-    role: str  # template | algorithm | reader | usage | driver | illustrative | io_input | io_output
+    role: str  # template | algorithm
     code: str
     reusable_code: str
     dependencies: List[str]
@@ -40,7 +39,7 @@ SYMBOL_PATTERNS = [
     (r"\bclass\s+([A-Za-z_]\w*)", "class"),
     (r"\busing\s+([A-Za-z_]\w*)\s*=", "alias"),
     (
-        r"\b(?:void|int|ll|ull|ld|bool|string|vi|vll|pii|pll|Pt|Matrix|Frac|Simplex|Dinic|MCMF)\s+([A-Za-z_]\w*)\s*\(",
+        r"\b(?:void|int|ll|ull|ld|double|bool|string|vi|vll|pii|pll|Pt|Matrix|Frac|Simplex|Dinic|MCMF)\s+([A-Za-z_]\w*)\s*\(",
         "func",
     ),
     (
@@ -56,16 +55,13 @@ SYMBOL_PATTERNS = [
 
 # Mapa canónico de símbolos a IDs estables de algoritmos
 CANONICAL_SYMBOL_IDS: Dict[str, str] = {
-    "eps_cmp": "eps_cmp",
     "rd": "rng_mt19937",
     "rng": "rng_mt19937",
     "MOD": "modular_arith",
     "custom_hash": "custom_hash",
     "ordered_set": "pbds_ordered_set",
-    "ordered_multiset": "pbds_ordered_multiset",
     "DSU": "dsu",
     "RollbackDSU": "rollback_dsu",
-    "DynCon": "dynamic_connectivity",
     "SparseTable": "sparse_table",
     "Fenwick": "fenwick_1d",
     "Fenwick2D": "fenwick_2d",
@@ -74,33 +70,22 @@ CANONICAL_SYMBOL_IDS: Dict[str, str] = {
     "LazySegTree": "lazy_segtree",
     "SegTree2D": "segtree_2d",
     "PersistentST": "persistent_segtree",
-    "PersistentSegTree": "persistent_segtree",
-    "PersistentFreqSegTree": "persistent_kth",
     "HLD": "hld",
-    "LinkCutTree": "link_cut_tree",
-    "min_cyclic_string": "duval_min_rotation",
-    "RollingHash": "rolling_hash",
     "prefix_function": "kmp",
     "z_function": "z_algorithm",
-    "manacher": "manacher",
-    "Trie": "string_trie",
     "BitTrie": "bit_trie",
     "AhoCorasick": "aho_corasick",
     "SuffixArray": "suffix_array",
     "SuffixAutomaton": "suffix_automaton",
-    "Eertree": "eertree",
     "topological_sort": "toposort",
     "BridgesAndCuts": "bridges_and_cuts",
     "TarjanSCC": "tarjan_scc",
     "TwoSAT": "twosat",
-    "eulerian_directed": "eulerian_directed_fn",
     "EulerianDirected": "eulerian_directed",
     "Dinic": "dinic",
     "MCMF": "mcmf",
-    "Kuhn": "kuhn_bipartite",
     "BipartiteMVC": "bipartite_mvc",
     "hungarian": "hungarian",
-    "Hungarian": "hungarian_struct",
     "Blossom": "blossom",
     "directed_mst": "directed_mst",
     "BlockCutTree": "block_cut_tree",
@@ -112,17 +97,14 @@ CANONICAL_SYMBOL_IDS: Dict[str, str] = {
     "is_prime_single": "is_prime_single",
     "miller_rabin": "miller_rabin",
     "pollard_rho": "pollard_rho",
-    "factorize_64": "factorize_64",
     "extgcd": "extgcd",
     "find_diophantine": "diophantine",
     "crt_general": "crt_general",
     "norm_mod": "modular_arith",
     "init_fact": "combinatorics",
-    "lucas_nCr": "lucas",
     "euler_phi": "euler_phi",
     "init_phi_and_mobius": "phi_mobius_sieve",
     "Matrix": "matrix_exp",
-    "fib_fast": "fib_fast",
     "XorBasis": "xor_basis",
     "gauss_double": "gauss_double",
     "gauss_mod": "gauss_mod",
@@ -136,7 +118,6 @@ CANONICAL_SYMBOL_IDS: Dict[str, str] = {
     "xor_n": "xor_range",
     "mex": "mex",
     "nim_normal_win": "nim",
-    "nim_misere_win": "misere_nim",
     "Simplex": "simplex",
     "BerlekampMassey": "berlekamp_massey",
     "lagrange_eval_consecutive": "lagrange",
@@ -156,7 +137,6 @@ CANONICAL_SYMBOL_IDS: Dict[str, str] = {
     "convex_hull": "convex_hull",
     "rotating_callipers_max_dist2": "rotating_callipers",
     "closest_pair_distance": "closest_pair",
-    "point_in_convex_polygon": "point_in_convex_polygon",
     "Halfplane": "halfplane_intersection",
     "halfplane_intersection": "halfplane_intersection",
     "minkowski_sum": "minkowski_sum",
@@ -191,9 +171,7 @@ for _sym, _cid in CANONICAL_SYMBOL_IDS.items():
 # Dependencias implícitas conocidas entre IDs canónicos
 IMPLICIT_DEPENDENCIES: Dict[str, List[str]] = {
     "pollard_rho": ["rng_mt19937", "miller_rabin"],
-    "factorize_64": ["rng_mt19937", "miller_rabin"],
     "combinatorics": ["extgcd", "modular_arith"],
-    "lucas": ["extgcd", "modular_arith", "combinatorics"],
     "counting_expectation": ["extgcd", "modular_arith", "combinatorics"],
     "prefix_patterns": ["custom_hash"],
     "berlekamp_massey": ["modular_arith"],
@@ -201,14 +179,11 @@ IMPLICIT_DEPENDENCIES: Dict[str, List[str]] = {
     "matrix_exp": ["modular_arith", "custom_hash"],
     "discrete_log": ["custom_hash"],
     "twosat": ["tarjan_scc"],
-    "dynamic_connectivity": ["rollback_dsu"],
-    "kruskal": ["dsu"],
     "halfplane_intersection": ["geometry_2d"],
     "minkowski_sum": ["geometry_2d"],
     "closest_pair": ["geometry_2d"],
     "convex_hull": ["geometry_2d"],
     "rotating_callipers": ["geometry_2d"],
-    "point_in_convex_polygon": ["geometry_2d"],
     "analytic_geometry_circles": ["geometry_2d"],
 }
 
@@ -267,8 +242,7 @@ def strip_main_and_demos(code: str) -> str:
 
 def remove_already_defined_structs(code: str, defined_structs: Set[str]) -> str:
     """
-    Evita redefiniciones de structs cuando dos bloques agrupan estructuras repetidas
-    (p. ej. struct Blossom en §6.6 y §6.10 antes de la consolidación de Fase 3).
+    Evita redefiniciones de structs cuando se ensamblan múltiples snippets.
     """
     out = []
     i = 0
@@ -323,43 +297,167 @@ def detect_symbols(code: str) -> List[str]:
     return found
 
 
-def classify_cpp_block(code: str, preceding_text: str, block_idx: int, section_num: str) -> str:
+def classify_block(code: str, section_num: str) -> str:
     if section_num.startswith("1.1") and "#include <bits/stdc++.h>" in code:
         return "template"
-    has_main = bool(re.search(r"\bint\s+main\s*\(", code))
-    symbols = detect_symbols(code)
-    prec_lower = preceding_text[-350:].lower()
-    if "cómo leer" in prec_lower or "como leer" in prec_lower or "lectura de entrada" in prec_lower:
-        return "reader"
-    if "cómo llamarlo" in prec_lower or "como llamarlo" in prec_lower or "uso con los datos" in prec_lower:
-        return "usage"
-    if "implementación" in prec_lower or "implementacion" in prec_lower:
-        return "algorithm"
-    if has_main and not symbols:
-        return "driver"
-    if symbols:
-        return "algorithm"
-    if "cin >>" in code:
-        return "reader"
-    if "cout <<" in code:
-        return "usage"
-    return "illustrative"
+    return "algorithm"
 
 
-def classify_python_block(code: str, preceding_text: str, symbols: List[str]) -> str:
-    prec_lower = preceding_text[-350:].lower()
-    if "cómo leer" in prec_lower or "como leer" in prec_lower:
-        return "reader"
-    if "cómo llamarlo" in prec_lower or "como llamarlo" in prec_lower:
-        return "usage"
-    if "implementación" in prec_lower or "implementacion" in prec_lower:
-        return "algorithm"
-    return "algorithm" if symbols or "import " in code or "=" in code else "illustrative"
+def normalize_lang_filter(lang_filter: str = "all") -> str:
+    val = (lang_filter or "all").strip().lower()
+    if val in ("py", "python"):
+        return "py"
+    if val in ("cpp", "c++"):
+        return "cpp"
+    return "all"
 
 
-def extract_snippets(md_path: str) -> List[Snippet]:
-    with open(md_path, "r", encoding="utf-8") as f:
-        lines = f.readlines()
+def iter_markdown_files(source_path: str, lang_filter: str = "all") -> List[str]:
+    norm = normalize_lang_filter(lang_filter)
+    if os.path.isfile(source_path):
+        return [source_path]
+    if not os.path.isdir(source_path):
+        raise FileNotFoundError(f"Ruta fuente no encontrada: {source_path}")
+    md_files: List[str] = []
+    for root, dirs, files in os.walk(source_path):
+        dirs.sort()
+        has_cpp = any(f.endswith((".cpp", ".cc", ".cxx", ".hpp", ".h")) for f in files)
+        has_py = any(f.endswith(".py") for f in files)
+        if norm == "cpp" and has_py and not has_cpp:
+            continue
+        if norm == "py" and not has_py:
+            continue
+        for fname in sorted(files):
+            if fname.endswith(".md"):
+                md_files.append(os.path.join(root, fname))
+    return md_files
+
+
+OPTIONAL_TAG_RE = re.compile(r"\s*(?:\[(?:opcional|optional)\]|<!--\s*(?:opcional|optional)\s*-->)\s*$", re.IGNORECASE)
+
+
+def expand_markdown_file(md_file: str, lang_filter: str = "all", include_optional: bool = True) -> str:
+    norm = normalize_lang_filter(lang_filter)
+    base_dir = os.path.dirname(os.path.abspath(md_file))
+    with open(md_file, "r", encoding="utf-8") as f:
+        raw_lines = f.read().splitlines()
+
+    out: List[str] = []
+    in_fence = False
+    fence_marker = ""
+    skip_until_level: Optional[int] = None
+    has_emitted_h3 = False
+    pending_hr = False
+    include_re = re.compile(
+        r"^--\s+(\S+\.(?:cpp|cc|cxx|hpp|h|py))(?:\s+\[(?:opcional|optional)\])?\s*$",
+        re.IGNORECASE,
+    )
+    heading_re = re.compile(r"^(#{2,4})\s+(.*)$")
+
+    for line_no, line in enumerate(raw_lines, start=1):
+        stripped = line.strip()
+        if not in_fence:
+            m_fence = re.match(r"^(`{3,}|~{3,})\s*(\S*).*$", stripped)
+            if m_fence:
+                in_fence = True
+                fence_marker = m_fence.group(1)
+                if skip_until_level is None:
+                    out.append(line)
+                continue
+
+            if re.match(r"^-{3,}\s*$", stripped):
+                if has_emitted_h3:
+                    pending_hr = True
+                continue
+
+            m_head = heading_re.match(stripped)
+            if m_head:
+                level = len(m_head.group(1))
+                if skip_until_level is not None and level <= skip_until_level:
+                    skip_until_level = None
+                is_opt = bool(OPTIONAL_TAG_RE.search(stripped))
+                if skip_until_level is not None:
+                    continue
+                if is_opt and not include_optional:
+                    skip_until_level = level
+                    continue
+                if level == 2:
+                    has_emitted_h3 = False
+                    pending_hr = False
+                elif level == 3:
+                    if pending_hr and has_emitted_h3:
+                        out.append("---")
+                        out.append("")
+                    has_emitted_h3 = True
+                    pending_hr = False
+                clean_line = OPTIONAL_TAG_RE.sub("", line)
+                out.append(clean_line)
+                continue
+
+            if skip_until_level is not None:
+                continue
+
+            m_inc = include_re.match(stripped)
+            if m_inc:
+                is_opt_inc = bool(OPTIONAL_TAG_RE.search(stripped))
+                if is_opt_inc and not include_optional:
+                    continue
+                rel_code = m_inc.group(1)
+                is_py = rel_code.endswith(".py")
+                if norm == "cpp" and is_py:
+                    continue
+                if norm == "py" and not is_py:
+                    continue
+                code_path = os.path.join(base_dir, rel_code)
+                if not os.path.isfile(code_path):
+                    raise FileNotFoundError(
+                        f"Archivo de código '{rel_code}' no encontrado (referenciado en {md_file}:{line_no})"
+                    )
+                with open(code_path, "r", encoding="utf-8") as cf:
+                    code_body = cf.read().rstrip()
+                lang = "python" if is_py else "cpp"
+                out.append(f"```{lang}")
+                out.append(code_body)
+                out.append("```")
+                continue
+        else:
+            if stripped.startswith(fence_marker) and len(stripped) == len(fence_marker):
+                in_fence = False
+                if skip_until_level is None:
+                    out.append(line)
+                continue
+            if skip_until_level is not None:
+                continue
+
+        out.append(line)
+
+    return "\n".join(out).strip() + "\n"
+
+
+def load_markdown_source(
+    source_path: str = DEFAULT_SOURCE_PATH,
+    lang_filter: str = "all",
+    include_optional: bool = True,
+) -> str:
+    md_files = iter_markdown_files(source_path, lang_filter=lang_filter)
+    if not md_files:
+        raise FileNotFoundError(f"No se hallaron archivos .md en '{source_path}' para lang='{lang_filter}'")
+    combined = "\n\n".join(
+        expand_markdown_file(p, lang_filter=lang_filter, include_optional=include_optional).rstrip()
+        for p in md_files
+    )
+    combined = re.sub(r"^\s*-{3,}\s*\n+", "", combined)
+    return combined.strip() + "\n"
+
+
+def extract_snippets(
+    md_path: str = DEFAULT_SOURCE_PATH,
+    lang_filter: str = "all",
+    include_optional: bool = True,
+) -> List[Snippet]:
+    lines = load_markdown_source(
+        md_path, lang_filter=lang_filter, include_optional=include_optional
+    ).splitlines(keepends=True)
 
     snippets: List[Snippet] = []
     current_sec_num = "0.0"
@@ -372,23 +470,12 @@ def extract_snippets(md_path: str) -> List[Snippet]:
     fence_marker = ""
     fence_lang = ""
     fence_lines: List[str] = []
-    preceding_lines: List[str] = []
-    explicit_meta: Dict[str, str] = {}
 
     heading_re = re.compile(r"^(#{2,4})\s+(.*)$")
     sec_num_re = re.compile(r"^(\d+\.\d+(?:\.\d+)?)\s+(.*)$")
-    meta_comment_re = re.compile(r"<!--\s*snippet:\s*(.*?)\s*-->")
 
     for line in lines:
         if not in_fence:
-            m_meta = meta_comment_re.search(line)
-            if m_meta:
-                for kv in m_meta.group(1).split():
-                    if "=" in kv:
-                        k, v = kv.split("=", 1)
-                        explicit_meta[k.strip()] = v.strip()
-                continue
-
             m_head = heading_re.match(line.strip())
             if m_head:
                 level_str, title = m_head.groups()
@@ -401,7 +488,6 @@ def extract_snippets(md_path: str) -> List[Snippet]:
                     elif len(level_str) == 3:
                         current_sec_num = slugify(current_heading)[:16]
                         current_sec_title = current_heading
-                preceding_lines.append(line)
                 continue
 
             m_fence = re.match(r"^(`{3,}|~{3,})\s*(\S*).*$", line.strip())
@@ -411,37 +497,17 @@ def extract_snippets(md_path: str) -> List[Snippet]:
                 fence_lang = (m_fence.group(2) or "text").lower()
                 fence_lines = []
                 continue
-
-            preceding_lines.append(line)
-            if len(preceding_lines) > 25:
-                preceding_lines.pop(0)
         else:
             if line.strip().startswith(fence_marker) and len(line.strip()) == len(fence_marker):
                 in_fence = False
                 code = "".join(fence_lines).rstrip()
-                prec_text = "".join(preceding_lines)
                 idx = sec_block_counts.get(current_sec_num, 0)
                 sec_block_counts[current_sec_num] = idx + 1
 
                 symbols = detect_symbols(code) if fence_lang in ("cpp", "c++", "python", "py") else []
-                if "role" in explicit_meta:
-                    role = explicit_meta["role"]
-                elif fence_lang in ("cpp", "c++"):
-                    role = classify_cpp_block(code, prec_text, idx, current_sec_num)
-                elif fence_lang in ("python", "py"):
-                    role = classify_python_block(code, prec_text, symbols)
-                else:
-                    prec_low = prec_text[-250:].lower()
-                    if "salida" in prec_low or "output" in prec_low:
-                        role = "io_output"
-                    elif "entrada" in prec_low or "input" in prec_low:
-                        role = "io_input"
-                    else:
-                        role = "illustrative"
+                role = classify_block(code, current_sec_num)
 
-                if "id" in explicit_meta:
-                    base_id = explicit_meta["id"]
-                elif role == "template":
+                if role == "template":
                     base_id = "cpp_template_base"
                 else:
                     mapped_id = None
@@ -464,15 +530,12 @@ def extract_snippets(md_path: str) -> List[Snippet]:
                     final_id = base_id
 
                 deps: List[str] = []
-                if "deps" in explicit_meta:
-                    deps = [d.strip() for d in explicit_meta["deps"].split(",") if d.strip()]
-                else:
-                    for sym in symbols:
-                        c_id = CANONICAL_SYMBOL_IDS.get(sym)
-                        if c_id and c_id in IMPLICIT_DEPENDENCIES:
-                            for d in IMPLICIT_DEPENDENCIES[c_id]:
-                                if d not in deps:
-                                    deps.append(d)
+                for sym in symbols:
+                    c_id = CANONICAL_SYMBOL_IDS.get(sym)
+                    if c_id and c_id in IMPLICIT_DEPENDENCIES:
+                        for d in IMPLICIT_DEPENDENCIES[c_id]:
+                            if d not in deps:
+                                deps.append(d)
 
                 reusable = strip_main_and_demos(code) if fence_lang in ("cpp", "c++") else code
 
@@ -491,8 +554,6 @@ def extract_snippets(md_path: str) -> List[Snippet]:
                         block_index_in_section=idx,
                     )
                 )
-                explicit_meta = {}
-                preceding_lines = []
             else:
                 fence_lines.append(line)
 
@@ -524,30 +585,9 @@ def find_snippet_by_symbol_or_id(snippets: List[Snippet], query: str) -> Optiona
 
 def get_base_template(snippets: List[Snippet]) -> str:
     tpl = find_snippet_by_symbol_or_id(snippets, "cpp_template_base")
-    if tpl:
-        return tpl.reusable_code
-    return (
-        "#include <bits/stdc++.h>\n"
-        "using namespace std;\n"
-        "using ll = long long;\n"
-        "using ull = unsigned long long;\n"
-        "using ld = long double;\n"
-        "using i128 = __int128_t;\n"
-        "using pii = pair<int, int>;\n"
-        "using pll = pair<ll, ll>;\n"
-        "using vi = vector<int>;\n"
-        "using vll = vector<ll>;\n"
-        "#define all(x) (x).begin(), (x).end()\n"
-        "#define rall(x) (x).rbegin(), (x).rend()\n"
-        "#define sz(x) (int)(x).size()\n"
-        "#define pb push_back\n"
-        "#define fi first\n"
-        "#define se second\n"
-        "const int INF_INT = 1e9 + 7;\n"
-        "const ll INF = 1e18;\n"
-        "const ld EPS = 1e-9;\n"
-        "const ld PI = acos(-1.0L);\n"
-    )
+    if not tpl:
+        raise RuntimeError("No se encontró el bloque cpp_template_base (§1.1) en Notebook_ICPC_Final.md.")
+    return tpl.reusable_code
 
 
 def assemble_cpp_program(
@@ -583,10 +623,11 @@ def assemble_cpp_program(
         visiting_ids.add(snip.id)
         for dep in snip.dependencies:
             add_query(dep)
-        # Detectar símbolos top-level de otros snippets usados dentro de snip.reusable_code
+        # Detectar símbolos top-level de otros snippets usados dentro de snip.reusable_code (ignorando comentarios)
+        code_no_comments = re.sub(r"//[^\n]*", "", snip.reusable_code)
         for sym, owner_id in sym_to_snip_id.items():
             if owner_id != snip.id and owner_id not in included_ids and owner_id not in visiting_ids:
-                if re.search(rf"\b{re.escape(sym)}\b", snip.reusable_code):
+                if re.search(rf"\b{re.escape(sym)}\b", code_no_comments):
                     add_query(owner_id)
         visiting_ids.remove(snip.id)
         included_ids.add(snip.id)
@@ -607,7 +648,7 @@ def assemble_cpp_program(
 
 def main():
     parser = argparse.ArgumentParser(description="Extractor de snippets del Notebook ICPC")
-    parser.add_argument("--input", "-i", default="Notebook_ICPC_Final.md", help="Ruta al archivo Markdown")
+    parser.add_argument("--input", "-i", default=DEFAULT_SOURCE_PATH, help="Directorio modular (sections/) o archivo Markdown")
     parser.add_argument("--json", "-j", help="Guardar catálogo de snippets en JSON")
     parser.add_argument("--list", "-l", action="store_true", help="Listar todos los snippets extraídos")
     args = parser.parse_args()
