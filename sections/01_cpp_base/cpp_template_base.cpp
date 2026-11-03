@@ -3,7 +3,6 @@
 // #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
 
 #include <bits/stdc++.h>
-#include <cassert>
 using namespace std;
 
 using ll = long long;
@@ -18,8 +17,7 @@ using vll = vector<ll>;
 #define for1(i, n) for (int i = 1; i <= (int)n; ++i)
 #define fore(i, l, r) for (int i = (int)l; i <= (int)r; ++i)
 #define ford(i, n) for (int i = (int)(n) - 1; i >= 0; --i)
-#define fored(i, l, r) \
-    for (int i = (int)r; i >= (int)l; --i)
+#define fored(i, l, r) for (int i = (int)r; i >= (int)l; --i)
 #define all(x) (x).begin(), (x).end()
 #define rall(x) (x).rbegin(), (x).rend()
 #define sz(x) (int)(x).size()
