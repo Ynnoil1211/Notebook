@@ -65,7 +65,7 @@ cout << evaluate_expr(s) << "\n";
 int n, m; cin >> n >> m;
 MaxClique mc(n);
 forn(i, m) {
-  int u, v; cin >> u >> v; mc.add_edge(u - 1, v - 1);
+    int u, v; cin >> u >> v; mc.add_edge(u - 1, v - 1);
 }
 int sz_clq = mc.solve(); // nodos en mc.best_clique
 ```

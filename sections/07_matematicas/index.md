@@ -40,8 +40,8 @@
 linear_sieve_spf(); // una vez en main()
 int q; cin >> q;
 while (q--) {
-  int x; cin >> x;
-  vi pf = get_prime_factors(x); // ej: 12 -> {2, 2, 3}
+    int x; cin >> x;
+    vi pf = get_prime_factors(x); // ej: 12 -> {2, 2, 3}
 }
 ```
 - **Trampas y adaptaciones:** (1) No olvidar llamar `linear_sieve_spf(max_val)` una vez al inicio de `main()` antes de invocar `get_prime_factors(x)`.
@@ -189,8 +189,8 @@ auto [x, lcm] = crt_general(r, m); // x = -1 si incompatible
 init_fact(); // una sola vez al inicio de main()
 int q; cin >> q;
 while (q--) {
-  ll n, r; cin >> n >> r;
-  cout << nCr(n, r) << "\n"; // o nCr_iter(n, r)
+    ll n, r; cin >> n >> r;
+    cout << nCr(n, r) << "\n"; // o nCr_iter(n, r)
 }
 ```
 - **Trampas y adaptaciones:** (1) Por el Teorema de Lucas en base 2, $\binom{n}{r}$ es **impar** si y solo si $(n \text{ AND } r) == r$ ($r$ es submáscara de bits de $n$).
@@ -239,8 +239,8 @@ while (q--) {
 int n, m; ll k; cin >> n >> m >> k;
 Matrix T(n);
 forn(i, m) {
-  int u, v; cin >> u >> v; --u; --v;
-  T.m[u][v] = (T.m[u][v] + 1) % MOD;
+    int u, v; cin >> u >> v; --u; --v;
+    T.m[u][v] = (T.m[u][v] + 1) % MOD;
 }
 Matrix Tk = mat_pow(T, k); // Tk.m[u][v]: caminos u->v
 ```
@@ -395,8 +395,8 @@ int st = gauss_double(a, ans); // 0:sin sol, 1:unica, 2:inf
 Simplex lp(n, m);
 forn(j, m) cin >> lp.c[j];
 forn(i, n) {
-  forn(j, m) cin >> lp.a[i][j];
-  cin >> lp.b[i];
+    forn(j, m) cin >> lp.a[i][j];
+    cin >> lp.b[i];
 }
 auto [best, x] = lp.solve(); // -INF_LP infact, +INF_LP ilim
 ```

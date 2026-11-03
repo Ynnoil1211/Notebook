@@ -18,9 +18,9 @@
 int n; ll k; cin >> n >> k;
 vll a(n); forn(i, n) cin >> a[i]; sort(all(a));
 auto check = [&](ll d) { // ej: colocar k puntos a dist >= d
-  int cnt = 1; ll last = a[0];
-  forn(i, n) if (a[i] - last >= d) cnt++, last = a[i];
-  return cnt >= k;
+    int cnt = 1; ll last = a[0];
+    forn(i, n) if (a[i] - last >= d) cnt++, last = a[i];
+    return cnt >= k;
 };
 cout << bs_max(0, a.back() - a[0], check) << "\n";
 ```
@@ -119,7 +119,7 @@ int n, q; cin >> n >> q;
 vll a(n); forn(i, n) cin >> a[i];
 PrefixSum ps(a);
 while (q--) {
-  int l, r; cin >> l >> r; cout << ps.query(l, r) << "\n";
+    int l, r; cin >> l >> r; cout << ps.query(l, r) << "\n";
 }
 ```
 - **Trampas y adaptaciones:** (1) Los prefijos deben guardarse siempre en `ll` (`vll pref`) aunque el arreglo original quepa en `int`; (2) si las consultas del enunciado son 0-based `[l, r]`, llamar `ps.query(l + 1, r + 1)`.
@@ -140,8 +140,8 @@ vector<vll> mat(n, vll(m));
 forn(i, n) forn(j, m) cin >> mat[i][j];
 PrefixSum2D ps(mat);
 while (q--) {
-  int r1, c1, r2, c2; cin >> r1 >> c1 >> r2 >> c2;
-  cout << ps.query(r1, c1, r2, c2) << "\n";
+    int r1, c1, r2, c2; cin >> r1 >> c1 >> r2 >> c2;
+    cout << ps.query(r1, c1, r2, c2) << "\n";
 }
 ```
 - **Trampas y adaptaciones:** (1) Al aplicar inclusión-exclusión 2D, recordar sumar de vuelta `+ p[r1 - 1][c1 - 1]` que fue restado dos veces.
@@ -175,8 +175,8 @@ while (q--) {
 int n, q; cin >> n >> q;
 DiffArray1D da(n);
 while (q--) {
-  int l, r; ll v; cin >> l >> r >> v;
-  da.add_range(l, r, v);
+    int l, r; ll v; cin >> l >> r >> v;
+    da.add_range(l, r, v);
 }
 vll res = da.build(); // res[1..n]
 ```
@@ -196,9 +196,9 @@ vll res = da.build(); // res[1..n]
 int n, m, q; cin >> n >> m >> q;
 DiffArray2D da(n, m);
 while (q--) {
-  int r1, c1, r2, c2; ll v;
-  cin >> r1 >> c1 >> r2 >> c2 >> v;
-  da.add_rect(r1, c1, r2, c2, v);
+    int r1, c1, r2, c2; ll v;
+    cin >> r1 >> c1 >> r2 >> c2 >> v;
+    da.add_rect(r1, c1, r2, c2, v);
 }
 auto mat = da.build(); // mat[1..n][1..m]
 ```

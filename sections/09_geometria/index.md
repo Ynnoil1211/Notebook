@@ -40,13 +40,13 @@
 int n, q; cin >> n >> q;
 vector<Pt> poly(n); vector<PtLL> poly_i(n);
 forn(i, n) {
-  ll x, y; cin >> x >> y;
-  poly[i] = {(ld)x, (ld)y}; poly_i[i] = {x, y};
+    ll x, y; cin >> x >> y;
+    poly[i] = {(ld)x, (ld)y}; poly_i[i] = {x, y};
 }
 ll area2 = polygon_area2_int(poly_i); // 2 * Area exacta
 while (q--) {
-  Pt p; cin >> p.x >> p.y;
-  int st = point_in_polygon(p, poly); // 0:out, 1:in, 2:on
+    Pt p; cin >> p.x >> p.y;
+    int st = point_in_polygon(p, poly); // 0:out, 1:in, 2:on
 }
 ```
 - **Trampas y adaptaciones:** (1) Por el **Teorema de Pick**, en un polígono con vértices enteros, $2 \cdot \text{Área} = 2 I + B - 2$, donde $B = \sum \gcd(|\Delta x_i|, |\Delta y_i|)$ son los puntos enteros en el borde e $I$ los puntos estrictamente interiores.
@@ -132,8 +132,8 @@ vector<Pt> hull = convex_hull(pts); // vertices en orden CCW
 ```cpp
 vector<Halfplane> hps;
 forn(i, n) {
-  Pt a, b; cin >> a.x >> a.y >> b.x >> b.y;
-  hps.pb(Halfplane(a, b));
+    Pt a, b; cin >> a.x >> a.y >> b.x >> b.y;
+    hps.pb(Halfplane(a, b));
 }
 vector<Pt> poly = halfplane_intersection(hps);
 ```

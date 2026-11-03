@@ -36,13 +36,13 @@ forn(i, m) { int u, v; cin >> u >> v; dsu.unite(u, v); }
 int n, q; cin >> n >> q;
 DynCon dc(n);
 while (q--) {
-  char op; cin >> op;
-  if (op == '?') dc.add_query();
-  else {
-    int u, v; cin >> u >> v;
-    if (op == '+') dc.add_edge(u, v);
-    else dc.rem_edge(u, v);
-  }
+    char op; cin >> op;
+    if (op == '?') dc.add_query();
+    else {
+        int u, v; cin >> u >> v;
+        if (op == '+') dc.add_edge(u, v);
+        else dc.rem_edge(u, v);
+    }
 }
 vi ans = dc.solve();
 ```
@@ -65,7 +65,7 @@ int n, q; cin >> n >> q;
 vll a(n); forn(i, n) cin >> a[i];
 SparseTable st(a);
 while (q--) {
-  int l, r; cin >> l >> r; cout << st.query(l, r) << "\n";
+    int l, r; cin >> l >> r; cout << st.query(l, r) << "\n";
 }
 ```
 - **Trampas y adaptaciones:** (1) Verificar siempre `L <= R` antes de llamar a `query(L, R)` (de lo contrario `R - L + 1 <= 0` indexa fuera de `lg`).
@@ -89,9 +89,9 @@ int n, q; cin >> n >> q;
 Fenwick ft(n);
 for1(i, n) { ll x; cin >> x; ft.add(i, x); }
 while (q--) {
-  int t, l, r; cin >> t >> l >> r;
-  if (t == 1) ft.add(l, r); // suma r en pos l (1-based)
-  else cout << ft.query(l, r) << "\n";
+    int t, l, r; cin >> t >> l >> r;
+    if (t == 1) ft.add(l, r); // suma r en pos l (1-based)
+    else cout << ft.query(l, r) << "\n";
 }
 ```
 - **Trampas y adaptaciones:** (1) **Jamás** llamar `ft.add(0, delta)`: como `0 & -0 == 0`, produce un **bucle infinito**; si tus datos son 0-based, suma `+ 1` al índice.
@@ -126,9 +126,9 @@ int n, q; cin >> n >> q;
 vll a(n); forn(i, n) cin >> a[i];
 IterSegTree st(a); // o SegTree st(a) (4.4.2)
 while (q--) {
-  int t, x, y; cin >> t >> x >> y;
-  if (t == 1) st.update(x - 1, y); // asigna a[x-1] = y
-  else cout << st.query(x - 1, y - 1) << "\n";
+    int t, x, y; cin >> t >> x >> y;
+    if (t == 1) st.update(x - 1, y); // asigna a[x-1] = y
+    else cout << st.query(x - 1, y - 1) << "\n";
 }
 ```
 - **Trampas y adaptaciones:** (1) Aunque internamente el bucle convierte a semiabierto `[l, r + 1)`, la interfaz pública `query(l, r)` recibe un rango **cerrado** `[l, r]` 0-based.
@@ -163,9 +163,9 @@ int n, q; cin >> n >> q;
 vll a(n); forn(i, n) cin >> a[i];
 LazySegTree st(a);
 while (q--) {
-  int t, l, r; cin >> t >> l >> r; --l; --r;
-  if (t == 1) { ll v; cin >> v; st.add_range(l, r, v); }
-  else cout << st.query_sum(l, r) << "\n"; // o query_min
+    int t, l, r; cin >> t >> l >> r; --l; --r;
+    if (t == 1) { ll v; cin >> v; st.add_range(l, r, v); }
+    else cout << st.query_sum(l, r) << "\n"; // o query_min
 }
 ```
 - **Trampas y adaptaciones:** (1) Para soportar asignación en rango (`a[l..r] = v`) además de suma, mantener un booleano `has_set` y al aplicar un `set` limpiar el `lazy` de suma previo.
@@ -288,7 +288,7 @@ int n, q; cin >> n >> q;
 vll vals(n + 1); for1(i, n) cin >> vals[i];
 vector<vi> g(n + 1);
 forn(i, n - 1) {
-  int u, v; cin >> u >> v; g[u].pb(v); g[v].pb(u);
+    int u, v; cin >> u >> v; g[u].pb(v); g[v].pb(u);
 }
 HLD hld(n, 1, g, vals);
 // hld.update_node(u, x), hld.query_path(u, v)
@@ -308,10 +308,10 @@ HLD hld(n, 1, g, vals);
 ```cpp
 int n; cin >> n; timer_s = 0;
 for1(i, n) {
-  cin >> col_s[i]; adj_s[i].clear(); big_c[i] = 0;
+    cin >> col_s[i]; adj_s[i].clear(); big_c[i] = 0;
 }
 forn(i, n - 1) {
-  int u, v; cin >> u >> v; adj_s[u].pb(v); adj_s[v].pb(u);
+    int u, v; cin >> u >> v; adj_s[u].pb(v); adj_s[v].pb(u);
 }
 pre_sack(1, 0); dfs_sack(1, 0, false); // ans_sack[1..n]
 ```

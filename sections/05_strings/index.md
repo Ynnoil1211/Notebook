@@ -29,8 +29,8 @@
 string s; int q; cin >> s >> q;
 PolyHash rh(s);
 while (q--) {
-  int l1, r1, l2, r2; cin >> l1 >> r1 >> l2 >> r2;
-  bool eq = (rh.get(l1, r1) == rh.get(l2, r2)); // 0-based
+    int l1, r1, l2, r2; cin >> l1 >> r1 >> l2 >> r2;
+    bool eq = (rh.get(l1, r1) == rh.get(l2, r2)); // 0-based
 }
 ```
 - **Trampas y adaptaciones:** (1) Nunca mapear `'a' -> 0` (si `'a' == 0`, entonces `"a"`, `"aa"` y `"aaa"` tendrían todas hash `0`).
@@ -106,7 +106,7 @@ int n, q; cin >> n >> q;
 StringTrie tr;
 forn(i, n) { string s; cin >> s; tr.insert(s); }
 while (q--) {
-  string p; cin >> p; cout << tr.count_prefix(p) << "\n";
+    string p; cin >> p; cout << tr.count_prefix(p) << "\n";
 }
 ```
 - **Trampas y adaptaciones:** (1) Si la memoria es ajustada y el alfabeto es grande, reemplazar `int nxt[26]` por `map<char, int>` (paga $\mathcal{O}(\log \Sigma)$ pero ahorra memoria).
@@ -205,6 +205,6 @@ string s; cin >> s;
 PalindromicTree pt(s);
 int dist_pal = sz(pt.st) - 2;
 ford(i, sz(pt.st)) if (i >= 2)
-  pt.st[pt.st[i].link].cnt += pt.st[i].cnt;
+    pt.st[pt.st[i].link].cnt += pt.st[i].cnt;
 ```
 - **Trampas y adaptaciones:** (1) Para obtener el número total de ocurrencias de cada palíndromo en $S$, recorrer los nodos desde `sz(pt.st) - 1` hacia `2` haciendo `st[st[i].link].cnt += st[i].cnt`.

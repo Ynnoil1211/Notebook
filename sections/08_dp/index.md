@@ -119,8 +119,8 @@ int n, m; cin >> n >> m;
 vector<vll> dist(n, vll(n, INF));
 forn(i, n) dist[i][i] = 0;
 forn(i, m) {
-  int u, v; ll w; cin >> u >> v >> w; --u; --v;
-  dist[u][v] = min(dist[u][v], w);
+    int u, v; ll w; cin >> u >> v >> w; --u; --v;
+    dist[u][v] = min(dist[u][v], w);
 }
 auto [ans, path] = tsp_subset_dp(dist, 0, true);
 ```
@@ -142,7 +142,7 @@ auto [ans, path] = tsp_subset_dp(dist, 0, true);
 int n; cin >> n;
 vector<vi> adj(n + 1);
 forn(i, n - 1) {
-  int u, v; cin >> u >> v; adj[u].pb(v); adj[v].pb(u);
+    int u, v; cin >> u >> v; adj[u].pb(v); adj[v].pb(u);
 }
 vll ans = rerooting_sum_distances(n, adj); // ans[1..n]
 ```
@@ -192,7 +192,7 @@ ll min_y = -cht.query(x);
 - **Lectura de entrada y uso:** Definir `cost_fn(j, i)` (costo del segmento **1-based** `[j..i]`) y llamar `solve_dc_dp(n, k, cost_fn)`:
 ```cpp
 auto cost_fn = [&](int l, int r) -> ll {
-  ll s = pref[r] - pref[l - 1]; return s * s; // 1-based
+    ll s = pref[r] - pref[l - 1]; return s * s; // 1-based
 };
 ll ans = solve_dc_dp(n, k, cost_fn);
 ```

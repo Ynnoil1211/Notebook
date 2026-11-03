@@ -17,13 +17,13 @@
 ```cpp
 cin >> n_g >> m_g;
 forn(r, n_g) {
-  cin >> grid_g[r];
-  forn(c, m_g) comp_g[r][c] = -1;
+    cin >> grid_g[r];
+    forn(c, m_g) comp_g[r][c] = -1;
 }
 int id = 0;
 forn(r, n_g) forn(c, m_g)
-  if (grid_g[r][c] == '.' && comp_g[r][c] == -1)
-    flood_fill_bfs(r, c, id++); // ans_comp[comp_g[r][c]]
+    if (grid_g[r][c] == '.' && comp_g[r][c] == -1)
+        flood_fill_bfs(r, c, id++); // id en comp_g[r][c]
 ```
 - **Trampas y adaptaciones:** (1) Marcar `comp_g[nr][nc] = id` **al encolar** (no al desencolar) para no insertar la misma celda múltiples veces y provocar TLE/MLE.
 
@@ -42,8 +42,8 @@ int n, m, k; cin >> n >> m >> k;
 for1(i, n) adj_rev[i].clear();
 vi src(k); forn(i, k) cin >> src[i];
 forn(i, m) {
-  int u, v; cin >> u >> v;
-  adj_rev[v].pb(u); // + adj_rev[u].pb(v) si es no dirigido
+    int u, v; cin >> u >> v;
+    adj_rev[v].pb(u); // + adj_rev[u].pb(v) si no dir
 }
 multi_source_bfs(src, n); // dist_ms[1..n]
 ```
@@ -63,8 +63,8 @@ multi_source_bfs(src, n); // dist_ms[1..n]
 int n, m, s, t; cin >> n >> m >> s >> t;
 for1(i, n) adj01[i].clear();
 forn(i, m) {
-  int u, v, w; cin >> u >> v >> w;
-  adj01[u].pb({v, w}); adj01[v].pb({u, w});
+    int u, v, w; cin >> u >> v >> w;
+    adj01[u].pb({v, w}); adj01[v].pb({u, w});
 }
 bfs_01(s, n); // dist01[t], ruta = get_path_01(t)
 ```
@@ -88,8 +88,8 @@ bfs_01(s, n); // dist01[t], ruta = get_path_01(t)
 int n, m; cin >> n >> m;
 for1(i, n) { adj_dfs[i].clear(); col_bip[i] = 0; }
 forn(i, m) {
-  int u, v; cin >> u >> v;
-  adj_dfs[u].pb(v); adj_dfs[v].pb(u);
+    int u, v; cin >> u >> v;
+    adj_dfs[u].pb(v); adj_dfs[v].pb(u);
 }
 bool ok = true;
 for1(i, n) if (!col_bip[i]) ok &= dfs_bipartite(i, 1);
@@ -129,8 +129,8 @@ for1(i, n) if (!state_dir[i]) has_cyc |= dfs_dir_cycle(i);
 int n; cin >> n; timer_e = 0;
 for1(i, n) adj_dfs[i].clear();
 forn(i, n - 1) {
-  int u, v; cin >> u >> v;
-  adj_dfs[u].pb(v); adj_dfs[v].pb(u);
+    int u, v; cin >> u >> v;
+    adj_dfs[u].pb(v); adj_dfs[v].pb(u);
 }
 dfs_euler(1, 0); // is_ancestor(u, v) en O(1)
 ```
@@ -176,8 +176,8 @@ dfs_euler(1, 0); // is_ancestor(u, v) en O(1)
 int n, m, s, t; cin >> n >> m >> s >> t;
 for1(i, n) adj_dij[i].clear();
 forn(i, m) {
-  int u, v; ll w; cin >> u >> v >> w;
-  adj_dij[u].pb({v, w}); // + adj_dij[v].pb({u, w})
+    int u, v; ll w; cin >> u >> v >> w;
+    adj_dij[u].pb({v, w}); // + adj_dij[v].pb({u, w})
 }
 dijkstra(s, n); // dist_dij[t], ruta = get_path_dij(t)
 ```
@@ -217,8 +217,8 @@ int n, m; cin >> n >> m;
 vector<vll> d(n + 1, vll(n + 1, INF));
 for1(i, n) d[i][i] = 0;
 forn(i, m) {
-  int u, v; ll w; cin >> u >> v >> w;
-  d[u][v] = min(d[u][v], w); // y d[v][u] si es no dirigido
+    int u, v; ll w; cin >> u >> v >> w;
+    d[u][v] = min(d[u][v], w); // + d[v][u] si no dir
 }
 floyd_warshall(n, d);
 ```
@@ -242,8 +242,8 @@ floyd_warshall(n, d);
 int n; cin >> n;
 for1(i, n) adj_tr[i].clear();
 forn(i, n - 1) {
-  int u, v; cin >> u >> v;
-  adj_tr[u].pb(v); adj_tr[v].pb(u);
+    int u, v; cin >> u >> v;
+    adj_tr[u].pb(v); adj_tr[v].pb(u);
 }
 vi path = get_diameter_path(n); // diam = sz(path) - 1
 ```
@@ -281,7 +281,7 @@ ll cost = kruskal_mst(n, ed, mst); // -1 si es desconexo
 int n, q; cin >> n >> q;
 vector<vi> adj(n + 1);
 forn(i, n - 1) {
-  int u, v; cin >> u >> v; adj[u].pb(v); adj[v].pb(u);
+    int u, v; cin >> u >> v; adj[u].pb(v); adj[v].pb(u);
 }
 LCA lca(n, 1, adj); // lca.lca(u, v), lca.dist(u, v)
 ```
@@ -334,7 +334,7 @@ vi ord = topological_sort(n, adj); // ciclo si sz(ord) < n
 int n, m; cin >> n >> m;
 vector<vi> adj(n + 1);
 forn(i, m) {
-  int u, v; cin >> u >> v; adj[u].pb(v); adj[v].pb(u);
+    int u, v; cin >> u >> v; adj[u].pb(v); adj[v].pb(u);
 }
 BridgesAndCuts bc(n, adj); // bc.bridges, bc.is_cut[1..n]
 ```
@@ -394,8 +394,8 @@ if (sat.solve()) { /* sat.ans[0..n-1] tiene asignacion */ }
 int n, m, s, t; cin >> n >> m >> s >> t;
 Dinic mf(n, s, t);
 forn(i, m) {
-  int u, v; ll c; cin >> u >> v >> c;
-  mf.add_edge(u, v, c);
+    int u, v; ll c; cin >> u >> v >> c;
+    mf.add_edge(u, v, c);
 }
 ll flow = mf.max_flow(); // corte min: mf.left_of_min_cut(u)
 ```
@@ -415,8 +415,8 @@ ll flow = mf.max_flow(); // corte min: mf.left_of_min_cut(u)
 int n, m, s, t; cin >> n >> m >> s >> t;
 MCMF mcmf(n);
 forn(i, m) {
-  int u, v; ll cap, cost; cin >> u >> v >> cap >> cost;
-  mcmf.add_edge(u, v, cap, cost);
+    int u, v; ll cap, cost; cin >> u >> v >> cap >> cost;
+    mcmf.add_edge(u, v, cap, cost);
 }
 auto [flow, min_cost] = mcmf.solve(s, t);
 ```
@@ -493,8 +493,8 @@ int pairs = bl.solve(); // pareja de u en bl.match[u]
 int n, m, root; cin >> n >> m >> root; --root;
 vector<DirEdge> ed(m);
 forn(i, m) {
-  cin >> ed[i].u >> ed[i].v >> ed[i].w;
-  --ed[i].u; --ed[i].v;
+    cin >> ed[i].u >> ed[i].v >> ed[i].w;
+    --ed[i].u; --ed[i].v;
 }
 auto [cost, par] = directed_mst(n, root, ed);
 ```
@@ -550,7 +550,8 @@ vi tour = eu.find_tour(); // vacio si no existe
 int n, m, s, t; cin >> n >> m >> s >> t;
 PushRelabel pr(n);
 forn(i, m) {
-  int u, v; ll c; cin >> u >> v >> c; pr.add_edge(u, v, c);
+    int u, v; ll c; cin >> u >> v >> c;
+    pr.add_edge(u, v, c);
 }
 ll flow = pr.max_flow(s, t);
 ```

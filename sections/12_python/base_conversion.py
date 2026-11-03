@@ -13,8 +13,10 @@ f_bin = f"{45:08b}"         # "00101101"
 f_hex = f"{45:04X}"         # "002D"
 
 # 3. De Decimal a cualquier Base B (2 <= B <= 62):
-CHARS = ("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-         "abcdefghijklmnopqrstuvwxyz")
+CHARS = (
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz"
+)
 
 def to_base(n: int, b: int) -> str:
     if n == 0:
