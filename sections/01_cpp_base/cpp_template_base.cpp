@@ -67,7 +67,7 @@ void io_formatting_tricks() {
     cout << hex << 255 << " " << oct << 255 << dec << "\n";
 }
 
-ostream& operator<<(ostream& os, const ii& pa) { // DEBUGGING
+ostream& operator<<(ostream& os, const pii& pa) { // DEBUGGING
   return os << "("<< pa.fi << ", " << pa.se << ")";
 }
 
