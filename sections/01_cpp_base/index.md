@@ -2,16 +2,16 @@
 
 ## Bloque 1: C++ Base, Strings STL, Bitmasks y Cambios de Base
 
-### 1.1 Template Base ICPC, Pragmas, Formateo `cout`/`printf` y Comparador `EPS`
+### 1.1 Template Base ICPC y Comparador `EPS`
 
-- **Cuándo usar:** Esqueleto base para todo programa C++ en competencia: incluye fast I/O, macros de iteración (`forn`, `for1`, `fore`, `ford`, `fored`), comparación segura con `EPS` (`eps_lt`, `eps_eq`) y cuantización para contenedores.
-- **Cuándo no usar / alternativa:** No descomentar `#pragma GCC target("avx2...")` si el juez corre en una arquitectura distinta sin soporte AVX2 o si el problema es I/O-bound.
-- **Contrato:** Define alias `ll`, `ull`, `ld`, `pii`, `pll`, `vi`, `vll`, macros `forn`/`for1`/`fore`/`ford`/`fored` y constantes `INF_INT`, `INF`, `EPS`, `PI`. `eps_eq(a, b)` comprueba `|a - b| <= EPS`.
+- **Cuándo usar:** Esqueleto base para todo programa C++ en competencia: fast I/O, alias de tipos, macros de iteración (`forn`, `for1`) y comparación segura con `EPS` (`eps_sgn`, `eps_eq`, `eps_lt`) más cuantización para claves de contenedores.
+- **Cuándo no usar / alternativa:** En problemas interactivos, no llamar a `sync_with_stdio(false)` y vaciar la salida (`flush`) tras cada escritura.
+- **Contrato:** Define alias `ll`, `ull`, `ld`, `pii`, `pll`, `vi`, `vll`, macros `all`, `sz`, `pb`, `fi`, `se`, `el`, `forn`, `for1`, y constantes `INF_INT` ($10^9$, distancias en `int`), `INF` ($10^{18}$), `EPS` y `PI`. `eps_eq(a, b)` comprueba `|a - b| <= EPS`.
 - **Complejidad:** Fast I/O y comparadores en $\mathcal{O}(1)$.
 
 -- cpp_template_base.cpp
 
-- **Trampas y adaptaciones:** (1) Jamás mezclar `scanf`/`printf` con `cin`/`cout` tras `sync_with_stdio(false)`; (2) no usar `eps_lt` como comparador directo de `std::set` porque la cercanía `|a-b| <= EPS` no es transitiva (usar `quantize_eps`).
+- **Trampas y adaptaciones:** (1) Jamás mezclar `scanf`/`printf` con `cin`/`cout` tras `sync_with_stdio(false)`; (2) no usar `eps_lt` como comparador directo de `std::set` porque la cercanía `|a-b| <= EPS` no es transitiva (usar `quantize_eps`); (3) para imprimir reales, `cout << fixed << setprecision(10) << x`.
 
 ------------------------------------------------------------------------
 

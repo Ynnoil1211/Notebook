@@ -1,108 +1,105 @@
-# OUR BRAINS ARE DIAZ O — ICPC Team Notebook (Typst 3-Column Renderer)
+# OUR BRAINS ARE DIAZ O — ICPC Team Notebook
 
-Este repositorio contiene el manual competitivo y sistema de generación de notebooks para ICPC del equipo **OUR BRAINS ARE DIAZ O**, diseñado en formato apaisado (*landscape*) de **3 columnas compactas con resaltado de sintaxis nativo (Syntax Highlighting)** para C++17 y Python 3 y suite automatizada de verificación.
+Notebook de referencia del equipo para ICPC: fichas cortas de C++17 y
+Python 3 con código real compilado y verificado, renderizadas a un PDF
+apaisado de 3 columnas con Typst.
 
----
+## La plantilla C++
 
-## 📁 Estructura Modular del Proyecto
+Todo el código C++ del notebook se apoya en un único archivo:
+
+**[`sections/01_cpp_base/cpp_template_base.cpp`](sections/01_cpp_base/cpp_template_base.cpp)**
+
+Los snippets `.cpp` no son programas completos: se pegan después de la
+plantilla, que ya aporta `bits/stdc++.h`, fast I/O y `main`. Por eso ningún
+snippet repite `#include`, `using namespace std` ni alias.
+
+La plantilla define:
+
+- Alias: `ll`, `ull`, `ld`, `pii`, `pll`, `vi`, `vll`.
+- Macros: `all`, `sz`, `pb`, `fi`, `se`, `el`, `forn`, `for1`.
+- Constantes: `INF = 1e18` (sumas en `ll`), `INF_INT = 1e9` (distancias en
+  `int`), `EPS` y `PI`.
+- Comparación real: `eps_sgn`, `eps_eq`, `eps_lt` y `quantize_eps` para usar
+  `ld` como clave de `set`/`map` (ver §1.1).
+
+El contrato completo, con las trampas, está en
+[§1.1 de C++ Base](sections/01_cpp_base/index.md).
+
+## Estructura
 
 ```text
-├── sections/                         # 13 bloques con fichas Markdown (index.md) y código (.cpp / .py) separado
-│   ├── 00_guia/                      # Selector rápido y checklist anti-WA (index.md)
-│   ├── 01_cpp_base/                  # Template base C++, RNG, strings, bitmasks, bases (index.md + 5 .cpp)
-│   ├── 02_stl_pbds/                  # STL, compresión, custom_hash y PBDS (index.md + 6 .cpp)
-│   ├── 03_busquedas_prefix/          # Búsqueda binaria/ternaria, 2P, pilas, prefijos, greedy (index.md + 17 .cpp)
-│   ├── 04_estructuras_datos/         # DSU, Sparse Table, Fenwick, SegTree, Treap, HLD, LCT (index.md + 17 .cpp)
-│   ├── 05_strings/                   # Duval, Hashing, KMP, Z, Manacher, Trie, AC, SA, SAM, Eertree (index.md + 12 .cpp)
-│   ├── 06_grafos/                    # BFS/DFS, Dijkstra, Árboles, SCC, 2-SAT, Flujo, Matching (index.md + 29 .cpp)
-│   ├── 07_matematicas/               # Cribas, Pollard-Rho, CRT, Matrices, FFT/NTT, Simplex, BM (index.md + 36 .cpp)
-│   ├── 08_dp/                        # Knapsack, LIS, Digit DP, SOS DP, Rerooting, CHT, D&C, Knuth (index.md + 13 .cpp)
-│   ├── 09_geometria/                 # Primitivas 2D, Convex Hull, Callipers, Semiplanos, Minkowski (index.md + 10 .cpp)
-│   ├── 10_mitm_parsing_clique/       # Meet in the Middle, Shunting-Yard y Max Clique (index.md + 4 .cpp)
-│   ├── 11_compendio_teorico/         # Identidades, cotas, combinatoria y teoremas de grafos (index.md)
-│   └── 12_python/                    # Kit táctico de Python 3 / PyPy 3 (index.md + 15 .py)
-├── Notebook_ICPC_Final.pdf           # Notebook compilado en PDF (3 columnas apaisadas, 37 páginas)
-├── notebook_3col.typ                 # Plantilla maestra de Typst (3 columnas, índice con páginas y estilos)
-├── build_pdf.py                      # Compilador modular con expansión de directivas -- archivo.cpp/.py
-├── tools/
-│   └── extract_snippets.py           # Extractor y ensamblador de snippets C++/Python con resolución de dependencias
-└── tests/
-    └── run_tests.py                  # Suite de pruebas de regresión, diferenciales, compilación y formato
+sections/
+  00_guia/                  Selector rápido, complejidades y checklist anti-WA
+  01_cpp_base/              Plantilla, RNG, strings, bitmasks y bases (5 .cpp)
+  02_stl_pbds/              STL, compresión, custom_hash y PBDS (6 .cpp)
+  03_busquedas_prefix/      Búsqueda binaria/ternaria, 2P, pilas, prefijos (17 .cpp)
+  04_estructuras_datos/     DSU, Sparse Table, Fenwick, SegTree, Treap, HLD (17 .cpp)
+  05_strings/               Duval, hashing, KMP, Z, Manacher, Trie, AC, SA (12 .cpp)
+  06_grafos/                BFS/DFS, Dijkstra, SCC, 2-SAT, flujo, matching (29 .cpp)
+  07_matematicas/           Cribas, Pollard-Rho, CRT, matrices, FFT/NTT (36 .cpp)
+  08_dp/                    Knapsack, LIS, Digit DP, SOS DP, CHT, D&C, Knuth (13 .cpp)
+  09_geometria/             Primitivas 2D, convex hull, callipers, semiplanos (10 .cpp)
+  10_mitm_parsing_clique/   Meet in the middle, Shunting-Yard y max clique (4 .cpp)
+  11_compendio_teorico/     Identidades, cotas y teoremas de grafos
+  12_python/                Kit táctico de Python 3 / PyPy 3 (15 .py)
+Notebook_ICPC_Final.pdf     PDF compilado del notebook
+build_pdf.py                Expande las directivas -- archivo, Pandoc y Typst
+notebook_3col.typ           Plantilla Typst de 3 columnas
+tools/extract_snippets.py   Extrae y ensambla snippets con sus dependencias
+tests/run_tests.py          Compilación, regresión, diferenciales y formato
 ```
 
----
+## Cómo se insertan los snippets
 
-## 🧩 Cómo Funciona la Separación entre Markdown y Código
-
-Cada carpeta `sections/XX_<bloque>/` contiene:
-1. Un único archivo `index.md` con las fichas explicativas del bloque (cuándo usar, contrato, complejidad y trampas).
-2. Los archivos `.cpp` o `.py` puros de cada algoritmo (sin bloques ``` de Markdown), listos para abrir con autocompletado/LSP en cualquier IDE.
-
-Para insertar un algoritmo dentro de `index.md`, basta con escribir una línea con `-- <archivo>`:
+Cada bloque tiene un `index.md` con las fichas y los `.cpp`/`.py` sueltos.
+Una línea `-- archivo.cpp` dentro del `index.md` inserta el archivo:
 
 ```markdown
-#### 6.6.1 Flujo Máximo: Algoritmo de Dinic (`Dinic`)
+#### 6.6.1 Flujo Máximo: Dinic (`Dinic`)
 
-- **Cuándo usar:** Flujo máximo y corte mínimo en redes generales...
-- **Contrato:** Inicializar `Dinic mf(N + 1)`, agregar aristas con `mf.add_edge(u, v, cap)`...
-- **Complejidad:** $\mathcal{O}(V^2 E)$ en redes generales...
+- **Cuándo usar:** Flujo máximo y corte mínimo en redes generales.
+- **Contrato:** `Dinic mf(N + 1)`, aristas con `mf.add_edge(u, v, cap)`.
 
 -- dinic.cpp
 
-- **Trampas y adaptaciones:** En grafos no dirigidos...
+- **Trampas:** aristas no dirigidas se agregan en ambos sentidos.
 ```
 
-Tanto `build_pdf.py` como `tools/extract_snippets.py` y `tests/run_tests.py` expanden automáticamente cada directiva `-- archivo.cpp` / `-- archivo.py` al bloque de código correspondiente en memoria.
+`build_pdf.py`, `tools/extract_snippets.py` y `tests/run_tests.py` expanden
+esa directiva en memoria; los `.cpp` se editan como código normal, con LSP.
 
----
+## Requisitos
 
-## 🛠️ Requisitos Previos y Versiones Mínimas
+- Python 3.10 o superior.
+- `g++` con C++17, `__int128` y PBDS (para la suite de pruebas).
+- Typst y Pandoc (para el PDF).
 
-1. **Python $\ge 3.10$** (requerido para `int.bit_count()`, `bisect` con `key=`, y `sys.set_int_max_str_digits` en Python 3.11+).
-2. **Compilador C++17 (`g++`)** con soporte para `__int128` y PBDS (`<ext/pb_ds/assoc_container.hpp>`) para ejecutar la suite de pruebas (`tests/run_tests.py`).
-3. **Typst** y **Pandoc** (requeridos para generar `Notebook_ICPC_Final.pdf`).
+## Generar el PDF
 
----
-
-## 🚀 Cómo Generar el PDF
-
-Ejecuta desde cualquier directorio:
 ```bash
 python3 build_pdf.py
 ```
 
-Opciones disponibles:
-- **Modo en vivo (`--watch`)**: Vigila cambios tanto en cualquier `index.md` o archivo `.cpp`/`.py` dentro de `sections/` como en `notebook_3col.typ`:
-  ```bash
-  python3 build_pdf.py --watch
-  ```
-- **Temas esenciales vs. opcionales (`[opcional]`)**:
-  Por defecto se omiten los temas muy avanzados o específicos marcados con `[opcional]` en los `sections/*/index.md` (también puedes pasar `--no-optional` / `--essential`). Para incluir todo el material avanzado usa `--optional` (o `--full`):
-  ```bash
-  python3 build_pdf.py                      # Solo temas esenciales (Regional)
-  python3 build_pdf.py --optional           # Incluye también los temas marcados [opcional]
-  ```
-- **Compilar solo C++ (`--cpp` o `--lang cpp`) o solo Python (`--py` o `--lang py`)**:
-  ```bash
-  python3 build_pdf.py --cpp -o Notebook_CPP.pdf
-  python3 build_pdf.py --cpp --optional -o Notebook_CPP_Full.pdf
-  python3 build_pdf.py --py -o Notebook_Python.pdf
-  ```
-- **Compilar solo un bloque específico (por ejemplo, solo Grafos)**:
-  ```bash
-  python3 build_pdf.py --input sections/06_grafos --output grafos.pdf
-  ```
-- **Solo compilar Typst (`--no-pandoc`, sin requerir Pandoc instalado)**:
-  ```bash
-  python3 build_pdf.py --no-pandoc
-  ```
+Opciones útiles:
 
----
+```bash
+python3 build_pdf.py --watch                 # reconstruye al guardar
+python3 build_pdf.py --cpp -o Notebook_CPP.pdf
+python3 build_pdf.py --py -o Notebook_Python.pdf
+python3 build_pdf.py --optional              # incluye temas [opcional]
+python3 build_pdf.py -i sections/06_grafos -o grafos.pdf
+python3 build_pdf.py --no-pandoc             # sin Pandoc instalado
+```
 
-## 🧪 Verificación Automatizada
+Por defecto se omiten los temas marcados `[opcional]`; `--optional` (o
+`--full`) los incluye.
 
-Ejecutar la suite completa de pruebas (`tests/run_tests.py`):
-Compila y ejecuta todas las pruebas de regresión, pruebas diferenciales contra oráculos, compilación estricta de las 164 fichas operativas y auditoría de ancho de línea ($\le 60$ caracteres):
+## Pruebas
+
 ```bash
 python3 tests/run_tests.py --strict
 ```
+
+Compila las 164 fichas, ejecuta los casos de regresión y los oráculos
+diferenciales, y verifica el ancho de línea (≤ 60 caracteres) de los bloques.

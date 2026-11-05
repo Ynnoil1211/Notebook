@@ -167,7 +167,7 @@ cout << ac.count_matches(txt) << "\n";
 string s; cin >> s; int n = sz(s);
 SuffixArray sa(s);
 ll dist_subs = 1LL * n * (n + 1) / 2;
-fore(i, 2, n) dist_subs -= sa.lcp[i];
+for (int i = 2; i <= n; ++i) dist_subs -= sa.lcp[i];
 ```
 - **Trampas y adaptaciones:** (1) Para el LCP entre dos sufijos cualesquiera `i` y `j` con `rk[i] < rk[j]`, construir una `SparseTable` (§4.2) sobre `lcp` y consultar el mínimo en `[rk[i] + 1, rk[j]]`.
 
@@ -204,7 +204,7 @@ string lcs = sam.longest_common_substring(t);
 string s; cin >> s;
 PalindromicTree pt(s);
 int dist_pal = sz(pt.st) - 2;
-ford(i, sz(pt.st)) if (i >= 2)
+for (int i = sz(pt.st) - 1; i >= 2; --i)
     pt.st[pt.st[i].link].cnt += pt.st[i].cnt;
 ```
 - **Trampas y adaptaciones:** (1) Para obtener el número total de ocurrencias de cada palíndromo en $S$, recorrer los nodos desde `sz(pt.st) - 1` hacia `2` haciendo `st[st[i].link].cnt += st[i].cnt`.

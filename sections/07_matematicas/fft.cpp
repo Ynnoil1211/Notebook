@@ -10,7 +10,7 @@ void fft(vector<cd>& a, bool inv) {
         if (i < j) swap(a[i], a[j]);
     }
     for (int len = 2; len <= n; len <<= 1) {
-        double ang = 2 * acos(-1.0) / len * (inv ? -1 : 1);
+        double ang = 2 * PI / len * (inv ? -1 : 1);
         cd wlen(cos(ang), sin(ang));
         for (int i = 0; i < n; i += len) {
             cd w(1);
