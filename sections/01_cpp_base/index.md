@@ -6,7 +6,7 @@
 
 - **Cuándo usar:** Esqueleto base para todo programa C++ en competencia: fast I/O, alias de tipos, macros de iteración (`forn`, `for1`) y comparación segura con `EPS` (`eps_sgn`, `eps_eq`, `eps_lt`) más cuantización para claves de contenedores.
 - **Cuándo no usar / alternativa:** En problemas interactivos, no llamar a `sync_with_stdio(false)` y vaciar la salida (`flush`) tras cada escritura.
-- **Contrato:** Define alias `ll`, `ull`, `ld`, `pii`, `pll`, `vi`, `vll`, macros `all`, `sz`, `pb`, `fi`, `se`, `el`, `forn`, `for1`, y constantes `INF_INT` ($10^9$, distancias en `int`), `INF` ($10^{18}$), `EPS` y `PI`. Trae las 8 direcciones de grilla `dr`/`dc`/`dir_char` en orden horario (los índices pares son las 4 rectas, útiles para reconstruir pasos) y un `operator<<` de `pii` como `(x, y)` para depurar. `eps_eq(a, b)` comprueba `|a - b| <= EPS`.
+- **Contrato:** Define alias `ll`, `ull`, `ld`, `pii`, `pll`, `vi`, `vll`, macros `all`, `sz`, `pb`, `fi`, `se`, `el`, `forn`, `for1`, y constantes `INF_INT` ($10^9$, distancias en `int`), `INF` ($10^{18}$), `EPS` y `PI`. Trae las 8 direcciones de grilla `dr`/`dc`/`dir_char` (0–3 son las rectas U/D/L/R y 4–7 las diagonales, útiles para reconstruir pasos), el chequeo de límites `is_valid(r, c, n, m)` para flood fill, y un `operator<<` de `pii` como `(x, y)` para depurar. `eps_eq(a, b)` comprueba `|a - b| <= EPS`.
 - **Complejidad:** Fast I/O y comparadores en $\mathcal{O}(1)$.
 
 -- cpp_template_base.cpp

@@ -23,14 +23,18 @@ const ll INF = 1e18;
 const ld EPS = 1e-9;
 const ld PI = acos(-1.0L);
 
-// Grillas 2D: 8 vecinos en orden horario desde arriba. Los
-// indices pares (0, 2, 4, 6) son las 4 rectas, asi que
-// `k += 2` recorre solo las rectas y `k++` las 8.
-int dr[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
-int dc[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+// Grillas 2D: 0..3 son las 4 rectas (U, D, L, R) y 4..7 las
+// diagonales (UL, UR, DL, DR). dr filas, dc columnas.
+int dr[8] = {-1, 1, 0, 0, -1, -1, 1, 1};
+int dc[8] = {0, 0, -1, 1, -1, 1, -1, 1};
 // Letra de cada paso, util para reconstruir caminos.
-const char* dir_char[8] = {"U", "UR", "R", "DR",
-                           "D", "DL", "L", "UL"};
+const char* dir_char[8] = {"U", "D", "L", "R",
+                           "UL", "UR", "DL", "DR"};
+
+// Flood fill / BFS de grilla: (r, c) dentro de n x m.
+bool is_valid(int r, int c, int n, int m) {
+    return 0 <= r && r < n && 0 <= c && c < m;
+}
 
 // |a - b| <= EPS no es transitivo: nunca usar eps_lt como
 // comparador de std::set/std::map. Para claves, cuantizar
