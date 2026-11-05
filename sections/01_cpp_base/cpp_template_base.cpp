@@ -23,6 +23,15 @@ const ll INF = 1e18;
 const ld EPS = 1e-9;
 const ld PI = acos(-1.0L);
 
+// Grillas 2D: 8 vecinos en orden horario desde arriba. Los
+// indices pares (0, 2, 4, 6) son las 4 rectas, asi que
+// `k += 2` recorre solo las rectas y `k++` las 8.
+int dr[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
+int dc[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+// Letra de cada paso, util para reconstruir caminos.
+const char* dir_char[8] = {"U", "UR", "R", "DR",
+                           "D", "DL", "L", "UL"};
+
 // |a - b| <= EPS no es transitivo: nunca usar eps_lt como
 // comparador de std::set/std::map. Para claves, cuantizar
 // con quantize_eps.
@@ -31,6 +40,11 @@ bool eps_eq(ld a, ld b) { return eps_sgn(a - b) == 0; }
 bool eps_lt(ld a, ld b) { return eps_sgn(a - b) < 0; }
 ll quantize_eps(ld x, ld step = EPS) {
     return llround(x / step);
+}
+
+// DEBUG: imprime un pii como "(x, y)".
+ostream& operator<<(ostream& os, const pii& pa) {
+    return os << "(" << pa.fi << ", " << pa.se << ")";
 }
 
 void solve() {
